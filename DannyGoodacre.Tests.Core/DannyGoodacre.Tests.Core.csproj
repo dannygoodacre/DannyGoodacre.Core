@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <PackageId>DannyGoodacre.Tests.Core</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Danny Goodacre</Authors>
+        <Description>Common logic for my .NET test projects.</Description>
+        <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
+      <PackageReference Include="Moq" Version="4.20.72" />
+      <PackageReference Include="NUnit" Version="4.4.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DannyGoodacre.Core\DannyGoodacre.Core.csproj" />
+    </ItemGroup>
+
+</Project>
