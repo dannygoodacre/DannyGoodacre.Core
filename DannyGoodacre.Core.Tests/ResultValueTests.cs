@@ -1,16 +1,15 @@
-using DannyGoodacre.Tests.Core;
 using NUnit.Framework;
 
 namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]
-public class ResultTests : TestBase
+public class ResultValueTests
 {
-    [Test]
+[Test]
     public void IsSuccess_WhenSuccessful_ReturnsTrue()
     {
         // Act
-        var result = Result.Success();
+        var result = Result<int>.Success(123);
 
         // Assert
         Assert.That(result.IsSuccess, Is.True);
@@ -20,7 +19,7 @@ public class ResultTests : TestBase
     public void IsSuccess_WhenUnsuccessful_ReturnsFalse()
     {
         // Act
-        var result = Result.InternalError("Test Error");
+        var result = Result<int>.InternalError("Test Error");
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
@@ -29,11 +28,18 @@ public class ResultTests : TestBase
     [Test]
     public void Success()
     {
+        // Arrange
+        const int value = 123;
+
         // Act
-        var result = Result.Success();
+        var result = Result<int>.Success(value);
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Success));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+            Assert.That(result.Value, Is.EqualTo(value));
+        }
     }
 
     [Test]
@@ -52,7 +58,7 @@ public class ResultTests : TestBase
         validationState.AddError(property2, error2);
 
         // Act
-        var result = Result.Invalid(validationState);
+        var result = Result<int>.Invalid(validationState);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -64,47 +70,30 @@ public class ResultTests : TestBase
     }
 
     [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string message = "Test Message";
-
-        // Act
-        var result = Result.DomainError(message);
-
-        // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
-            Assert.That(result.Error, Is.EqualTo(message));
-        }
-    }
-
-    [Test]
-    public void Cancelled()
-    {
-        // Act
-        var result = Result.Cancelled();
-
-        // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
-    }
-
-    [Test]
     public void NotFound()
     {
         // Act
-        var result = Result.NotFound();
+        var result = Result<int>.NotFound();
 
         // Assert
         Assert.That(result.Status, Is.EqualTo(Status.NotFound));
     }
 
     [Test]
+    public void Cancelled()
+    {
+        // Act
+        var result = Result<int>.Cancelled();
+
+        // Assert
+        Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
+    }
+
+    [Test]
     public void InternalError()
     {
         // Act
-        var result = Result.InternalError("Test Error");
+        var result = Result<int>.InternalError("Test Error");
 
         // Assert
         Assert.That(result.Status, Is.EqualTo(Status.InternalError));
@@ -117,12 +106,11 @@ public class ResultTests : TestBase
         const string message = "Test Message";
 
         // Act
-        var result = Result.InternalError(message);
+        var result = Result<int>.InternalError(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
-
             Assert.That(result.Status, Is.EqualTo(Status.InternalError));
             Assert.That(result.Error, Is.EqualTo(message));
         }
@@ -135,7 +123,7 @@ public class ResultTests : TestBase
         var exception = new Exception("Test Exception");
 
         // Act
-        var result = Result.InternalError(exception);
+        var result = Result<int>.InternalError(exception);
 
         // Assert
         using (Assert.EnterMultipleScope())
