@@ -70,6 +70,23 @@ public class ResultValueTests
     }
 
     [Test]
+    public void DomainError()
+    {
+        // Arrange
+        const string message = "Test Message";
+
+        // Act
+        var result = Result<int>.DomainError(message);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Error, Is.EqualTo(message));
+        }
+    }
+
+    [Test]
     public void NotFound()
     {
         // Act

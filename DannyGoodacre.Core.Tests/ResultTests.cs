@@ -144,4 +144,21 @@ public class ResultTests : TestBase
             Assert.That(result.Exception, Is.EqualTo(exception));
         }
     }
+
+    [Test]
+    public void ImplicitSuccess()
+    {
+        // Arrange
+        const int value = 123;
+
+        // Act
+        var result = Result.Success(value);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+            Assert.That(result.Value, Is.EqualTo(value));
+        }
+    }
 }
