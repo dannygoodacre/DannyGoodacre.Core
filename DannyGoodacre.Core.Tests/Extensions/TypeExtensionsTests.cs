@@ -17,7 +17,7 @@ public class TypeExtensionsTests
         protected override string CommandName => "Simple Command";
 
         protected override Task<Result> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
-            => throw new NotImplementedException();
+            => Task.FromResult(Result.Success());
     }
 
     private class CommandWithValueHandler(ILogger logger) : CommandHandler<Command, int>(logger)
@@ -25,7 +25,7 @@ public class TypeExtensionsTests
         protected override string CommandName => "Result Command";
 
         protected override Task<Result<int>> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
-            => throw new NotImplementedException();
+            => Task.FromResult(Result<int>.Success(123));
     }
 
     private class DeepCommandHandler(ILogger logger) : SimpleCommandHandler(logger);
@@ -35,7 +35,7 @@ public class TypeExtensionsTests
         protected override string QueryName => "Simple Query";
 
         protected override Task<Result<int>> InternalExecuteAsync(Query query, CancellationToken cancellationToken)
-            => throw new NotImplementedException();
+            => Task.FromResult(Result<int>.Success(123));
     }
 
     private class DeepQueryHandler(ILogger logger) : SimpleQueryHandler(logger);
