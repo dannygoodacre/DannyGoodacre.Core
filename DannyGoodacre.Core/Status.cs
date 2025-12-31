@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Core.Common;
+namespace DannyGoodacre.Core;
 
 public enum Status
 {

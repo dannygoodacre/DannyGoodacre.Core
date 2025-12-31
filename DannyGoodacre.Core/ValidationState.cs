@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace DannyGoodacre.Core.Common;
+namespace DannyGoodacre.Core;
 
 public class ValidationState
 {

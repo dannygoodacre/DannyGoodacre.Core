@@ -1,0 +1,44 @@
+name: Code Coverage Report
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-report:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install ReportGenerator Tool
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool
+
+      - name: Run Tests with Coverage
+        run: |
+          dotnet test .. \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage_data
+
+      - name: Generate Report
+        run: |
+          reportgenerator \
+            -reports:./coverage_data/*/coverage.cobertura.xml \
+            -targetdir:coverage_report \
+            -reporttypes:Html \
+            -assemblyfilters:-DannyGoodacre.Tests.Core
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: coverage_report/

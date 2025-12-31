@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace DannyGoodacre.Tests.Common;
+namespace DannyGoodacre.Tests.Core;
 
 public static class LoggerExtensions
 {

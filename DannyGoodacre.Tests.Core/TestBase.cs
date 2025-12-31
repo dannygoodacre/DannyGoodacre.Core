@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
-using DannyGoodacre.Core.Common;
+using DannyGoodacre.Core;
 using Moq;
 using NUnit.Framework;
 
-namespace DannyGoodacre.Tests.Common;
+namespace DannyGoodacre.Tests.Core;
 
 public abstract class TestBase
 {
