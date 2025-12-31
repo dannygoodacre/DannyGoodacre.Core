@@ -24,7 +24,7 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
-          dotnet test .. \
+          dotnet test \
             --configuration Release \
             --collect:"XPlat Code Coverage" \
             --results-directory ./coverage_data
