@@ -1,6 +1,5 @@
 using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Core.Common;
-using DannyGoodacre.Tests.Common;
+using DannyGoodacre.Tests.Core;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;

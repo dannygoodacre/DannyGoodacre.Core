@@ -1,8 +1,7 @@
-using DannyGoodacre.Core.Common;
-using DannyGoodacre.Tests.Common;
+using DannyGoodacre.Tests.Core;
 using NUnit.Framework;
 
-namespace DannyGoodacre.Core.Tests.Common;
+namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]
 public class ValidationStateTests : TestBase

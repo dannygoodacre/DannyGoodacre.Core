@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
-public class CommandHandlerTests : TestBase
+public class CommandHandlerValueTests : TestBase
 {
     public class TestCommand : ICommand;
 
@@ -25,21 +25,21 @@ public class CommandHandlerTests : TestBase
 
     private static Action<ValidationState, TestCommand> _validate = (_, _) => {};
 
-    private static Func<TestCommand, CancellationToken, Task<Result>> _internalExecuteAsync = (_, _) => Task.FromResult(new Result());
+    private static Func<TestCommand, CancellationToken, Task<Result<string>>> _internalExecuteAsync = (_, _) => Task.FromResult(Result<string>.Success("Test result value"));
 
     private Mock<ILogger<TestCommandHandler>> _loggerMock = null!;
 
-    public class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand>(logger)
+    public class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand, string>(logger)
     {
         protected override string CommandName => TestName;
 
         protected override void Validate(ValidationState validationState, TestCommand command)
             => _validate(validationState, command);
 
-        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+        protected override Task<Result<string>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => _internalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken) => ExecuteAsync(command, cancellationToken);
+        public Task<Result<string>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken) => ExecuteAsync(command, cancellationToken);
     }
 
     [Test]

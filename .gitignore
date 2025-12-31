@@ -55,3 +55,6 @@ nunit-*.xml
 
 *.sln.DotSettings.user
 .idea/
+
+coverage_data/
+coverage_report/
