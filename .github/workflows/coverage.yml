@@ -34,7 +34,7 @@ jobs:
           reportgenerator \
             -reports:./coverage_data/*/coverage.cobertura.xml \
             -targetdir:coverage_report \
-            -reporttypes:Html \
+            -reporttypes:"Html;MarkdownSummaryGithub" \
             -assemblyfilters:-DannyGoodacre.Tests.Core
 
       - name: Upload Coverage Report
@@ -42,3 +42,12 @@ jobs:
         with:
           name: code-coverage-report
           path: coverage_report/
+
+      - name: Write to Job Summary
+        run: cat coverage_report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Post Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: coverage_report/SummaryGithub.md
