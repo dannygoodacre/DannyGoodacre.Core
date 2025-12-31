@@ -44,7 +44,7 @@ jobs:
       - name: Add Artifact Link to Summary File
         run: |
           echo -e "\n---" >> coverage_report/SummaryGithub.md
-          echo -e "##[Download full coverage report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> coverage_report/SummaryGithub.md
+          echo -e "## [Download full coverage report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> coverage_report/SummaryGithub.md
 
       - name: Write to Job Summary
         run: cat coverage_report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
