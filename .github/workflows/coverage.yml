@@ -41,11 +41,10 @@ jobs:
             -reporttypes:"Html;MarkdownSummaryGithub" \
             -assemblyfilters:-DannyGoodacre.Tests.Core
 
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-report
-          path: coverage_report/
+      - name: Add Artifact Link to Summary File
+        run: |
+          echo -e "\n---" >> coverage_report/SummaryGithub.md
+          echo -e "### 📊 [Download Full HTML Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> coverage_report/SummaryGithub.md
 
       - name: Write to Job Summary
         run: cat coverage_report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
@@ -56,7 +55,8 @@ jobs:
         with:
           path: coverage_report/SummaryGithub.md
 
-      - name: Add Artifact Link to Summary
-        run: |
-          echo -e "\n---" >> coverage_report/SummaryGithub.md
-          echo -e "### 📊 [Download Full HTML Report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> coverage_report/SummaryGithub.md
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report
+          path: coverage_report/
