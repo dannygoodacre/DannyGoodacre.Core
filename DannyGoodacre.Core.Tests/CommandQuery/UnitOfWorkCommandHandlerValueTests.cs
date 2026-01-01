@@ -12,7 +12,7 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
 
     private const string TestCommandName = "Test Unit Of Work Command Handler";
 
-    private const int TestExpectedChanges = 123;
+    private static int _testExpectedChanges;
 
     private const int TestResultValue = 789;
 
@@ -31,7 +31,7 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
     {
         protected override string CommandName => TestCommandName;
 
-        protected override int ExpectedChanges => TestExpectedChanges;
+        protected override int ExpectedChanges => _testExpectedChanges;
 
         protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => _internalExecuteAsync(command, cancellationToken);
@@ -48,6 +48,8 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
         _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
 
         _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(TestResultValue));
+
+        _testExpectedChanges = 123;
     }
 
     [Test]
@@ -68,7 +70,7 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessfulAnd_ShouldReturnSuccess()
+    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
     {
         // Arrange
         const int actualChanges = 456;
@@ -79,7 +81,30 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
             .ReturnsAsync(actualChanges)
             .Verifiable(Times.Once);
 
-        _loggerMock.Setup(LogLevel.Error, $"Command '{TestCommandName}' made an unexpected number of changes: Expected '{TestExpectedChanges}', Actual '{actualChanges}'.");
+        _loggerMock.Setup(LogLevel.Error, $"Command '{TestCommandName}' made an unexpected number of changes: Expected '{_testExpectedChanges}', Actual '{actualChanges}'.");
+
+        var handler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
+
+        // Act
+        var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
+
+        // Assert
+        AssertSuccess(result);
+    }
+
+    [Test]
+    public async Task ExecuteAsync_WhenSuccessfulAndNotValidatingChanges_ShouldReturnSuccess()
+    {
+        // Arrange
+        const int actualChanges = 456;
+
+        _testExpectedChanges = -1;
+
+        _unitOfWorkMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == _testCancellationToken)))
+            .ReturnsAsync(actualChanges)
+            .Verifiable(Times.Once);
 
         var handler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
 
