@@ -10,7 +10,7 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
 {
     public class TestCommand : ICommand;
 
-    private const string TestCommandName = "Test Unit Of Work Command Handler";
+    private const string TestCommandName = "Test Unit Of Work Command With Value Handler";
 
     private static int _testExpectedChanges;
 
