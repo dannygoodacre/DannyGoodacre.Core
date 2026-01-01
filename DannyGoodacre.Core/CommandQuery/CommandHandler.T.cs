@@ -21,7 +21,7 @@ public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TC
     /// <summary>
     /// The internal command logic.
     /// </summary>
-    /// <param name="command">The valid command request.</param>
+    /// <param name="command">The valid command request to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
     protected abstract Task<Result<TResult>> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken);
@@ -29,10 +29,10 @@ public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TC
     /// <summary>
     /// Run the command by validating first and, if successful, execute the internal logic.
     /// </summary>
-    /// <param name="command">The command request.</param>
+    /// <param name="command">The command request to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async Task<Result<TResult>> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
+    protected async virtual Task<Result<TResult>> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {
         var validationState = new ValidationState();
 
