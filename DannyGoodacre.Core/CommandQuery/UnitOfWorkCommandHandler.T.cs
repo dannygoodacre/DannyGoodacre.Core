@@ -36,7 +36,7 @@ public abstract class UnitOfWorkCommandHandler<TCommand, TResult>(ILogger logger
 
             if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
             {
-                Logger.LogError("Command '{Command}' made an unexpected number of changes to the database: Expected '{Expected}', actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+                Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
             }
         }
 

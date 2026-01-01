@@ -4,7 +4,6 @@ using DannyGoodacre.Core.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 using SystemMonitor.Core;
 
 namespace DannyGoodacre.Core.Tests.Extensions;

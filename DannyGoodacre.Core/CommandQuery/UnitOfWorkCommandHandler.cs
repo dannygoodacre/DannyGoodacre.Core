@@ -30,14 +30,16 @@ public abstract class UnitOfWorkCommandHandler<TCommand>(ILogger logger, IUnitOf
     {
         var result = await base.ExecuteAsync(command, cancellationToken);
 
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
+            return result;
+        }
 
-            if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
-            {
-                Logger.LogError("Command '{Command}' made an unexpected number of changes to the database: Expected '{Expected}', actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
-            }
+        var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
+        {
+            Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
         }
 
         return result;

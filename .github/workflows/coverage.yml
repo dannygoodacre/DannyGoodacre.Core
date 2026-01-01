@@ -27,10 +27,14 @@ jobs:
       - name: Install ReportGenerator Tool
         run: dotnet tool install --global dotnet-reportgenerator-globaltool
 
+      - name: Build
+        run: dotnet build --configuration Release
+
       - name: Run Tests with Coverage
         run: |
           dotnet test \
             --configuration Release \
+            --no-build \
             --collect:"XPlat Code Coverage" \
             --results-directory ./coverage_data
 

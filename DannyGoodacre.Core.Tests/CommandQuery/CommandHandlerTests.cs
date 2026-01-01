@@ -1,8 +1,6 @@
 using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Tests.Core;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
@@ -39,7 +37,8 @@ public class CommandHandlerTests : TestBase
         protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => _internalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken) => ExecuteAsync(command, cancellationToken);
+        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => ExecuteAsync(command, cancellationToken);
     }
 
     [Test]
@@ -59,11 +58,7 @@ public class CommandHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-        }
+        AssertInvalid(result);
     }
 
     [Test]
@@ -84,11 +79,7 @@ public class CommandHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testCommand, cancellationTokenSource.Token);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
-        }
+        AssertCancelled(result);
     }
 
     [Test]
@@ -107,11 +98,7 @@ public class CommandHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
-        }
+        AssertCancelled(result);
     }
 
     [Test]
@@ -135,10 +122,6 @@ public class CommandHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-        }
+        AssertInternalError(result, TestExceptionMessage);
     }
 }
