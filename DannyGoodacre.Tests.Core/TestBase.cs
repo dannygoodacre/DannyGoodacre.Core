@@ -29,26 +29,7 @@ public abstract class TestBase
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Status, Is.EqualTo(Status.Success));
         }
-    }
 
-    protected static void AssertInternalError(Result result, string error)
-    {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-            Assert.That(result.Error, Is.EqualTo(error));
-        }
-    }
-
-    protected static void AssertInternalError<T>(Result<T> result, string error)
-    {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-            Assert.That(result.Error, Is.EqualTo(error));
-        }
     }
 
     protected static void AssertInvalid(Result result)
@@ -66,6 +47,44 @@ public abstract class TestBase
         {
             Assert.That(result.IsSuccess, Is.False);
             Assert.That(result.Status, Is.EqualTo(Status.Invalid));
+        }
+    }
+
+    protected static void AssertDomainError(Result result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertDomainError<T>(Result<T> result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertCancelled(Result result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
+        }
+    }
+
+    protected static void AssertCancelled<T>(Result<T> result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
         }
     }
 
@@ -87,22 +106,22 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertDomainError(Result result, string error)
+    protected static void AssertInternalError(Result result, string error)
     {
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
             Assert.That(result.Error, Is.EqualTo(error));
         }
     }
 
-    protected static void AssertDomainError<T>(Result<T> result, string error)
+    protected static void AssertInternalError<T>(Result<T> result, string error)
     {
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
             Assert.That(result.Error, Is.EqualTo(error));
         }
     }

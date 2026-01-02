@@ -1,8 +1,6 @@
 using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Tests.Core;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
@@ -59,11 +57,7 @@ public class QueryHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-        }
+        AssertInvalid(result);
     }
 
     [Test]
@@ -84,11 +78,7 @@ public class QueryHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testQuery, cancellationTokenSource.Token);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
-        }
+        AssertCancelled(result);
     }
 
     [Test]
@@ -107,11 +97,7 @@ public class QueryHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
-        }
+        AssertCancelled(result);
     }
 
     [Test]
@@ -135,10 +121,6 @@ public class QueryHandlerTests : TestBase
         var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-        }
+        AssertInternalError(result, TestExceptionMessage);
     }
 }

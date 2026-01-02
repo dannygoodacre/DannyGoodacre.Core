@@ -1,6 +1,3 @@
-using DannyGoodacre.Tests.Core;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]

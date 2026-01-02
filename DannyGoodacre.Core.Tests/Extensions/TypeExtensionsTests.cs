@@ -1,7 +1,6 @@
 using DannyGoodacre.Core.CommandQuery;
 using DannyGoodacre.Core.Extensions;
 using Microsoft.Extensions.Logging;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Core.Tests.Extensions;
 
