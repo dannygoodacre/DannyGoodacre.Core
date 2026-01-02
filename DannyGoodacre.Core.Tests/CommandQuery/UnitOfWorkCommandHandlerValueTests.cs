@@ -14,6 +14,8 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
 
     private static int _testExpectedChanges;
 
+    private static int _testActualChanges;
+
     private const int TestResultValue = 789;
 
     private readonly CancellationToken _testCancellationToken = CancellationToken.None;
@@ -25,6 +27,8 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
     private readonly TestCommand _testCommand = new();
 
     private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
+
+    private static TestUnitOfWorkCommandWithValueHandler _testHandler = null!;
 
     public class TestUnitOfWorkCommandWithValueHandler(ILogger logger, IUnitOfWork unitOfWork)
         : UnitOfWorkCommandHandler<TestCommand, int>(logger, unitOfWork)
@@ -49,7 +53,9 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
 
         _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(TestResultValue));
 
-        _testExpectedChanges = 123;
+        _testExpectedChanges = -1;
+
+        _testHandler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
     }
 
     [Test]
@@ -60,58 +66,95 @@ public class UnitOfWorkCommandHandlerValueTests : TestBase
 
         _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.InternalError(testError));
 
-        var handler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
-
         // Act
-        var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
+        var result = await Act();
 
         // Assert
         AssertInternalError(result, testError);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
+    public async Task ExecuteAsync_WhenSuccessfulAndNotValidatingChanges_ShouldReturnSuccess()
     {
         // Arrange
-        const int actualChanges = 456;
+        _testActualChanges = 456;
 
-        _unitOfWorkMock
-            .Setup(x => x.SaveChangesAsync(
-                It.Is<CancellationToken>(y => y == _testCancellationToken)))
-            .ReturnsAsync(actualChanges)
-            .Verifiable(Times.Once);
-
-        _loggerMock.Setup(LogLevel.Error, $"Command '{TestCommandName}' made an unexpected number of changes: Expected '{_testExpectedChanges}', Actual '{actualChanges}'.");
-
-        var handler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
+        SetupUnitOfWork_SaveChangesAsync();
 
         // Act
-        var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
+        var result = await Act();
 
         // Assert
         AssertSuccess(result);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessfulAndNotValidatingChanges_ShouldReturnSuccess()
+    public async Task ExecuteAsync_WhenSuccessfulAndChangesValid_ShouldReturnSuccess()
     {
         // Arrange
-        const int actualChanges = 456;
+        _testExpectedChanges = 123;
 
-        _testExpectedChanges = -1;
+        _testActualChanges = 123;
 
-        _unitOfWorkMock
-            .Setup(x => x.SaveChangesAsync(
-                It.Is<CancellationToken>(y => y == _testCancellationToken)))
-            .ReturnsAsync(actualChanges)
-            .Verifiable(Times.Once);
-
-        var handler = new TestUnitOfWorkCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
+        SetupUnitOfWork_SaveChangesAsync();
 
         // Act
-        var result = await handler.TestExecuteAsync(_testCommand, _testCancellationToken);
+        var result = await Act();
 
         // Assert
         AssertSuccess(result);
     }
+
+    [Test]
+    public async Task ExecuteAsync_WhenSuccessfulAndInvalidChanges_ShouldReturnInternalError()
+    {
+        // Arrange
+        _testExpectedChanges = 123;
+
+        _testActualChanges = 456;
+
+        SetupUnitOfWork_SaveChangesAsync();
+
+        _loggerMock.Setup(LogLevel.Error, $"Command '{TestCommandName}' made an unexpected number of changes: Expected '{_testExpectedChanges}', Actual '{_testActualChanges}'.");
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertInternalError(result, "Unexpected number of changes saved.");
+    }
+
+    [Test]
+    public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccursDuringSaving_ShouldReturnInternalError()
+    {
+        // Arrange
+        _testActualChanges = 456;
+
+        const string testError = "Test Internal Error";
+
+        var exception = new Exception(testError);
+
+        _unitOfWorkMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == _testCancellationToken)))
+            .ThrowsAsync(exception)
+            .Verifiable(Times.Once);
+
+        _loggerMock.Setup(LogLevel.Critical, $"Command '{TestCommandName}' failed while saving changes, with exception: {testError}", exception: exception);
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertInternalError(result, testError);
+    }
+
+    private Task<Result<int>> Act() => _testHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
+
+    private void SetupUnitOfWork_SaveChangesAsync()
+        => _unitOfWorkMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == _testCancellationToken)))
+            .ReturnsAsync(_testActualChanges)
+            .Verifiable(Times.Once);
 }

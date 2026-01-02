@@ -35,13 +35,24 @@ public abstract class UnitOfWorkCommandHandler<TCommand>(ILogger logger, IUnitOf
             return result;
         }
 
-        var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
+        try
         {
-            Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
-        }
+            var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return result;
+            if (ExpectedChanges == -1 || actualChanges == ExpectedChanges)
+            {
+                return result;
+            }
+
+            Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+
+            return Result.InternalError("Unexpected number of changes saved.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "Command '{Command}' failed while saving changes, with exception: {Exception}", CommandName, ex.Message);
+
+            return Result.InternalError(ex.Message);
+        }
     }
 }

@@ -21,25 +21,38 @@ public abstract class UnitOfWorkCommandHandler<TCommand, TResult>(ILogger logger
     /// Run the command by validating first and, if valid, execute the internal logic.
     /// If the command executes successfully, save the changes to the database.
     /// </summary>
-    /// <param name="command">The command request to process.</param>
+    /// <param name="command">The command request to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>
-    /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
+    /// A <see cref="Result{T}"/> indicating the outcome of the operation.
     /// </returns>
     protected async override Task<Result<TResult>> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {
         var result = await base.ExecuteAsync(command, cancellationToken);
 
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
+        {
+            return result;
+        }
+
+        try
         {
             var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
+            if (ExpectedChanges == -1 || actualChanges == ExpectedChanges)
             {
-                Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+                return result;
             }
-        }
 
-        return result;
+            Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+
+            return Result<TResult>.InternalError("Unexpected number of changes saved.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCritical(ex, "Command '{Command}' failed while saving changes, with exception: {Exception}", CommandName, ex.Message);
+
+            return Result<TResult>.InternalError(ex.Message);
+        }
     }
 }
