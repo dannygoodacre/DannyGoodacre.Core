@@ -1,13 +1,13 @@
 using DannyGoodacre.Core.CommandQuery;
+using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
 public class QueryHandlerTests : TestBase
 {
-    public class TestQuery : IQuery;
+    public class TestQuery : IQueryRequest;
 
     private const string TestName = "Test Query Handler";
 

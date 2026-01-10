@@ -19,7 +19,7 @@ internal static class TypeExtensions
                     if (definition == typeof(CommandHandler<>)
                         || definition == typeof(CommandHandler<,>)
                         || definition == typeof(TransactionCommandHandler<>)
-                        || definition == typeof(TransactionalCommandHandler<,>))
+                        || definition == typeof(TransactionCommandHandler<,>))
                     {
                         return true;
                     }

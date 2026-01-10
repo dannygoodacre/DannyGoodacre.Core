@@ -1,4 +1,5 @@
 using DannyGoodacre.Core.CommandQuery;
+using DannyGoodacre.Core.CommandQuery.Abstractions;
 using DannyGoodacre.Core.Extensions;
 using Microsoft.Extensions.Logging;
 
@@ -7,33 +8,33 @@ namespace DannyGoodacre.Core.Tests.Extensions;
 [TestFixture]
 public class TypeExtensionsTests
 {
-    private class Command : ICommand;
+    private class CommandRequest : ICommandRequest;
 
-    private class Query : IQuery;
+    private class QueryRequest : IQueryRequest;
 
-    private class SimpleCommandHandler(ILogger logger) : CommandHandler<Command>(logger)
+    private class SimpleCommandHandler(ILogger logger) : CommandHandler<CommandRequest>(logger)
     {
         protected override string CommandName => "Simple Command";
 
-        protected override Task<Result> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(CommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result.Success());
     }
 
-    private class CommandWithValueHandler(ILogger logger) : CommandHandler<Command, int>(logger)
+    private class CommandWithValueHandler(ILogger logger) : CommandHandler<CommandRequest, int>(logger)
     {
         protected override string CommandName => "Result Command";
 
-        protected override Task<Result<int>> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(CommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 
     private class DeepCommandHandler(ILogger logger) : SimpleCommandHandler(logger);
 
-    private class SimpleQueryHandler(ILogger logger) : QueryHandler<Query, int>(logger)
+    private class SimpleQueryHandler(ILogger logger) : QueryHandler<QueryRequest, int>(logger)
     {
         protected override string QueryName => "Simple Query";
 
-        protected override Task<Result<int>> InternalExecuteAsync(Query query, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(QueryRequest queryRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 

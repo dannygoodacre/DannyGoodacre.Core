@@ -24,6 +24,7 @@
     <ItemGroup>
         <Using Include="NUnit.Framework" />
         <Using Include="DannyGoodacre.Tests.Core" />
+        <Using Include="Moq" />
     </ItemGroup>
 
     <ItemGroup>

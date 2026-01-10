@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TCommand : ICommand
+public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TCommand : ICommandRequest
 {
     protected abstract string CommandName { get; }
 

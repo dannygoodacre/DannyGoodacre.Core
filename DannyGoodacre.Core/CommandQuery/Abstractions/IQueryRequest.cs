@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Core.CommandQuery.Abstractions;
 
 /// <summary>
-/// A command request.
+/// A query request.
 /// </summary>
-public interface ICommand;
+public interface IQueryRequest;

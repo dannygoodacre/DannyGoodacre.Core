@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace DannyGoodacre.Core.CommandQuery;
 
 public abstract class TransactionCommandHandler<TCommand>(ILogger logger, IUnitOfWork unitOfWork)
-    : CommandHandler<TCommand>(logger) where TCommand : ICommand
+    : CommandHandler<TCommand>(logger) where TCommand : ICommandRequest
 {
     /// <summary>
     /// The number of state entries expected to be persisted upon completion.
@@ -52,7 +52,7 @@ public abstract class TransactionCommandHandler<TCommand>(ILogger logger, IUnitO
                 return Result.InternalError("Database integrity check failed.");
             }
 
-            await  transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
 
             return result;
         }
