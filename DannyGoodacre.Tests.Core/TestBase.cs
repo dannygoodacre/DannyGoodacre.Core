@@ -29,7 +29,16 @@ public abstract class TestBase
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Status, Is.EqualTo(Status.Success));
         }
+    }
 
+    protected static void AssertSuccess<T>(Result<T> result, T expectedValue)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+            Assert.That(result.Value, Is.EqualTo(expectedValue));
+        }
     }
 
     protected static void AssertInvalid(Result result)

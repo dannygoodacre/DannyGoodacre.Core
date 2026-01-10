@@ -7,41 +7,45 @@ namespace SystemMonitor.Core;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddCommandHandlers(this IServiceCollection services, params Assembly[] assemblies)
+    extension(IServiceCollection services)
     {
-        var handlerTypes = assemblies
-            .SelectMany(x => x.GetTypes())
-            .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsCommandHandler());
-
-        foreach (var handlerType in handlerTypes)
+        public IServiceCollection AddCommandHandlers(params Assembly[] assemblies)
         {
-            var interfaces = handlerType.GetInterfaces();
+            var handlerTypes = assemblies
+                .SelectMany(x => x.GetTypes())
+                .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsCommandHandler());
 
-            foreach (var serviceType in interfaces)
+            foreach (var handlerType in handlerTypes)
             {
-                services.AddScoped(serviceType, handlerType);
+                var interfaces = handlerType.GetInterfaces();
+
+                foreach (var serviceType in interfaces)
+                {
+                    services.AddScoped(serviceType, handlerType);
+                }
             }
+
+            return services;
         }
 
-        return services;
-    }
-
-    public static IServiceCollection AddQueryHandlers(this IServiceCollection services, params Assembly[] assemblies)
-    {
-        var handlerTypes = assemblies
-            .SelectMany(x => x.GetTypes())
-            .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsQueryHandler());
-
-        foreach (var handlerType in handlerTypes)
+        public IServiceCollection AddQueryHandlers(params Assembly[] assemblies)
         {
-            var interfaces = handlerType.GetInterfaces();
+            var handlerTypes = assemblies
+                .SelectMany(x => x.GetTypes())
+                .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsQueryHandler());
 
-            foreach (var serviceType in interfaces)
+            foreach (var handlerType in handlerTypes)
             {
-                services.AddScoped(serviceType, handlerType);
-            }
-        }
+                var interfaces = handlerType.GetInterfaces();
 
-        return services;
+                foreach (var serviceType in interfaces)
+                {
+                    services.AddScoped(serviceType, handlerType);
+                }
+            }
+
+            return services;
+        }
     }
+
 }

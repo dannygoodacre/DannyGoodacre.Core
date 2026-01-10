@@ -4,50 +4,54 @@ namespace DannyGoodacre.Core.Extensions;
 
 internal static class TypeExtensions
 {
-    public static bool IsCommandHandler(this Type type)
+    extension(Type type)
     {
-        var baseType = type.BaseType;
-
-        while (baseType is not null)
+        public bool IsCommandHandler()
         {
-            if (baseType.IsGenericType)
-            {
-                var definition = baseType.GetGenericTypeDefinition();
+            var baseType = type.BaseType;
 
-                if (definition == typeof(CommandHandler<>)
-                    || definition == typeof(CommandHandler<,>)
-                    || definition == typeof(UnitOfWorkCommandHandler<>)
-                    || definition == typeof(UnitOfWorkCommandHandler<,>))
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType)
                 {
-                    return true;
+                    var definition = baseType.GetGenericTypeDefinition();
+
+                    if (definition == typeof(CommandHandler<>)
+                        || definition == typeof(CommandHandler<,>)
+                        || definition == typeof(TransactionCommandHandler<>)
+                        || definition == typeof(TransactionCommandHandler<,>))
+                    {
+                        return true;
+                    }
                 }
+
+                baseType = baseType.BaseType;
             }
 
-            baseType = baseType.BaseType;
+            return false;
         }
 
-        return false;
-    }
-
-    public static bool IsQueryHandler(this Type type)
-    {
-        var baseType = type.BaseType;
-
-        while (baseType is not null)
+        public bool IsQueryHandler()
         {
-            if (baseType.IsGenericType)
-            {
-                var definition = baseType.GetGenericTypeDefinition();
+            var baseType = type.BaseType;
 
-                if (definition == typeof(QueryHandler<,>))
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType)
                 {
-                    return true;
+                    var definition = baseType.GetGenericTypeDefinition();
+
+                    if (definition == typeof(QueryHandler<,>))
+                    {
+                        return true;
+                    }
                 }
+
+                baseType = baseType.BaseType;
             }
 
-            baseType = baseType.BaseType;
+            return false;
         }
-
-        return false;
     }
+
 }

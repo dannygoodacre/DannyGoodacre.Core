@@ -1,9 +1,8 @@
 using System.Reflection;
 using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Core.Data;
+using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SystemMonitor.Core;
 
 namespace DannyGoodacre.Core.Tests.Extensions;
@@ -11,27 +10,27 @@ namespace DannyGoodacre.Core.Tests.Extensions;
 [TestFixture]
 public class ServiceCollectionExtensionsTests
 {
-    private class MyCommand : ICommand;
+    private class MyCommandRequest : ICommandRequest;
 
     private interface ITestCommand;
 
     private class TestCommandHandler(ILogger logger)
-        : CommandHandler<MyCommand>(logger), ITestCommand
+        : CommandHandler<MyCommandRequest>(logger), ITestCommand
     {
         protected override string CommandName => "Test Command";
 
-        protected override Task<Result> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(MyCommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result.Success());
     }
 
     private interface ITestCommandWithValue;
 
     private class TestCommandWithValueHandler(ILogger logger)
-        : CommandHandler<MyCommand, int>(logger), ITestCommandWithValue
+        : CommandHandler<MyCommandRequest, int>(logger), ITestCommandWithValue
     {
         protected override string CommandName => "Test Command With Value";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(MyCommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 
@@ -39,39 +38,42 @@ public class ServiceCollectionExtensionsTests
     {
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(1);
+
+        public Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
     }
 
     private interface ITestUnitOfWorkCommand;
 
-    private class TestUnitOfWorkCommandHandler(ILogger logger)
-        : UnitOfWorkCommandHandler<MyCommand>(logger, new UnitOfWork()), ITestUnitOfWorkCommand
+    private class TestTransactionCommandHandler(ILogger logger)
+        : TransactionCommandHandler<MyCommandRequest>(logger, new UnitOfWork()), ITestUnitOfWorkCommand
     {
         protected override string CommandName => "Test Unit Of Work Command";
 
-        protected override Task<Result> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(MyCommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result.Success());
     }
 
     private interface ITestUnitOfWorkCommandWithValue;
 
-    private class TestUnitOfWorkCommandWithValueHandler(ILogger logger)
-        : UnitOfWorkCommandHandler<MyCommand, int>(logger, new UnitOfWork()), ITestUnitOfWorkCommandWithValue
+    private class TransactionCommandWithValueHandler(ILogger logger)
+        : TransactionCommandHandler<MyCommandRequest, int>(logger, new UnitOfWork()), ITestUnitOfWorkCommandWithValue
     {
         protected override string CommandName => "Test Unit Of Work Command With Value";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(MyCommandRequest commandRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 
-    private class MyQuery : IQuery;
+    private class MyQueryRequest : IQueryRequest;
 
     private interface ITestQuery;
 
-    private class TestQueryHandler(ILogger logger) : QueryHandler<MyQuery, int>(logger), ITestQuery
+    private class TestQueryHandler(ILogger logger) : QueryHandler<MyQueryRequest, int>(logger), ITestQuery
     {
         protected override string QueryName => "Test Query";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyQuery query, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(MyQueryRequest queryRequest, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 
