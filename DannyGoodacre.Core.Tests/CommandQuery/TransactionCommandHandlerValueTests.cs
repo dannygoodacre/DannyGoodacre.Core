@@ -9,7 +9,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 {
     public class TestCommand : ICommandRequest;
 
-    private const string TestCommandName = "Test Transaction Command Handler";
+    private const string TestName = "Test Transaction Command Handler";
 
     private static int _testResultValue;
 
@@ -34,7 +34,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
     public class TestTransactionCommandWithValueHandler(ILogger logger, IUnitOfWork unitOfWork)
         : TransactionCommandHandler<TestCommand, int>(logger, unitOfWork)
     {
-        protected override string CommandName => TestCommandName;
+        protected override string CommandName => TestName;
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
@@ -98,7 +98,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 
         SetupTransaction_RollbackAsync();
 
-        _loggerMock.Setup(LogLevel.Error, $"Command '{TestCommandName}' attempted to persist an unexpected number of changes: Expected '{_testExpectedChanges}', Actual '{_testActualChanges}'.");
+        _loggerMock.Setup(LogLevel.Error, $"Command '{TestName}' attempted to persist an unexpected number of changes: Expected '{_testExpectedChanges}', Actual '{_testActualChanges}'.");
 
         SetupTransaction_DisposeAsync();
 
@@ -153,6 +153,31 @@ public class TransactionCommandWithValueHandlerTests : TestBase
     }
 
     [Test]
+    public async Task ExecuteAsync_WhenCancelled_ShouldRollbackAndReturnCancelled()
+    {
+        // Arrange
+        SetupUnitOfWork_BeginTransactionAsync();
+
+        _unitOfWorkMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == _testCancellationToken)))
+            .ThrowsAsync(new OperationCanceledException())
+            .Verifiable(Times.Once);
+
+        SetupTransaction_RollbackAsync();
+
+        _loggerMock.Setup(LogLevel.Information, $"Command '{TestName}' was cancelled while persisting changes.");
+
+        SetupTransaction_DisposeAsync();
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertCancelled(result);
+    }
+
+    [Test]
     public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccurs_ShouldRollbackAndReturnInternalError()
     {
         // Arrange
@@ -170,7 +195,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 
         SetupTransaction_RollbackAsync();
 
-        _loggerMock.Setup(LogLevel.Critical, $"Command '{TestCommandName}' experienced a transaction failure: {testError}");
+        _loggerMock.Setup(LogLevel.Critical, $"Command '{TestName}' experienced a transaction failure: {testError}", exception: exception);
 
         SetupTransaction_DisposeAsync();
 
@@ -198,6 +223,13 @@ public class TransactionCommandWithValueHandlerTests : TestBase
             .ReturnsAsync(_testActualChanges)
             .Verifiable(Times.Once);
 
+    private void SetupTransaction_CommitAsync()
+        => _testTransaction
+            .Setup(x => x.CommitAsync(
+                It.Is<CancellationToken>(y => y == _testCancellationToken)))
+            .Returns(Task.CompletedTask)
+            .Verifiable(Times.Once);
+
     private void SetupTransaction_RollbackAsync()
         => _testTransaction
             .Setup(x => x.RollbackAsync(
@@ -209,12 +241,5 @@ public class TransactionCommandWithValueHandlerTests : TestBase
         => _testTransaction
             .Setup(x => x.DisposeAsync())
             .Returns(ValueTask.CompletedTask)
-            .Verifiable(Times.Once);
-
-    private void SetupTransaction_CommitAsync()
-        => _testTransaction
-            .Setup(x => x.CommitAsync(
-                It.Is<CancellationToken>(y => y == _testCancellationToken)))
-            .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 }

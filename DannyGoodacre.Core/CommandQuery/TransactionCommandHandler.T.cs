@@ -56,11 +56,19 @@ public abstract class TransactionCommandHandler<TCommand, TResult>(ILogger logge
 
             return result;
         }
+        catch (OperationCanceledException)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+
+            Logger.LogInformation("Command '{Command}' was cancelled while persisting changes.", CommandName);
+
+            return Result<TResult>.Cancelled();
+        }
         catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
 
-            Logger.LogCritical("Command '{Command}' experienced a transaction failure: {Exception}", CommandName, ex.Message);
+            Logger.LogCritical(ex, "Command '{Command}' experienced a transaction failure: {Exception}", CommandName, ex.Message);
 
             return Result<TResult>.InternalError(ex.Message);
         }
