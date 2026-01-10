@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class TransactionCommandHandler<TCommand>(ILogger logger, IUnitOfWork unitOfWork)
-    : CommandHandler<TCommand>(logger) where TCommand : ICommandRequest
+public abstract class TransactionCommandHandler<TCommandRequest>(ILogger logger, IUnitOfWork unitOfWork)
+    : CommandHandler<TCommandRequest>(logger) where TCommandRequest : ICommandRequest
 {
     /// <summary>
     /// The number of state entries expected to be persisted upon completion.
@@ -21,18 +21,18 @@ public abstract class TransactionCommandHandler<TCommand>(ILogger logger, IUnitO
     /// Run the command by validating first and, if valid, execute the internal logic.
     /// If the command executes successfully, save the changes to the database.
     /// </summary>
-    /// <param name="command">The command request to validate and process.</param>
+    /// <param name="commandRequest">The command request to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>
     /// A <see cref="Result"/> indicating the outcome of the operation.
     /// </returns>
-    protected async override Task<Result> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
+    protected async override Task<Result> ExecuteAsync(TCommandRequest commandRequest, CancellationToken cancellationToken)
     {
         await using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var result = await base.ExecuteAsync(command, cancellationToken);
+            var result = await base.ExecuteAsync(commandRequest, cancellationToken);
 
             if (!result.IsSuccess)
             {

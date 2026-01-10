@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery : IQueryRequest
+public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where TQueryRequest : IQueryRequest
 {
     protected abstract string QueryName { get; }
 
@@ -14,8 +14,8 @@ public abstract class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery
     /// Validate the query before execution.
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
-    /// <param name="query">The query request to validate.</param>
-    protected virtual void Validate(ValidationState validationState, TQuery query)
+    /// <param name="queryRequest">The query request to validate.</param>
+    protected virtual void Validate(ValidationState validationState, TQueryRequest queryRequest)
     {
     }
 
@@ -25,7 +25,7 @@ public abstract class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery
     /// <param name="query">The valid query request to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<Result<TResult>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken);
+    protected abstract Task<Result<TResult>> InternalExecuteAsync(TQueryRequest query, CancellationToken cancellationToken);
 
     /// <summary>
     /// Run the query by validating first and, if successful, execute the internal logic.
@@ -33,7 +33,7 @@ public abstract class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery
     /// <param name="query">The query request to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken)
+    protected async Task<Result<TResult>> ExecuteAsync(TQueryRequest query, CancellationToken cancellationToken)
     {
         var validationState = new ValidationState();
 

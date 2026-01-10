@@ -16,8 +16,8 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
-            => _internalExecuteAsync(command, cancellationToken);
+        protected override Task<Result<int>> InternalExecuteAsync(TestCommand commandRequest, CancellationToken cancellationToken)
+            => _internalExecuteAsync(commandRequest, cancellationToken);
 
         public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
