@@ -7,94 +7,114 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class QueryHandlerTests : TestBase
 {
-    public class TestQuery : IQueryRequest;
+    public class TestQueryRequest : IQueryRequest;
 
-    private const string TestName = "Test Query Handler";
-
-    private const string TestProperty = "Test Property";
-
-    private const string TestError = "Test Error";
-
-    private const string TestExceptionMessage = "Test Exception Message";
-
-    private readonly CancellationToken _testCancellationToken = CancellationToken.None;
-
-    private readonly TestQuery _testQuery = new();
-
-    private static Action<ValidationState, TestQuery> _validate = (_, _) => {};
-
-    private static Func<TestQuery, CancellationToken, Task<Result<int>>> _internalExecuteAsync = (_, _) => Task.FromResult(new Result<int>());
-
-    private Mock<ILogger<TestQueryHandler>> _loggerMock = null!;
-
-    public class TestQueryHandler(ILogger logger) : QueryHandler<TestQuery, int>(logger)
+    public class TestQueryHandler(ILogger logger) : QueryHandler<TestQueryRequest, int>(logger)
     {
         protected override string QueryName => TestName;
 
-        protected override void Validate(ValidationState validationState, TestQuery query)
-            => _validate(validationState, query);
+        protected override void Validate(ValidationState validationState, TestQueryRequest queryRequest)
+            => _testValidate(validationState, queryRequest);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken)
-            => _internalExecuteAsync(query, cancellationToken);
+        protected override Task<Result<int>> InternalExecuteAsync(TestQueryRequest queryRequest, CancellationToken cancellationToken)
+            => _testInternalExecuteAsync(queryRequest, cancellationToken);
 
-        public Task<Result<int>> TestExecuteAsync(TestQuery command, CancellationToken cancellationToken) => ExecuteAsync(command, cancellationToken);
+        public Task<Result<int>> TestExecuteAsync(TestQueryRequest command, CancellationToken cancellationToken)
+            => ExecuteAsync(command, cancellationToken);
+    }
+
+    private const string TestName = "Test Query Handler";
+
+    private int _testResultValue;
+
+    private CancellationToken _testCancellationToken;
+
+    private Mock<ILogger<TestQueryHandler>> _loggerMock = null!;
+
+    private static Action<ValidationState, TestQueryRequest> _testValidate = null!;
+
+    private static Func<TestQueryRequest, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
+
+    private static TestQueryRequest _testQueryRequest = null!;
+
+    private static TestQueryHandler _testCommandHandler = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _testResultValue = 123;
+
+        _testCancellationToken = CancellationToken.None;
+
+        _testValidate = (_, _) => {};
+
+        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(_testResultValue));
+
+        _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
+
+        _testQueryRequest = new TestQueryRequest();
+
+        _testCommandHandler = new TestQueryHandler(_loggerMock.Object);
     }
 
     [Test]
     public async Task ExecuteAsync_WhenValidationFails_ShouldReturnInvalid()
     {
         // Arrange
-        _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
+        const string testProperty = "Test Property";
 
-        _loggerMock.Setup(LogLevel.Error, $"Query '{TestName}' failed validation: {TestProperty}:{Environment.NewLine}  - {TestError}");
+        const string testError = "Test Error";
 
-        _validate = (validationState, _)
-            => validationState.AddError(TestProperty, TestError);
+        _loggerMock.Setup(LogLevel.Error, $"Query '{TestName}' failed validation: {testProperty}:{Environment.NewLine}  - {testError}");
 
-        var handler = new TestQueryHandler(_loggerMock.Object);
+        _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
         // Act
-        var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
+        var result = await Act();
 
         // Assert
         AssertInvalid(result);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCancelled_ShouldReturnCancelled()
+    public async Task ExecuteAsync_WhenCancelledBefore_ShouldReturnCancelled()
     {
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
-        _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
+        _testCancellationToken = cancellationTokenSource.Token;
 
         _loggerMock.Setup(LogLevel.Information, $"Query '{TestName}' was cancelled before execution.");
-
-        var handler = new TestQueryHandler(_loggerMock.Object);
 
         await cancellationTokenSource.CancelAsync();
 
         // Act
-        var result = await handler.TestExecuteAsync(_testQuery, cancellationTokenSource.Token);
+        var result = await Act();
 
         // Assert
         AssertCancelled(result);
     }
 
     [Test]
+    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
+    {
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertSuccess(result, _testResultValue);
+    }
+
+    [Test]
     public async Task ExecuteAsync_WhenCancelledDuring_ShouldReturnCancelled()
     {
         // Arrange
-        _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
-
         _loggerMock.Setup(LogLevel.Information, $"Query '{TestName}' was cancelled during execution.");
 
-        _internalExecuteAsync = (_, _) => throw new OperationCanceledException();
-
-        var handler = new TestQueryHandler(_loggerMock.Object);
+        _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
         // Act
-        var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
+        var result = await Act();
 
         // Assert
         AssertCancelled(result);
@@ -104,23 +124,20 @@ public class QueryHandlerTests : TestBase
     public async Task ExecuteAsync_WhenExceptionOccurs_ShouldReturnInternalError()
     {
         // Arrange
-        var exception = new ApplicationException(TestExceptionMessage);
+        const string testExceptionMessage = "Test Exception Message";
 
-        _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
+        var exception = new Exception(testExceptionMessage);
 
-        _loggerMock.Setup(
-            LogLevel.Critical,
-            $"Query '{TestName}' failed with exception: {TestExceptionMessage}",
-            exception: exception);
+        _loggerMock.Setup(LogLevel.Critical, $"Query '{TestName}' failed with exception: {testExceptionMessage}", exception: exception);
 
-        _internalExecuteAsync = (_, _) => throw exception;
-
-        var handler = new TestQueryHandler(_loggerMock.Object);
+        _testInternalExecuteAsync = (_, _) => throw exception;
 
         // Act
-        var result = await handler.TestExecuteAsync(_testQuery, _testCancellationToken);
+        var result = await Act();
 
         // Assert
-        AssertInternalError(result, TestExceptionMessage);
+        AssertInternalError(result, testExceptionMessage);
     }
+
+    private Task<Result<int>> Act() => _testCommandHandler.TestExecuteAsync(_testQueryRequest, _testCancellationToken);
 }

@@ -7,7 +7,6 @@ public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TC
 {
     protected abstract string CommandName { get; }
 
-    // ReSharper disable once MemberCanBePrivate.Global
     protected ILogger Logger { get; } = logger;
 
     /// <summary>

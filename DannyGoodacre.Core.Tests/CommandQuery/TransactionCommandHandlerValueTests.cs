@@ -9,29 +9,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 {
     public class TestCommand : ICommandRequest;
 
-    private const string TestName = "Test Transaction Command Handler";
-
-    private static int _testResultValue;
-
-    private static int _testExpectedChanges;
-
-    private static int _testActualChanges;
-
-    private readonly CancellationToken _testCancellationToken = CancellationToken.None;
-
-    private readonly TestCommand _testCommand = new();
-
-    private Mock<ILogger<TestTransactionCommandWithValueHandler>> _loggerMock = null!;
-
-    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
-
-    private Mock<ITransaction> _testTransaction = null!;
-
-    private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
-
-    private static TestTransactionCommandWithValueHandler _testHandler = null!;
-
-    public class TestTransactionCommandWithValueHandler(ILogger logger, IUnitOfWork unitOfWork)
+    public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
         : TransactionCommandHandler<TestCommand, int>(logger, unitOfWork)
     {
         protected override string CommandName => TestName;
@@ -45,22 +23,46 @@ public class TransactionCommandWithValueHandlerTests : TestBase
             => ExecuteAsync(command, cancellationToken);
     }
 
+    private const string TestName = "Test Transaction Command Handler";
+
+    private static int _testResultValue;
+
+    private static int _testExpectedChanges;
+
+    private static int _testActualChanges;
+
+    private CancellationToken _testCancellationToken;
+
+    private readonly TestCommand _testCommand = new();
+
+    private Mock<ILogger<TestTransactionCommandHandler>> _loggerMock = null!;
+
+    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+
+    private Mock<ITransaction> _testTransaction = null!;
+
+    private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
+
+    private static TestTransactionCommandHandler _testHandler = null!;
+
     [SetUp]
     public void SetUp()
     {
-        _loggerMock = new Mock<ILogger<TestTransactionCommandWithValueHandler>>(MockBehavior.Strict);
-
-        _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
-
         _testResultValue = 123;
-
-        _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(_testResultValue));
-
-        _testHandler = new TestTransactionCommandWithValueHandler(_loggerMock.Object, _unitOfWorkMock.Object);
 
         _testExpectedChanges = -1;
 
+        _testCancellationToken = CancellationToken.None;
+
+        _loggerMock = new Mock<ILogger<TestTransactionCommandHandler>>(MockBehavior.Strict);
+
+        _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
+
         _testTransaction = new Mock<ITransaction>();
+
+        _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(_testResultValue));
+
+        _testHandler = new TestTransactionCommandHandler(_loggerMock.Object, _unitOfWorkMock.Object);
     }
 
     [Test]
@@ -130,7 +132,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
         var result = await Act();
 
         // Assert
-        AssertSuccess(result);
+        AssertSuccess(result, _testResultValue);
     }
 
     [Test]
@@ -149,7 +151,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
         var result = await Act();
 
         // Assert
-        AssertSuccess(result);
+        AssertSuccess(result, _testResultValue);
     }
 
     [Test]
@@ -206,8 +208,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
         AssertInternalError(result, testError);
     }
 
-    private Task<Result<int>> Act()
-        => _testHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
+    private Task<Result<int>> Act() => _testHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
 
     private void SetupUnitOfWork_BeginTransactionAsync()
         => _unitOfWorkMock

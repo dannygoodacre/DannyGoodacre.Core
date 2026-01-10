@@ -7,7 +7,21 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class TransactionCommandHandlerTests : TestBase
 {
-    public class TestCommand : ICommandRequest;
+    public class TestCommandRequest : ICommandRequest;
+
+    public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
+        : TransactionCommandHandler<TestCommandRequest>(logger, unitOfWork)
+    {
+        protected override string CommandName => TestName;
+
+        protected override int ExpectedChanges => _testExpectedChanges;
+
+        protected override Task<Result> InternalExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
+            => _internalExecuteAsync(commandRequest, cancellationToken);
+
+        public Task<Result> TestExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
+            => ExecuteAsync(commandRequest, cancellationToken);
+    }
 
     private const string TestName = "Test Transaction Command Handler";
 
@@ -15,48 +29,36 @@ public class TransactionCommandHandlerTests : TestBase
 
     private static int _testActualChanges;
 
-    private readonly CancellationToken _testCancellationToken = CancellationToken.None;
-
-    private readonly TestCommand _testCommand = new();
+    private CancellationToken _testCancellationToken;
 
     private Mock<ILogger<TestTransactionCommandHandler>> _loggerMock = null!;
 
     private Mock<IUnitOfWork> _unitOfWorkMock = null!;
 
-    private Mock<ITransaction> _testTransaction = null!;
+    private Mock<ITransaction> _transactionMock = null!;
 
-    private static Func<TestCommand, CancellationToken, Task<Result>> _internalExecuteAsync = null!;
+    private static Func<TestCommandRequest, CancellationToken, Task<Result>> _internalExecuteAsync = null!;
+
+    private readonly TestCommandRequest _testCommandRequest = new();
 
     private static TestTransactionCommandHandler _testHandler = null!;
-
-    public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
-        : TransactionCommandHandler<TestCommand>(logger, unitOfWork)
-    {
-        protected override string CommandName => TestName;
-
-        protected override int ExpectedChanges => _testExpectedChanges;
-
-        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
-            => _internalExecuteAsync(command, cancellationToken);
-
-        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
-            => ExecuteAsync(command, cancellationToken);
-    }
 
     [SetUp]
     public void SetUp()
     {
+        _testExpectedChanges = -1;
+
+        _testCancellationToken = CancellationToken.None;
+
         _loggerMock = new Mock<ILogger<TestTransactionCommandHandler>>(MockBehavior.Strict);
 
         _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
 
+        _transactionMock = new Mock<ITransaction>();
+
         _internalExecuteAsync = (_, _) => Task.FromResult(Result.Success());
 
         _testHandler = new TestTransactionCommandHandler(_loggerMock.Object, _unitOfWorkMock.Object);
-
-        _testExpectedChanges = -1;
-
-        _testTransaction = new Mock<ITransaction>();
     }
 
     [Test]
@@ -202,14 +204,13 @@ public class TransactionCommandHandlerTests : TestBase
         AssertInternalError(result, testError);
     }
 
-    private Task<Result> Act()
-        => _testHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
+    private Task<Result> Act() => _testHandler.TestExecuteAsync(_testCommandRequest, _testCancellationToken);
 
     private void SetupUnitOfWork_BeginTransactionAsync()
         => _unitOfWorkMock
             .Setup(x => x.BeginTransactionAsync(
                 It.Is<CancellationToken>(y => y == _testCancellationToken)))
-            .ReturnsAsync(_testTransaction.Object)
+            .ReturnsAsync(_transactionMock.Object)
             .Verifiable(Times.Once);
 
     private void SetupUnitOfWork_SaveChangesAsync()
@@ -220,21 +221,21 @@ public class TransactionCommandHandlerTests : TestBase
             .Verifiable(Times.Once);
 
     private void SetupTransaction_CommitAsync()
-        => _testTransaction
+        => _transactionMock
             .Setup(x => x.CommitAsync(
                 It.Is<CancellationToken>(y => y == _testCancellationToken)))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
     private void SetupTransaction_RollbackAsync()
-        => _testTransaction
+        => _transactionMock
             .Setup(x => x.RollbackAsync(
                 It.Is<CancellationToken>(y => y == _testCancellationToken)))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once);
 
     private void SetupTransaction_DisposeAsync()
-        => _testTransaction
+        => _transactionMock
             .Setup(x => x.DisposeAsync())
             .Returns(ValueTask.CompletedTask)
             .Verifiable(Times.Once);
