@@ -1,5 +1,8 @@
 namespace DannyGoodacre.Core.CommandQuery.Abstractions;
 
+/// <summary>
+/// Provides functionality for coordinating and persisting changes to an underlying data store as a single atomic unit.
+/// </summary>
 public interface IUnitOfWork
 {
     /// <summary>

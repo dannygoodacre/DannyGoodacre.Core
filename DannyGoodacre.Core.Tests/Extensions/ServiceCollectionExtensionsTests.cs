@@ -85,7 +85,7 @@ public class ServiceCollectionExtensionsTests
 
         services.AddSingleton(Mock.Of<ILogger>());
 
-        var assembly = Assembly.GetExecutingAssembly();
+        var assembly = Assembly.GetExecutingAssembly()!;
 
         // Act
         services.AddCommandHandlers(assembly);
@@ -140,7 +140,7 @@ public class ServiceCollectionExtensionsTests
 
         services.AddSingleton(Mock.Of<ILogger>());
 
-        var assembly = Assembly.GetExecutingAssembly();
+        var assembly = Assembly.GetExecutingAssembly()!;
 
         // Act
         services.AddQueryHandlers(assembly);
