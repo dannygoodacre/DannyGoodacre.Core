@@ -5,7 +5,7 @@
         <PackageId>DannyGoodacre.Tests.Core</PackageId>
         <Version>0.2.1</Version>
         <Authors>Danny Goodacre</Authors>
-        <Description>Common logic for my .NET test projects.</Description>
+        <Description>A lightweight testing foundation library.</Description>
         <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <ImplicitUsings>enable</ImplicitUsings>
