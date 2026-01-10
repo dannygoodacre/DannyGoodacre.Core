@@ -1,9 +1,9 @@
-using DannyGoodacre.Core.Data;
+using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class UnitOfWorkCommandHandler<TCommand, TResult>(ILogger logger, IUnitOfWork unitOfWork)
+public abstract class TransactionalCommandHandler<TCommand, TResult>(ILogger logger, IUnitOfWork unitOfWork)
     : CommandHandler<TCommand, TResult>(logger) where TCommand : ICommand
 {
     /// <summary>
@@ -28,29 +28,39 @@ public abstract class UnitOfWorkCommandHandler<TCommand, TResult>(ILogger logger
     /// </returns>
     protected async override Task<Result<TResult>> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {
-        var result = await base.ExecuteAsync(command, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return result;
-        }
+        await using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
+            var result = await base.ExecuteAsync(command, cancellationToken);
 
-            if (ExpectedChanges == -1 || actualChanges == ExpectedChanges)
+            if (!result.IsSuccess)
             {
+                await transaction.RollbackAsync(cancellationToken);
+
                 return result;
             }
 
-            Logger.LogError("Command '{Command}' made an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+            var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return Result<TResult>.InternalError("Unexpected number of changes saved.");
+            if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+
+                Logger.LogError("Command '{Command}' attempted to persist an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.", CommandName, ExpectedChanges, actualChanges);
+
+                return Result<TResult>.InternalError("Database integrity check failed.");
+            }
+
+            await  transaction.CommitAsync(cancellationToken);
+
+            return result;
         }
         catch (Exception ex)
         {
-            Logger.LogCritical(ex, "Command '{Command}' failed while saving changes, with exception: {Exception}", CommandName, ex.Message);
+            await transaction.RollbackAsync(cancellationToken);
+
+            Logger.LogCritical("Command '{Command}' experienced a transaction failure: {Exception}", CommandName, ex.Message);
 
             return Result<TResult>.InternalError(ex.Message);
         }

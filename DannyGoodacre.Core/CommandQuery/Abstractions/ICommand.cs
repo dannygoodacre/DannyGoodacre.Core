@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Core.CommandQuery;
+namespace DannyGoodacre.Core.CommandQuery.Abstractions;
 
 /// <summary>
 /// A command request.

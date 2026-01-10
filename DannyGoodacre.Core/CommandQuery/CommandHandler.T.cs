@@ -1,3 +1,4 @@
+using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
