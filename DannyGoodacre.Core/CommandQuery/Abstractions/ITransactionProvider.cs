@@ -1,7 +1,7 @@
 namespace DannyGoodacre.Core.CommandQuery.Abstractions;
 
 /// <summary>
-/// Provides functionality for initiating an <see cref="ITransaction"/>.
+/// Provides functionality for initiating an <see cref="ITransaction"/> instance.
 /// </summary>
 public interface ITransactionProvider
 {
