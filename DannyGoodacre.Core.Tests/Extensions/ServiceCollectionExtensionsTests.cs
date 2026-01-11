@@ -3,7 +3,6 @@ using DannyGoodacre.Core.CommandQuery;
 using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SystemMonitor.Core;
 
 namespace DannyGoodacre.Core.Tests.Extensions;
 

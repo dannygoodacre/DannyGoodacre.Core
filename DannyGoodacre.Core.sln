@@ -6,6 +6,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Tests.Core", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Core.Tests", "DannyGoodacre.Core.Tests\DannyGoodacre.Core.Tests.csproj", "{1DE556E3-2435-4154-A050-02D8D41E5722}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Core.Identity", "DannyGoodacre.Core.Identity\DannyGoodacre.Core.Identity.csproj", "{073C3DA9-3791-4044-A9E0-D3D18A4DA827}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{EF9E4A24-1506-488C-AEDB-93885DDA1A99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +28,13 @@ Global
 		{1DE556E3-2435-4154-A050-02D8D41E5722}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1DE556E3-2435-4154-A050-02D8D41E5722}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1DE556E3-2435-4154-A050-02D8D41E5722}.Release|Any CPU.Build.0 = Release|Any CPU
+		{073C3DA9-3791-4044-A9E0-D3D18A4DA827}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{073C3DA9-3791-4044-A9E0-D3D18A4DA827}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{073C3DA9-3791-4044-A9E0-D3D18A4DA827}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{073C3DA9-3791-4044-A9E0-D3D18A4DA827}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF9E4A24-1506-488C-AEDB-93885DDA1A99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF9E4A24-1506-488C-AEDB-93885DDA1A99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF9E4A24-1506-488C-AEDB-93885DDA1A99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF9E4A24-1506-488C-AEDB-93885DDA1A99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

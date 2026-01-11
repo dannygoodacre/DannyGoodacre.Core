@@ -3,7 +3,7 @@ using DannyGoodacre.Core.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
-namespace SystemMonitor.Core;
+namespace DannyGoodacre.Core;
 
 public static class ServiceCollectionExtensions
 {
