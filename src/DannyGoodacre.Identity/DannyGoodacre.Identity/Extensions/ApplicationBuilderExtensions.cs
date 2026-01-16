@@ -9,13 +9,38 @@ public static class ApplicationBuilderExtensions
 {
     extension(IApplicationBuilder app)
     {
-        public async Task SeedIdentityAsync<TUser, TRole>(string adminUsername, string adminPassword)
-            where TUser : IdentityUser
-            where TRole : IdentityRole
+        public async Task SeedIdentityAsync(string adminUsername, string adminPassword)
         {
             await using var scope = app.ApplicationServices.CreateAsyncScope();
 
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Core.IdentityUser>>();
+
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                await roleManager.CreateAsync(new IdentityRole("Admin"));
+            }
+
+            var adminUser = await userManager.FindByNameAsync(adminUsername);
+
+            if (adminUser is not null)
+            {
+                return;
+            }
+
+            adminUser = new Core.IdentityUser
+            {
+                UserName = adminUsername,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
+
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
         }
     }
 }

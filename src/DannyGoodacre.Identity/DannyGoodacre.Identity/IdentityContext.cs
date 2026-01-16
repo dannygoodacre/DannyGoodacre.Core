@@ -4,4 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DannyGoodacre.Identity;
 
-public class IdentityContext(DbContextOptions options) : IdentityDbContext<IdentityUser>(options);
+public class IdentityContext(DbContextOptions options)
+    : IdentityDbContext<IdentityUser>(options);
+
+public class IdentityContext<TUser>(DbContextOptions options)
+    : IdentityDbContext<TUser>(options) where TUser : IdentityUser;
