@@ -18,7 +18,7 @@ internal sealed class UserManager(Microsoft.AspNetCore.Identity.UserManager<Iden
     public Task<IdentityUser?> FindByIdAsync(string userId)
         => userManager.FindByIdAsync(userId);
 
-    public Task<IdentityUser?> FindByNameAsync(string username)
+    public Task<IdentityUser?> FindByUsernameAsync(string username)
         => userManager.FindByNameAsync(username);
 
     public async Task<Result> ChangePasswordAsync(IdentityUser user, string currentPassword, string newPassword)
@@ -42,6 +42,6 @@ internal sealed class UserManager(Microsoft.AspNetCore.Identity.UserManager<Iden
         return identityResult.ToResult();
     }
 
-    public Task<bool> IsEmailConfirmedAsync(IdentityUser user)
+    public Task<bool> IsUserConfirmedAsync(IdentityUser user)
         => userManager.IsEmailConfirmedAsync(user);
 }

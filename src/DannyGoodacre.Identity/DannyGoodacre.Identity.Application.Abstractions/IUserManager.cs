@@ -9,7 +9,7 @@ public interface IUserManager<TUser> where TUser : IdentityUser
 
     Task<TUser?> FindByIdAsync(string userId);
 
-    Task<TUser?> FindByNameAsync(string username);
+    Task<TUser?> FindByUsernameAsync(string username);
 
     Task<Result> ChangePasswordAsync(TUser user, string currentPassword, string newPassword);
 
@@ -17,5 +17,5 @@ public interface IUserManager<TUser> where TUser : IdentityUser
 
     Task<Result> UpdateAsync(TUser user);
 
-    Task<bool> IsEmailConfirmedAsync(TUser user);
+    Task<bool> IsUserConfirmedAsync(TUser user);
 }

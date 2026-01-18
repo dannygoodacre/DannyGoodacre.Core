@@ -33,14 +33,14 @@ public class Program
 
         var app = builder.Build();
 
-        await app.SeedIdentityAsync("admin", "Password123$");
-
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
             await context.Database.MigrateAsync();
         }
+
+        await app.SeedIdentityAsync("admin", "Password123$");
 
         app.MapIdentityEndpoints();
 

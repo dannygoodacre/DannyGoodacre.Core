@@ -18,9 +18,9 @@ internal sealed class ChangePasswordHandler(ILogger<ChangePasswordHandler> logge
 
     protected override void Validate(ValidationState validationState, ChangePasswordRequest command)
     {
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.CurrentPassword),  command.CurrentPassword);
+        validationState.IsNotNullEmptyOrWhitespace(command.CurrentPassword, nameof(command.CurrentPassword));
 
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.NewPassword), command.NewPassword);
+        validationState.IsNotNullEmptyOrWhitespace(command.NewPassword, nameof(command.NewPassword));
     }
 
     protected async override Task<Result> InternalExecuteAsync(ChangePasswordRequest command, CancellationToken cancellationToken)

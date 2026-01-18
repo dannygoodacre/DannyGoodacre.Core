@@ -25,14 +25,14 @@ internal sealed class LoginHandler(ILogger<LoginHandler> logger,
 
     protected async override Task<Result> InternalExecuteAsync(LoginRequest command, CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByNameAsync(command.Username);
+        var user = await userManager.FindByUsernameAsync(command.Username);
 
         if (user is null)
         {
             return Result.DomainError("User not found.");
         }
 
-        if (!await userManager.IsEmailConfirmedAsync(user))
+        if (!await userManager.IsUserConfirmedAsync(user))
         {
             return Result.DomainError("User not confirmed.");
         }
