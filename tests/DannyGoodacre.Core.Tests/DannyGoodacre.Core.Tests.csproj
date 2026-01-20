@@ -7,10 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DannyGoodacre.Tests.Core\DannyGoodacre.Tests.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="coverlet.collector" Version="6.0.4">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -22,13 +18,18 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="DannyGoodacre.Testing.Core" />
         <Using Include="NUnit.Framework" />
-        <Using Include="DannyGoodacre.Tests.Core" />
         <Using Include="Moq" />
     </ItemGroup>
 
     <ItemGroup>
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\DannyGoodacre.Core\DannyGoodacre.Core.csproj" />
+      <ProjectReference Include="..\..\src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj" />
     </ItemGroup>
 
 </Project>

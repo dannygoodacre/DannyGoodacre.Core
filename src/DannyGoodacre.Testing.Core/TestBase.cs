@@ -1,17 +1,12 @@
 ﻿using System.Reflection;
-using DannyGoodacre.Core;
-using Moq;
-using NUnit.Framework;
 
-namespace DannyGoodacre.Tests.Core;
+namespace DannyGoodacre.Testing.Core;
 
 public abstract class TestBase
 {
     [TearDown]
     public void BaseTearDown()
-    {
-        VerifyAllAndNoOtherCalls();
-    }
+        => VerifyAllAndNoOtherCalls();
 
     protected static void AssertSuccess(Result result)
     {
