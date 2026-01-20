@@ -9,10 +9,10 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddCommandHandlers(params Assembly[] assemblies)
+        public IServiceCollection AddCommandHandlers(params Assembly?[] assemblies)
         {
             var handlerTypes = assemblies
-                .SelectMany(x => x.GetTypes())
+                .SelectMany(x => x?.GetTypes() ?? Type.EmptyTypes)
                 .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsCommandHandler());
 
             foreach (var handlerType in handlerTypes)
@@ -28,10 +28,10 @@ public static class ServiceCollectionExtensions
             return services;
         }
 
-        public IServiceCollection AddQueryHandlers(params Assembly[] assemblies)
+        public IServiceCollection AddQueryHandlers(params Assembly?[] assemblies)
         {
             var handlerTypes = assemblies
-                .SelectMany(x => x.GetTypes())
+                .SelectMany(x => x?.GetTypes() ?? Type.EmptyTypes)
                 .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsQueryHandler());
 
             foreach (var handlerType in handlerTypes)
@@ -47,5 +47,4 @@ public static class ServiceCollectionExtensions
             return services;
         }
     }
-
 }
