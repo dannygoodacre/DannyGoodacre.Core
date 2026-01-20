@@ -3,9 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2EF13EA6-1CE3-43AA-A1D1-33BC3A4836B0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{43EBC69F-DAD1-455C-B636-CD7C837F5F66}"
-	ProjectSection(SolutionItems) = preProject
-		tests\.editorconfig = tests\.editorconfig
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Core", "src\DannyGoodacre.Core\DannyGoodacre.Core.csproj", "{F59872B5-4009-489C-AC5D-68CA5740851C}"
 EndProject
@@ -21,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Identity.Core
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Core.Tests", "tests\DannyGoodacre.Core.Tests\DannyGoodacre.Core.Tests.csproj", "{1DA2DDCD-3239-4FCE-B590-89D2F068E3B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Tests.Core", "src\DannyGoodacre.Tests.Core\DannyGoodacre.Tests.Core.csproj", "{798665CA-C5A6-48DD-9A2D-6A28918993B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Testing.Core", "src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj", "{798665CA-C5A6-48DD-9A2D-6A28918993B6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "src\Test\Test.csproj", "{C941DD36-5272-4AC0-BF68-6CEDFE9AD8C9}"
 EndProject

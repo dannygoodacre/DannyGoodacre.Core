@@ -2,9 +2,10 @@ using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Moq;
 using NUnit.Framework;
 
-namespace DannyGoodacre.Tests.Core;
+namespace DannyGoodacre.Testing.Core;
 
-public abstract class TransactionCommandHandlerTestBase<TTransactionCommandHandler> : CommandHandlerTestBase<TTransactionCommandHandler>
+public abstract class TransactionCommandHandlerTestBase<TTransactionCommandHandler>
+    : CommandHandlerTestBase<TTransactionCommandHandler>
     where TTransactionCommandHandler : class
 {
     protected virtual int TestActualChanges => -1;
