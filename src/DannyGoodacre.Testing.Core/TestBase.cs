@@ -1,7 +1,4 @@
 ﻿using System.Reflection;
-using DannyGoodacre.Core;
-using Moq;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Testing.Core;
 

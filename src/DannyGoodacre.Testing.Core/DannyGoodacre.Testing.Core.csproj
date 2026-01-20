@@ -20,6 +20,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Using Include="DannyGoodacre.Core" />
+        <Using Include="NUnit.Framework" />
+        <Using Include="Moq" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\DannyGoodacre.Core\DannyGoodacre.Core.csproj" />
     </ItemGroup>
 

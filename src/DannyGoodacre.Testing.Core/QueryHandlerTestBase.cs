@@ -1,7 +1,4 @@
-using DannyGoodacre.Core;
 using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Testing.Core;
 
