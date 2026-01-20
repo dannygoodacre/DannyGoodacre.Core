@@ -5,21 +5,35 @@ using NUnit.Framework;
 
 namespace DannyGoodacre.Testing.Core;
 
-public abstract class CommandHandlerTestBase<TCommandHandler> : TestBase
+public abstract class CommandHandlerTestBase<TCommandHandler>
+    : CommandHandlerTestCore<TCommandHandler>
     where TCommandHandler : class
 {
+    protected abstract Task<Result> Act();
+}
+
+public abstract class CommandHandlerTestBase<TCommandHandler, TResult>
+    : CommandHandlerTestCore<TCommandHandler>
+    where TCommandHandler : class
+{
+    protected abstract Task<Result<TResult>> Act();
+}
+
+public abstract class CommandHandlerTestCore<TCommandHandler> : TestBase
+    where TCommandHandler : class
+{
+    internal CommandHandlerTestCore() {}
+
     protected abstract string CommandName { get; }
 
-    protected abstract Task<Result> Act();
-
-    protected readonly CancellationToken CancellationToken =  CancellationToken.None;
+    protected readonly CancellationToken CancellationToken = CancellationToken.None;
 
     protected Mock<ILogger<TCommandHandler>> LoggerMock { get; private set; } = null!;
 
     protected TCommandHandler CommandHandler { get; set; } = null!;
 
     [SetUp]
-    public void BaseSetUp()
+    public virtual void BaseSetUp()
         => LoggerMock = new Mock<ILogger<TCommandHandler>>(MockBehavior.Strict);
 
     protected void SetupLogger_FailedValidation(string message)

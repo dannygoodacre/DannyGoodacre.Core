@@ -1,13 +1,30 @@
+using DannyGoodacre.Core;
 using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Moq;
 using NUnit.Framework;
 
 namespace DannyGoodacre.Testing.Core;
 
-public abstract class TransactionCommandHandlerTestBase<TTransactionCommandHandler>
-    : CommandHandlerTestBase<TTransactionCommandHandler>
-    where TTransactionCommandHandler : class
+public abstract class TransactionCommandHandlerTestBase<TCommandHandler>
+    : TransactionCommandHandlerTestCore<TCommandHandler>
+    where TCommandHandler : class
 {
+    protected abstract Task<Result> Act();
+}
+
+public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResult>
+    : TransactionCommandHandlerTestCore<TCommandHandler>
+    where TCommandHandler : class
+{
+    protected abstract Task<Result<TResult>> Act();
+}
+
+public abstract class TransactionCommandHandlerTestCore<TCommandHandler>
+    : CommandHandlerTestCore<TCommandHandler>
+    where TCommandHandler : class
+{
+    internal TransactionCommandHandlerTestCore() {}
+
     protected virtual int TestActualChanges => -1;
 
     protected Mock<IUnitOfWork> UnitOfWorkMock { get; private set; } = null!;
@@ -15,12 +32,11 @@ public abstract class TransactionCommandHandlerTestBase<TTransactionCommandHandl
     private Mock<ITransaction> TransactionMock { get; set; } = null!;
 
     [SetUp]
-    public new void BaseSetUp()
+    public override void BaseSetUp()
     {
         base.BaseSetUp();
 
         UnitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
-
         TransactionMock = new Mock<ITransaction>(MockBehavior.Strict);
 
         SetupUnitOfWork_BeginTransactionAsync();
@@ -28,7 +44,7 @@ public abstract class TransactionCommandHandlerTestBase<TTransactionCommandHandl
         SetupTransaction_DisposeAsync();
     }
 
-    protected void SetupTransaction_SaveAndCommit()
+    protected void SetupTransaction_SaveChangesAndCommitAsync()
     {
         SetupUnitOfWork_SaveChangesAsync();
 
