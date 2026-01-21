@@ -26,4 +26,8 @@
       <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.1" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="DannyGoodacre.Identity.Tests"/>
+    </ItemGroup>
+
 </Project>

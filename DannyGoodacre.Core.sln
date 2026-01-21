@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DannyGoodacre.Identity.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Identity.Application.Tests", "tests\DannyGoodacre.Identity.Application.Tests\DannyGoodacre.Identity.Application.Tests.csproj", "{62E8789F-C1FC-4EAD-95D4-806EE098114D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Identity.Tests", "tests\DannyGoodacre.Identity.Tests\DannyGoodacre.Identity.Tests.csproj", "{2F655C7F-F71E-4E1C-85D4-A35C746FCB63}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{62E8789F-C1FC-4EAD-95D4-806EE098114D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62E8789F-C1FC-4EAD-95D4-806EE098114D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62E8789F-C1FC-4EAD-95D4-806EE098114D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2F655C7F-F71E-4E1C-85D4-A35C746FCB63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F655C7F-F71E-4E1C-85D4-A35C746FCB63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F655C7F-F71E-4E1C-85D4-A35C746FCB63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F655C7F-F71E-4E1C-85D4-A35C746FCB63}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F59872B5-4009-489C-AC5D-68CA5740851C} = {2EF13EA6-1CE3-43AA-A1D1-33BC3A4836B0}
@@ -81,5 +87,6 @@ Global
 		{C941DD36-5272-4AC0-BF68-6CEDFE9AD8C9} = {2EF13EA6-1CE3-43AA-A1D1-33BC3A4836B0}
 		{6E1DE0FD-23FB-45FE-8BCC-0D7DA3A48149} = {43EBC69F-DAD1-455C-B636-CD7C837F5F66}
 		{62E8789F-C1FC-4EAD-95D4-806EE098114D} = {6E1DE0FD-23FB-45FE-8BCC-0D7DA3A48149}
+		{2F655C7F-F71E-4E1C-85D4-A35C746FCB63} = {6E1DE0FD-23FB-45FE-8BCC-0D7DA3A48149}
 	EndGlobalSection
 EndGlobal

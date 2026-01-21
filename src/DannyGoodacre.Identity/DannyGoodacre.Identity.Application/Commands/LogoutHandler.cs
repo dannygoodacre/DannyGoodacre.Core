@@ -19,7 +19,7 @@ internal sealed class LogoutHandler(ILogger<LogoutHandler> logger, ISignInManage
         return Result.Success();
     }
 
-    public Task<Result> ExecuteAsync(CancellationToken cancellationToken = default)
+    public Task<Result> ExecuteAsync(CancellationToken cancellationToken)
         =>  ExecuteAsync(new LogoutRequest(), cancellationToken);
 }
 

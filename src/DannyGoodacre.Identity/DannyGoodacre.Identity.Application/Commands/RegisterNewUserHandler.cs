@@ -18,9 +18,9 @@ internal sealed class RegisterNewUserHandler(ILogger<RegisterNewUserHandler> log
 
     protected override void Validate(ValidationState validationState, RegisterNewUserRequest command)
     {
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.Username),  command.Username);
+        validationState.IsNotNullEmptyOrWhitespace(command.Username,  nameof(command.Username));
 
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.Password), command.Password);
+        validationState.IsNotNullEmptyOrWhitespace(command.Password, nameof(command.Password));
     }
 
     protected async override Task<Result> InternalExecuteAsync(RegisterNewUserRequest command, CancellationToken cancellationToken)

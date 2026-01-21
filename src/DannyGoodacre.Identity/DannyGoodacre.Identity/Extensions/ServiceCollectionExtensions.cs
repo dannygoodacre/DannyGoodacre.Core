@@ -10,15 +10,18 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        // TODO: Is setupAction needed yet?
-        public IServiceCollection AddIdentity<TContext>(Action<IdentityOptions>? setupAction = null)
-            where TContext : IdentityContext
+        public IServiceCollection AddIdentity<TContext>() where TContext : IdentityContext
         {
             services.AddHttpContextAccessor();
 
             services
-                .AddIdentity<Core.IdentityUser, IdentityRole>(setupAction ?? (_ => { }))
+                .AddIdentity<Core.IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<TContext>();
+
+            if (typeof(TContext) != typeof(IdentityContext))
+            {
+                services.AddScoped<IdentityContext>(provider => provider.GetRequiredService<TContext>());
+            }
 
             services
                 .AddScoped<Application.Abstractions.ISignInManager, SignInManager>()
@@ -27,8 +30,6 @@ public static class ServiceCollectionExtensions
                 .AddScoped<Application.Abstractions.IUserStore<Core.IdentityUser>, UserStore>();
 
             services.AddApplication();
-
-            services.AddScoped<IdentityContext>(provider => provider.GetRequiredService<TContext>());
 
             return services;
         }

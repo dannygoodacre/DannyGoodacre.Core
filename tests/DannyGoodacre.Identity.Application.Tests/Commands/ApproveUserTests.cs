@@ -13,13 +13,13 @@ internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
 
     private string _requestUserId = null!;
 
-    private Mock<IUserManager<IdentityUser>> _userManagerMock = null!;
-
     private IdentityUser _testUser = null!;
 
     private Result _testAddToRoleResult = null!;
 
     private Result _testUpdateAsyncResult = null!;
+
+    private Mock<IUserManager<IdentityUser>> _userManagerMock = null!;
 
     [SetUp]
     public void SetUp()

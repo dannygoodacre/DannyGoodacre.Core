@@ -18,9 +18,9 @@ internal sealed class LoginHandler(ILogger<LoginHandler> logger,
 
     protected override void Validate(ValidationState validationState, LoginRequest command)
     {
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.Username),  command.Username);
+        validationState.IsNotNullEmptyOrWhitespace(command.Username, nameof(command.Username));
 
-        validationState.IsNotNullEmptyOrWhitespace(nameof(command.Password), command.Password);
+        validationState.IsNotNullEmptyOrWhitespace(command.Password, nameof(command.Password));
     }
 
     protected async override Task<Result> InternalExecuteAsync(LoginRequest command, CancellationToken cancellationToken)

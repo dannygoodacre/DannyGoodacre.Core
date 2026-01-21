@@ -30,8 +30,8 @@ internal static class ResultExtensions
             => result.Status switch
             {
                 Status.Success => Results.Ok(),
-                Status.Invalid => Results.BadRequest((object?)result.ValidationState!.ToValidationProblemDetails()),
-                Status.DomainError => Results.BadRequest((object?)result.Error),
+                Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
+                Status.DomainError => Results.BadRequest(result.Error),
                 Status.NotFound => Results.NotFound(),
                 Status.Cancelled => Results.BadRequest("The request was cancelled."),
                 _ => Results.InternalServerError(),
