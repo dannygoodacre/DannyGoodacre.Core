@@ -132,7 +132,7 @@ internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
 
         SetupUserManager_UpdateAsync();
 
-        SetupTransaction_SaveAndCommit();
+        SetupTransaction_SaveChangesAndCommitAsync();
 
         // Act
         var result = await Act();
