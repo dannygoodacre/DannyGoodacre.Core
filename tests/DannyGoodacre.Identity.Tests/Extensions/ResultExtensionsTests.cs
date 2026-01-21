@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NUnit.Framework;
-using SignInResult = Microsoft.AspNetCore.Identity.SignInResult;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 
@@ -46,7 +45,7 @@ public class ResultExtensionsTests : TestBase
     public void ToResult_WhenSignInSucceeded_ShouldReturnSuccess()
     {
         // Arrange
-        var signInResult = SignInResult.Success;
+        var signInResult = Microsoft.AspNetCore.Identity.SignInResult.Success;
 
         // Act
         var result = signInResult.ToResult();
@@ -59,7 +58,7 @@ public class ResultExtensionsTests : TestBase
     public void ToResult_WhenSignInFailed_ShouldReturnInternalError()
     {
         // Arrange
-        var signInResult = SignInResult.Failed;
+        var signInResult = Microsoft.AspNetCore.Identity.SignInResult.Failed;
 
         // Act
         var result = signInResult.ToResult();

@@ -22,9 +22,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="DannyGoodacre.Testing.Core" />
-        <Using Include="NUnit.Framework" />
-        <Using Include="Moq" />
+      <Using Include="DannyGoodacre.Testing.Core" />
+      <Using Include="NUnit.Framework" />
+      <Using Include="Moq" />
     </ItemGroup>
 
 </Project>
