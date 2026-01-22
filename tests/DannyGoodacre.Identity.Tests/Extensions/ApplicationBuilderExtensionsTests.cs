@@ -111,7 +111,7 @@ public class ApplicationBuilderExtensionsTests : TestBase
         => _applicationBuilderMock.Object.SeedIdentityAsync(_requestUsername, _requestPassword);
 
     [Test]
-    public async Task SeedIdentityAsync_WhenCreateRoleFails_ShouldReturnInternalError()
+    public async Task SeedIdentityAsync_WhenCreateUserRoleFails_ShouldReturnInternalError()
     {
         // Arrange
         SetupRoleManager_RoleExistsAsync_User();
@@ -125,6 +125,27 @@ public class ApplicationBuilderExtensionsTests : TestBase
 
         // Assert
         AssertInternalError(result, "User role creation failed.");
+    }
+
+    [Test]
+    public async Task SeedIdentityAsync_WhenCreateAdminRoleFails_ShouldReturnInternalError()
+    {
+        // Arrange
+        SetupRoleManager_RoleExistsAsync_User();
+
+        SetupRoleManager_CreateAsync_User();
+
+        SetupRoleManager_RoleExistsAsync_Admin();
+
+        _testCreateAdminRoleResult = IdentityResult.Failed();
+
+        SetupRoleManager_CreateAsync_Admin();
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertInternalError(result, "Admin role creation failed.");
     }
 
     [Test]
