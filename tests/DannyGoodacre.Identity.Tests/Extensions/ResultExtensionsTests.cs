@@ -28,7 +28,7 @@ public class ResultExtensionsTests : TestBase
     public void ToResult_WhenIdentityFailed_ShouldReturnInternalError()
     {
         // Arrange
-        var identityResult = IdentityResult.Failed(new IdentityError()
+        var identityResult = IdentityResult.Failed(new IdentityError
         {
             Code = "Test Code",
             Description = "Test Description"

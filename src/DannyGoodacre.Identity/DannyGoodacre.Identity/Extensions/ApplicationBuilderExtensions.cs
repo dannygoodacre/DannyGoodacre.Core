@@ -1,3 +1,4 @@
+using DannyGoodacre.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +10,7 @@ public static class ApplicationBuilderExtensions
 {
     extension(IApplicationBuilder app)
     {
-        public async Task SeedIdentityAsync(string adminUsername, string adminPassword)
+        public async Task<Result> SeedIdentityAsync(string adminUsername, string adminPassword)
         {
             await using var scope = app.ApplicationServices.CreateAsyncScope();
 
@@ -26,7 +27,7 @@ public static class ApplicationBuilderExtensions
 
             if (adminUser is not null)
             {
-                return;
+                return Result.Success();
             }
 
             adminUser = new Core.IdentityUser
@@ -35,12 +36,18 @@ public static class ApplicationBuilderExtensions
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(adminUser, adminPassword);
+            var userResult = await userManager.CreateAsync(adminUser, adminPassword);
 
-            if (result.Succeeded)
+            if (!userResult.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
+                return Result.InternalError("User creation failed.");
             }
+
+            var roleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
+
+            return roleResult.Succeeded
+                ? Result.Success()
+                : Result.InternalError("Role creation failed.");
         }
     }
 }

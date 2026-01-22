@@ -40,7 +40,12 @@ public class Program
             await context.Database.MigrateAsync();
         }
 
-        await app.SeedIdentityAsync("admin", "Password123$");
+        var seedResult = await app.SeedIdentityAsync("admin", "Password123$");
+
+        if (!seedResult.IsSuccess)
+        {
+            throw new InvalidOperationException($"Identity seeding failed: {seedResult.Error}");
+        }
 
         app.MapIdentityEndpoints();
 
