@@ -83,9 +83,9 @@ internal sealed class ChangePasswordTests : CommandHandlerTestBase<ChangePasswor
     public async Task ChangePassword_WhenUserIsNull_ShouldReturnDomainError()
     {
         // Arrange
-        _testUser = null;
-
         SetupUserContext_GetUserId();
+
+        _testUser = null;
 
         SetupUserManager_FindByIdAsync();
 
@@ -102,11 +102,11 @@ internal sealed class ChangePasswordTests : CommandHandlerTestBase<ChangePasswor
         // Arrange
         const string testErrorMessage = "Error Message";
 
-        _testChangePasswordResult = Result.DomainError(testErrorMessage);
-
         SetupUserContext_GetUserId();
 
         SetupUserManager_FindByIdAsync();
+
+        _testChangePasswordResult = Result.DomainError(testErrorMessage);
 
         SetupUserManager_ChangePasswordAsync();
 

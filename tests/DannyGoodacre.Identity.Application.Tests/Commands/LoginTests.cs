@@ -18,7 +18,7 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
 
     private bool _testIsUserConfirmed;
 
-    private Result _testSignInResult = null!;
+    private Result _testPasswordSignInResult = null!;
 
     private Mock<IUserManager<IdentityUser>> _userManagerMock = null!;
 
@@ -35,7 +35,7 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
 
         _testIsUserConfirmed = true;
 
-        _testSignInResult = Result.Success();
+        _testPasswordSignInResult = Result.Success();
 
         _userManagerMock = new Mock<IUserManager<IdentityUser>>(MockBehavior.Strict);
 
@@ -85,9 +85,9 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
     public async Task Login_WhenUserNotConfirmed_ShouldReturnDomainError()
     {
         // Arrange
-        _testIsUserConfirmed = false;
-
         SetupUserManager_FindByUsernameAsync();
+
+        _testIsUserConfirmed = false;
 
         SetupUserManager_IsUserConfirmedAsync();
 
@@ -104,11 +104,11 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
         // Arrange
         const string testErrorMessage = "Test Error";
 
-        _testSignInResult = Result.DomainError(testErrorMessage);
-
         SetupUserManager_FindByUsernameAsync();
 
         SetupUserManager_IsUserConfirmedAsync();
+
+        _testPasswordSignInResult = Result.DomainError(testErrorMessage);
 
         SetupSignInManager_PasswordSignInAsync();
 
@@ -155,6 +155,6 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
             .Setup(x => x.PasswordSignInAsync(
                 It.Is<string>(y => y == _requestUsername),
                 It.Is<string>(y => y == _requestPassword)))
-            .ReturnsAsync(_testSignInResult)
+            .ReturnsAsync(_testPasswordSignInResult)
             .Verifiable(Times.Once);
 }

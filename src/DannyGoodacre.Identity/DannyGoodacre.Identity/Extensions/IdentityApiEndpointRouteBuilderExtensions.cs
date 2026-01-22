@@ -20,15 +20,13 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             var group = endpoints.MapGroup("/auth").WithTags("Identity");
 
             group.MapPost("/register", async Task<IResult> (
-                [FromServices] IServiceProvider serviceProvider,
+                IRegisterNewUser registerNewUser,
                 [FromBody] RegistrationRequest registrationRequest,
                 CancellationToken cancellationToken) =>
             {
-                var register = serviceProvider.GetRequiredService<IRegisterNewUser>();
-
-                var result = await register.ExecuteAsync(registrationRequest.Username,
-                                                         registrationRequest.Password,
-                                                         cancellationToken);
+                var result = await registerNewUser.ExecuteAsync(registrationRequest.Username,
+                                                                registrationRequest.Password,
+                                                                cancellationToken);
 
                 return result.ToHttpResponse();
             });

@@ -1,7 +1,6 @@
 using DannyGoodacre.Identity.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 

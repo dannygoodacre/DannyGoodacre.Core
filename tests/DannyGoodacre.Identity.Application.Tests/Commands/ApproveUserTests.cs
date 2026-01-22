@@ -84,9 +84,9 @@ internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
         // Arrange
         const string testErrorMessage = "Test Error";
 
-        _testAddToRoleResult = Result.DomainError(testErrorMessage);
-
         SetupUserManager_FindByIdAsync();
+
+        _testAddToRoleResult = Result.DomainError(testErrorMessage);
 
         SetupUserManager_AddToRoleAsync();
 
@@ -105,11 +105,11 @@ internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
         // Arrange
         const string testErrorMessage = "Test Error";
 
-        _testUpdateAsyncResult = Result.DomainError(testErrorMessage);
-
         SetupUserManager_FindByIdAsync();
 
         SetupUserManager_AddToRoleAsync();
+
+        _testUpdateAsyncResult = Result.DomainError(testErrorMessage);
 
         SetupUserManager_UpdateAsync();
 

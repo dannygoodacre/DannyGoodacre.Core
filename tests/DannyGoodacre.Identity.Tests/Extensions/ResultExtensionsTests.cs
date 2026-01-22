@@ -1,10 +1,8 @@
 using DannyGoodacre.Core;
-using DannyGoodacre.Testing.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 
@@ -85,6 +83,7 @@ public class ResultExtensionsTests : TestBase
     {
         // Arrange
         var validationState = new ValidationState();
+
         validationState.AddError("Property 1", "Message 1");
 
         var internalResult = Result.Invalid(validationState);

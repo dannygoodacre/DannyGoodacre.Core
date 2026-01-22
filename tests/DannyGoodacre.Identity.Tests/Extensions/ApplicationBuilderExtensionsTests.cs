@@ -12,13 +12,19 @@ public class ApplicationBuilderExtensionsTests : TestBase
 
     private string _requestPassword = null!;
 
-    private bool _testDoesRoleExist;
+    private bool _testDoesUserRoleExist;
 
-    private Core.IdentityUser _testUser = null!;
+    private bool _testDoesAdminRoleExist;
 
-    private IdentityResult _testUserResult = null!;
+    private IdentityResult _testCreateUserRoleResult = null!;
 
-    private IdentityResult _testRoleResult = null!;
+    private IdentityResult _testCreateAdminRoleResult = null!;
+
+    private Core.IdentityUser _testAdminUser = null!;
+
+    private IdentityResult _testCreateUserResult = null!;
+
+    private IdentityResult _testAddToRoleResult = null!;
 
     private Mock<UserManager<Core.IdentityUser>> _userManagerMock = null!;
 
@@ -28,19 +34,25 @@ public class ApplicationBuilderExtensionsTests : TestBase
     private Mock<IApplicationBuilder> _applicationBuilderMock = null!;
 
     [SetUp]
-    public void Setup()
+    public void SetUp()
     {
         _requestUsername = "Request Username";
 
         _requestPassword = "Request Password";
 
-        _testDoesRoleExist = false;
+        _testDoesUserRoleExist = false;
 
-        _testUser = null!;
+        _testDoesAdminRoleExist = false;
 
-        _testUserResult = IdentityResult.Success;
+        _testCreateUserRoleResult = IdentityResult.Success;
 
-        _testRoleResult = IdentityResult.Success;
+        _testCreateAdminRoleResult = IdentityResult.Success;
+
+        _testAdminUser = null!;
+
+        _testCreateUserResult = IdentityResult.Success;
+
+        _testAddToRoleResult = IdentityResult.Success;
 
         var userStore = new Mock<IUserStore<Core.IdentityUser>>();
 
@@ -99,14 +111,35 @@ public class ApplicationBuilderExtensionsTests : TestBase
         => _applicationBuilderMock.Object.SeedIdentityAsync(_requestUsername, _requestPassword);
 
     [Test]
+    public async Task SeedIdentityAsync_WhenCreateRoleFails_ShouldReturnInternalError()
+    {
+        // Arrange
+        SetupRoleManager_RoleExistsAsync_User();
+
+        _testCreateUserRoleResult = IdentityResult.Failed();
+
+        SetupRoleManager_CreateAsync_User();
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertInternalError(result, "User role creation failed.");
+    }
+
+    [Test]
     public async Task SeedIdentityAsync_WhenAdminUserAlreadyExists_ShouldReturnSuccess()
     {
         // Arrange
-        _testUser = new Core.IdentityUser();
+        SetupRoleManager_RoleExistsAsync_User();
 
-        SetupRoleManager_RoleExistsAsync();
+        SetupRoleManager_CreateAsync_User();
 
-        SetupRoleManager_CreateAsync();
+        SetupRoleManager_RoleExistsAsync_Admin();
+
+        SetupRoleManager_CreateAsync_Admin();
+
+        _testAdminUser = new Core.IdentityUser();
 
         SetupUserManager_FindByNameAsync();
 
@@ -121,13 +154,17 @@ public class ApplicationBuilderExtensionsTests : TestBase
     public async Task SeedIdentityAsync_WhenCreateUserFails_ShouldReturnInternalError()
     {
         // Arrange
-        _testUserResult = IdentityResult.Failed();
+        SetupRoleManager_RoleExistsAsync_User();
 
-        SetupRoleManager_RoleExistsAsync();
+        SetupRoleManager_CreateAsync_User();
 
-        SetupRoleManager_CreateAsync();
+        SetupRoleManager_RoleExistsAsync_Admin();
+
+        SetupRoleManager_CreateAsync_Admin();
 
         SetupUserManager_FindByNameAsync();
+
+        _testCreateUserResult = IdentityResult.Failed();
 
         SetupUserManager_CreateAsync();
 
@@ -142,15 +179,19 @@ public class ApplicationBuilderExtensionsTests : TestBase
     public async Task SeedIdentityAsync_WhenAddToRoleFails_ShouldReturnInternalError()
     {
         // Arrange
-        _testRoleResult = IdentityResult.Failed();
+        SetupRoleManager_RoleExistsAsync_User();
 
-        SetupRoleManager_RoleExistsAsync();
+        SetupRoleManager_CreateAsync_User();
 
-        SetupRoleManager_CreateAsync();
+        SetupRoleManager_RoleExistsAsync_Admin();
+
+        SetupRoleManager_CreateAsync_Admin();
 
         SetupUserManager_FindByNameAsync();
 
         SetupUserManager_CreateAsync();
+
+        _testAddToRoleResult = IdentityResult.Failed();
 
         SetupUserManager_AddToRoleAsync();
 
@@ -162,12 +203,16 @@ public class ApplicationBuilderExtensionsTests : TestBase
     }
 
     [Test]
-    public async Task SeedIdentityAsync_WhenSuccessful_ShouldReturnSuccess()
+    public async Task SeedIdentityAsync_WhenSuccessfulAndRolesAlreadyExist_ShouldReturnSuccess()
     {
         // Arrange
-        SetupRoleManager_RoleExistsAsync();
+        _testDoesUserRoleExist = true;
 
-        SetupRoleManager_CreateAsync();
+        SetupRoleManager_RoleExistsAsync_User();
+
+        _testDoesAdminRoleExist = true;
+
+        SetupRoleManager_RoleExistsAsync_Admin();
 
         SetupUserManager_FindByNameAsync();
 
@@ -182,24 +227,65 @@ public class ApplicationBuilderExtensionsTests : TestBase
         AssertSuccess(result);
     }
 
-    private void SetupRoleManager_RoleExistsAsync()
+    [Test]
+    public async Task SeedIdentityAsync_WhenSuccessful_ShouldReturnSuccess()
+    {
+        // Arrange
+        SetupRoleManager_RoleExistsAsync_User();
+
+        SetupRoleManager_CreateAsync_User();
+
+        SetupRoleManager_RoleExistsAsync_Admin();
+
+        SetupRoleManager_CreateAsync_Admin();
+
+        SetupUserManager_FindByNameAsync();
+
+        SetupUserManager_CreateAsync();
+
+        SetupUserManager_AddToRoleAsync();
+
+        // Act
+        var result = await Act();
+
+        // Assert
+        AssertSuccess(result);
+    }
+
+    private void SetupRoleManager_RoleExistsAsync_User()
+        => _roleManagerMock
+            .Setup(x => x.RoleExistsAsync(
+                It.Is<string>(y => y == "User")))
+            .ReturnsAsync(_testDoesUserRoleExist)
+            .Verifiable(Times.Once);
+
+    private void SetupRoleManager_RoleExistsAsync_Admin()
         => _roleManagerMock
             .Setup(x => x.RoleExistsAsync(
                 It.Is<string>(y => y == "Admin")))
-            .ReturnsAsync(_testDoesRoleExist)
+            .ReturnsAsync(_testDoesAdminRoleExist)
             .Verifiable(Times.Once);
 
-    private void SetupRoleManager_CreateAsync()
+    private void SetupRoleManager_CreateAsync_User()
+        => _roleManagerMock
+            .Setup(x => x.CreateAsync(
+                It.Is<IdentityRole>(y => y.Name == "User")))
+            .ReturnsAsync(_testCreateUserRoleResult)
+            .Verifiable(Times.Once);
+
+    private void SetupRoleManager_CreateAsync_Admin()
         => _roleManagerMock
             .Setup(x => x.CreateAsync(
                 It.Is<IdentityRole>(y => y.Name == "Admin")))
+            .ReturnsAsync(_testCreateAdminRoleResult)
             .Verifiable(Times.Once);
+
 
     private void SetupUserManager_FindByNameAsync()
         => _userManagerMock
             .Setup(x => x.FindByNameAsync(
                 It.Is<string>(y => y == _requestUsername)))
-            .ReturnsAsync(_testUser)
+            .ReturnsAsync(_testAdminUser)
             .Verifiable(Times.Once);
 
     private void SetupUserManager_CreateAsync()
@@ -207,7 +293,7 @@ public class ApplicationBuilderExtensionsTests : TestBase
             .Setup(x => x.CreateAsync(
                 It.Is<Core.IdentityUser>(y => y.UserName ==  _requestUsername),
                 It.Is<string>(y => y == _requestPassword)))
-            .ReturnsAsync(_testUserResult)
+            .ReturnsAsync(_testCreateUserResult)
             .Verifiable(Times.Once);
 
     private void SetupUserManager_AddToRoleAsync()
@@ -215,6 +301,6 @@ public class ApplicationBuilderExtensionsTests : TestBase
             .Setup(x => x.AddToRoleAsync(
                 It.Is<Core.IdentityUser>(y => y.UserName == _requestUsername),
                 It.Is<string>(y => y == "Admin")))
-            .ReturnsAsync(_testRoleResult)
+            .ReturnsAsync(_testAddToRoleResult)
             .Verifiable(Times.Once);
 }

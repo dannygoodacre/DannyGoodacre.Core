@@ -1,7 +1,5 @@
 using DannyGoodacre.Core;
 using DannyGoodacre.Identity.Extensions;
-using DannyGoodacre.Testing.Core;
-using NUnit.Framework;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 

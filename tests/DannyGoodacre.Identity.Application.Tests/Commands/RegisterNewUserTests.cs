@@ -70,9 +70,9 @@ internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<Register
         // Arrange
         const string testErrorMessage = "Test Error";
 
-        _testCreateResult = Result.DomainError(testErrorMessage);
-
         SetupUserStore_SetUsernameAsync();
+
+        _testCreateResult = Result.DomainError(testErrorMessage);
 
         SetupUserManager_CreateAsync();
 

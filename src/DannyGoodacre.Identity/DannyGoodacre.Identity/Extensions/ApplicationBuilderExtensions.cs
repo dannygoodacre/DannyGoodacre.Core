@@ -18,9 +18,24 @@ public static class ApplicationBuilderExtensions
 
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Core.IdentityUser>>();
 
+            if (!await roleManager.RoleExistsAsync("User"))
+            {
+                var createRoleResult = await roleManager.CreateAsync(new IdentityRole("User"));
+
+                if (!createRoleResult.Succeeded)
+                {
+                    return Result.InternalError("User role creation failed.");
+                }
+            }
+
             if (!await roleManager.RoleExistsAsync("Admin"))
             {
-                await roleManager.CreateAsync(new IdentityRole("Admin"));
+                var createRoleResult = await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+                if (!createRoleResult.Succeeded)
+                {
+                    return Result.InternalError("Admin role creation failed.");
+                }
             }
 
             var adminUser = await userManager.FindByNameAsync(adminUsername);
@@ -36,16 +51,16 @@ public static class ApplicationBuilderExtensions
                 EmailConfirmed = true
             };
 
-            var userResult = await userManager.CreateAsync(adminUser, adminPassword);
+            var createUserResult = await userManager.CreateAsync(adminUser, adminPassword);
 
-            if (!userResult.Succeeded)
+            if (!createUserResult.Succeeded)
             {
                 return Result.InternalError("User creation failed.");
             }
 
-            var roleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
+            var addToRoleResult = await userManager.AddToRoleAsync(adminUser, "Admin");
 
-            return roleResult.Succeeded
+            return addToRoleResult.Succeeded
                 ? Result.Success()
                 : Result.InternalError("Role creation failed.");
         }
