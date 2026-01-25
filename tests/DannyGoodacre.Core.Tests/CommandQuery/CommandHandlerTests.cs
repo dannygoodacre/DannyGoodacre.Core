@@ -7,20 +7,20 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class CommandHandlerTests : TestBase
 {
-    public class TestCommandRequest : ICommandRequest;
+    public class TestCommand : ICommand;
 
-    public class TestCommandHandler(ILogger logger) : CommandHandler<TestCommandRequest>(logger)
+    public class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand>(logger)
     {
         protected override string CommandName => TestName;
 
-        protected override void Validate(ValidationState validationState, TestCommandRequest commandRequest)
-            => _testValidate(validationState, commandRequest);
+        protected override void Validate(ValidationState validationState, TestCommand command)
+            => _testValidate(validationState, command);
 
-        protected override Task<Result> InternalExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
-            => _testInternalExecuteAsync(commandRequest, cancellationToken);
+        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => _testInternalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
-            => ExecuteAsync(commandRequest, cancellationToken);
+        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => ExecuteAsync(command, cancellationToken);
     }
 
     private const string TestName = "Test Command Handler";
@@ -29,11 +29,11 @@ public class CommandHandlerTests : TestBase
 
     private Mock<ILogger<TestCommandHandler>> _loggerMock = null!;
 
-    private static Action<ValidationState, TestCommandRequest> _testValidate = null!;
+    private static Action<ValidationState, TestCommand> _testValidate = null!;
 
-    private static Func<TestCommandRequest, CancellationToken, Task<Result>> _testInternalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<Result>> _testInternalExecuteAsync = null!;
 
-    private static TestCommandRequest _testCommandRequest = null!;
+    private static TestCommand _testCommand = null!;
 
     private static TestCommandHandler _testCommandHandler = null!;
 
@@ -48,7 +48,7 @@ public class CommandHandlerTests : TestBase
 
         _loggerMock = new Mock<ILogger<TestCommandHandler>>(MockBehavior.Strict);
 
-        _testCommandRequest = new TestCommandRequest();
+        _testCommand = new TestCommand();
 
         _testCommandHandler = new TestCommandHandler(_loggerMock.Object);
     }
@@ -135,5 +135,5 @@ public class CommandHandlerTests : TestBase
         AssertInternalError(result, testExceptionMessage);
     }
 
-    private Task<Result> Act() => _testCommandHandler.TestExecuteAsync(_testCommandRequest, _testCancellationToken);
+    private Task<Result> Act() => _testCommandHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
 }

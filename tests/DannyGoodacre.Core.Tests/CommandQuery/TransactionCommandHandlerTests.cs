@@ -7,20 +7,20 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class TransactionCommandHandlerTests : TestBase
 {
-    public class TestCommandRequest : ICommandRequest;
+    public class TestCommand : ICommand;
 
     public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
-        : TransactionCommandHandler<TestCommandRequest>(logger, unitOfWork)
+        : TransactionCommandHandler<TestCommand>(logger, unitOfWork)
     {
         protected override string CommandName => TestName;
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
-        protected override Task<Result> InternalExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
-            => _internalExecuteAsync(commandRequest, cancellationToken);
+        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => _internalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommandRequest commandRequest, CancellationToken cancellationToken)
-            => ExecuteAsync(commandRequest, cancellationToken);
+        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => ExecuteAsync(command, cancellationToken);
     }
 
     private const string TestName = "Test Transaction Command Handler";
@@ -37,9 +37,9 @@ public class TransactionCommandHandlerTests : TestBase
 
     private Mock<ITransaction> _transactionMock = null!;
 
-    private static Func<TestCommandRequest, CancellationToken, Task<Result>> _internalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<Result>> _internalExecuteAsync = null!;
 
-    private readonly TestCommandRequest _testCommandRequest = new();
+    private readonly TestCommand _testCommand = new();
 
     private static TestTransactionCommandHandler _testHandler = null!;
 
@@ -204,7 +204,7 @@ public class TransactionCommandHandlerTests : TestBase
         AssertInternalError(result, testError);
     }
 
-    private Task<Result> Act() => _testHandler.TestExecuteAsync(_testCommandRequest, _testCancellationToken);
+    private Task<Result> Act() => _testHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
 
     private void SetupUnitOfWork_BeginTransactionAsync()
         => _unitOfWorkMock

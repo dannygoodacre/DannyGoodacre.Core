@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging;
 namespace DannyGoodacre.Identity.Application.Commands;
 
 internal sealed class LogoutHandler(ILogger<LogoutHandler> logger, ISignInManager signInManager)
-    : CommandHandler<LogoutRequest>(logger), ILogout
+    : CommandHandler<Logout>(logger), ILogout
 {
 
     protected override string CommandName => "Logout";
 
-    protected async override Task<Result> InternalExecuteAsync(LogoutRequest command, CancellationToken cancellationToken)
+    protected async override Task<Result> InternalExecuteAsync(Logout command, CancellationToken cancellationToken)
     {
         await signInManager.SignOutAsync();
 
@@ -20,10 +20,10 @@ internal sealed class LogoutHandler(ILogger<LogoutHandler> logger, ISignInManage
     }
 
     public Task<Result> ExecuteAsync(CancellationToken cancellationToken)
-        =>  ExecuteAsync(new LogoutRequest(), cancellationToken);
+        =>  ExecuteAsync(new Logout(), cancellationToken);
 }
 
-internal sealed record LogoutRequest : ICommandRequest;
+internal sealed record Logout : ICommand;
 
 public interface ILogout
 {

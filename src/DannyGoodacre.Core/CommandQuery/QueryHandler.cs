@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where TQueryRequest : IQueryRequest
+public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where TQueryRequest : IQuery
 {
     protected abstract string QueryName { get; }
 

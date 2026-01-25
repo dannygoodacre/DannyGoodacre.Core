@@ -7,7 +7,7 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class TransactionCommandWithValueHandlerTests : TestBase
 {
-    public class TestCommand : ICommandRequest;
+    public class TestCommand : ICommand;
 
     public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
         : TransactionCommandHandler<TestCommand, int>(logger, unitOfWork)

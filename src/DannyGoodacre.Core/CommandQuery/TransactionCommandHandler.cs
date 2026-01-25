@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace DannyGoodacre.Core.CommandQuery;
 
 public abstract class TransactionCommandHandler<TCommandRequest>(ILogger logger, IUnitOfWork unitOfWork)
-    : CommandHandler<TCommandRequest>(logger) where TCommandRequest : ICommandRequest
+    : CommandHandler<TCommandRequest>(logger) where TCommandRequest : ICommand
 {
     /// <summary>
     /// The number of state entries expected to be persisted upon completion.

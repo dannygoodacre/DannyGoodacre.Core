@@ -1,15 +1,12 @@
 using DannyGoodacre.Identity.Application.Commands;
-using DannyGoodacre.Identity.Model;
+using DannyGoodacre.Identity.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace DannyGoodacre.Identity;
-
-using LoginRequest = Model.LoginRequest;
 
 public static class IdentityApiEndpointRouteBuilderExtensions
 {
@@ -17,10 +14,10 @@ public static class IdentityApiEndpointRouteBuilderExtensions
     {
         public IEndpointConventionBuilder MapIdentityEndpoints()
         {
-            var group = endpoints.MapGroup("/auth").WithTags("Identity");
+            var group = endpoints.MapGroup("").WithTags("Identity");
 
-            group.MapPost("/register", async Task<IResult> (
-                IRegisterNewUser registerNewUser,
+            group.MapPost("/users", async Task<IResult> (
+                [FromServices] IRegisterNewUser registerNewUser,
                 [FromBody] RegistrationRequest registrationRequest,
                 CancellationToken cancellationToken) =>
             {
@@ -31,39 +28,22 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 return result.ToHttpResponse();
             });
 
-            group.MapPost("/login", async Task<IResult> (
-                [FromServices] IServiceProvider serviceProvider,
-                [FromBody] LoginRequest loginRequest,
+            group.MapPost("/users/{userId}/approval", async Task<IResult> (
+                [FromServices] IApproveUser approveUser,
+                string userId,
                 CancellationToken cancellationToken) =>
             {
-                var login = serviceProvider.GetRequiredService<ILogin>();
-
-                var result = await login.ExecuteAsync(loginRequest.Username,
-                                                      loginRequest.Password,
-                                                      cancellationToken);
-
-                return result.ToHttpResponse();
-            });
-
-            group.MapPost("/logout", async Task<IResult> (
-                [FromServices] IServiceProvider serviceProvider,
-                CancellationToken cancellationToken) =>
-            {
-                var logout = serviceProvider.GetRequiredService<ILogout>();
-
-                var result = await logout.ExecuteAsync(cancellationToken);
+                var result = await approveUser.ExecuteAsync(userId, cancellationToken);
 
                 return result.ToHttpResponse();
             })
-            .RequireAuthorization();
+            .RequireAuthorization(x => x.RequireRole("Admin"));
 
-            group.MapPost("changepassword", async Task<IResult> (
-                [FromServices] IServiceProvider serviceProvider,
+            group.MapPatch("/users/me/password", async Task<IResult> (
+                [FromServices] IChangePassword changePassword,
                 [FromBody] ChangePasswordRequest changePasswordRequest,
                 CancellationToken cancellationToken) =>
             {
-                var changePassword = serviceProvider.GetRequiredService<IChangePassword>();
-
                 var result = await changePassword.ExecuteAsync(changePasswordRequest.OldPassword,
                                                                changePasswordRequest.NewPassword,
                                                                cancellationToken);
@@ -72,18 +52,27 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             })
             .RequireAuthorization();
 
-            group.MapPost("/{userId}/approve", async Task<IResult> (
-                string userId,
-                [FromServices] IServiceProvider serviceProvider,
+            group.MapPost("/session/me", async Task<IResult> (
+                [FromServices] ILogin login,
+                [FromBody] LoginRequest loginRequest,
                 CancellationToken cancellationToken) =>
             {
-                var approveUser = serviceProvider.GetRequiredService<IApproveUser>();
+                var result = await login.ExecuteAsync(loginRequest.Username,
+                                                      loginRequest.Password,
+                                                      cancellationToken);
 
-                var result = await approveUser.ExecuteAsync(userId, cancellationToken);
+                return result.ToHttpResponse();
+            });
+
+            group.MapDelete("/session/me", async Task<IResult> (
+                [FromServices] ILogout logout,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await logout.ExecuteAsync(cancellationToken);
 
                 return result.ToHttpResponse();
             })
-            .RequireAuthorization(policy => policy.RequireRole("Admin"));
+            .RequireAuthorization();
 
             return group;
         }

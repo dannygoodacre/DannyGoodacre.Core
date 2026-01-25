@@ -11,19 +11,19 @@ namespace DannyGoodacre.Identity.Application.Commands;
 internal sealed class ChangePasswordHandler(ILogger<ChangePasswordHandler> logger,
                                             IUserContext userContext,
                                             IUserManager<IdentityUser> userManager)
-    : CommandHandler<ChangePasswordRequest>(logger), IChangePassword
+    : CommandHandler<ChangePassword>(logger), IChangePassword
 {
 
     protected override string CommandName => "Change Password";
 
-    protected override void Validate(ValidationState validationState, ChangePasswordRequest command)
+    protected override void Validate(ValidationState validationState, ChangePassword command)
     {
         validationState.IsNotNullEmptyOrWhitespace(command.CurrentPassword, nameof(command.CurrentPassword));
 
         validationState.IsNotNullEmptyOrWhitespace(command.NewPassword, nameof(command.NewPassword));
     }
 
-    protected async override Task<Result> InternalExecuteAsync(ChangePasswordRequest command, CancellationToken cancellationToken)
+    protected async override Task<Result> InternalExecuteAsync(ChangePassword command, CancellationToken cancellationToken)
     {
         var userId = userContext.GetUserId();
 
@@ -43,14 +43,14 @@ internal sealed class ChangePasswordHandler(ILogger<ChangePasswordHandler> logge
     }
 
     public Task<Result> ExecuteAsync(string currentPassword, string newPassword, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new ChangePasswordRequest
+        => ExecuteAsync(new ChangePassword
         {
             CurrentPassword = currentPassword,
             NewPassword = newPassword
         }, cancellationToken);
 }
 
-internal sealed record ChangePasswordRequest : ICommandRequest
+internal sealed record ChangePassword : ICommand
 {
     public required string CurrentPassword { get; init; }
 

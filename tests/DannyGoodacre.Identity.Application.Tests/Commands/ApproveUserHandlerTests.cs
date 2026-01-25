@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace DannyGoodacre.Identity.Application.Tests.Commands;
 
 [TestFixture]
-internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
+internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<ApproveUserHandler>
 {
     protected override string CommandName => "Approve User";
 
@@ -34,7 +34,7 @@ internal class ApproveUserTests : TransactionCommandHandlerTestBase<ApproveUser>
 
         _testUpdateAsyncResult = Result.Success();
 
-        CommandHandler = new ApproveUser(LoggerMock.Object,
+        CommandHandler = new ApproveUserHandler(LoggerMock.Object,
                                          UnitOfWorkMock.Object,
                                          _userManagerMock.Object);
     }

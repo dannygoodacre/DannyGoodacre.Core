@@ -5,13 +5,13 @@ namespace DannyGoodacre.Core;
 /// </summary>
 public class Result
 {
-    public Status Status { get; private init; }
+    public Status Status { get; internal init; }
 
-    public string? Error { get; private init; }
+    public string? Error { get; internal init; }
 
-    public Exception? Exception { get; private init; }
+    public Exception? Exception { get; internal init; }
 
-    public ValidationState? ValidationState { get; private init; }
+    public ValidationState? ValidationState { get; internal init; }
 
     public bool IsSuccess => Status == Status.Success;
 
@@ -63,4 +63,13 @@ public class Result
 
     public static Result<T> Success<T>(T value)
         => Result<T>.Success(value);
+
+    public Result<T> ToResult<T>()
+        => new()
+        {
+            Status = Status,
+            Error = Error,
+            Exception = Exception,
+            ValidationState = ValidationState,
+        };
 }

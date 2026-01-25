@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Identity.Model;
+namespace DannyGoodacre.Identity.Models;
 
 public sealed record ChangePasswordRequest
 {

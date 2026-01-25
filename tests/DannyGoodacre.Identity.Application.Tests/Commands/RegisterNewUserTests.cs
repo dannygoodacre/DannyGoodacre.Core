@@ -6,7 +6,7 @@ using DannyGoodacre.Identity.Core;
 namespace DannyGoodacre.Identity.Application.Tests.Commands;
 
 [TestFixture]
-internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<RegisterNewUserHandler>
+internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<CreateUserHandler>
 {
 
     protected override string CommandName => "Register New User";
@@ -36,7 +36,7 @@ internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<Register
 
         _userManagerMock = new Mock<IUserManager<IdentityUser>>(MockBehavior.Strict);
 
-        CommandHandler = new RegisterNewUserHandler(LoggerMock.Object,
+        CommandHandler = new CreateUserHandler(LoggerMock.Object,
                                                     UnitOfWorkMock.Object,
                                                     _userStoreMock.Object,
                                                     _userManagerMock.Object);

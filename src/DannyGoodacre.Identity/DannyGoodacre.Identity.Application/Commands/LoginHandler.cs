@@ -11,19 +11,19 @@ namespace DannyGoodacre.Identity.Application.Commands;
 internal sealed class LoginHandler(ILogger<LoginHandler> logger,
                                    IUserManager<IdentityUser> userManager,
                                    ISignInManager signInManager)
-    : CommandHandler<LoginRequest>(logger), ILogin
+    : CommandHandler<Login>(logger), ILogin
 {
 
     protected override string CommandName => "Login";
 
-    protected override void Validate(ValidationState validationState, LoginRequest command)
+    protected override void Validate(ValidationState validationState, Login command)
     {
         validationState.IsNotNullEmptyOrWhitespace(command.Username, nameof(command.Username));
 
         validationState.IsNotNullEmptyOrWhitespace(command.Password, nameof(command.Password));
     }
 
-    protected async override Task<Result> InternalExecuteAsync(LoginRequest command, CancellationToken cancellationToken)
+    protected async override Task<Result> InternalExecuteAsync(Login command, CancellationToken cancellationToken)
     {
         var user = await userManager.FindByUsernameAsync(command.Username);
 
@@ -41,14 +41,14 @@ internal sealed class LoginHandler(ILogger<LoginHandler> logger,
     }
 
     public Task<Result> ExecuteAsync(string username, string password, CancellationToken cancellationToken)
-        => ExecuteAsync(new LoginRequest
+        => ExecuteAsync(new Login
         {
             Username = username,
             Password = password
         }, cancellationToken);
 }
 
-internal sealed record LoginRequest : ICommandRequest
+internal sealed record Login : ICommand
 {
     public required string Username { get; init; }
 

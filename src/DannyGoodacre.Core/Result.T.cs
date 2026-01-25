@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace DannyGoodacre.Core;
 
@@ -9,13 +10,13 @@ public class Result<T>
 {
     public T? Value { get; private init; }
 
-    public Status Status { get; private init; }
+    public Status Status { get; internal init; }
 
-    public string? Error { get; private init; }
+    public string? Error { get; internal init; }
 
-    public Exception? Exception { get; private init; }
+    public Exception? Exception { get; internal init; }
 
-    public ValidationState? ValidationState { get; private init; }
+    public ValidationState? ValidationState { get; internal init; }
 
     [MemberNotNullWhen(true, nameof(Value))]
     public bool IsSuccess => Status == Status.Success;
@@ -65,5 +66,14 @@ public class Result<T>
         {
             Status = Status.InternalError,
             Exception = exception
+        };
+
+    public Result ToVoidResult()
+        => new()
+        {
+            Status = Status,
+            Error = Error,
+            Exception = Exception,
+            ValidationState = ValidationState,
         };
 }
