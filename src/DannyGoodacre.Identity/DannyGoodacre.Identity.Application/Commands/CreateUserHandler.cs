@@ -1,4 +1,3 @@
-using System.Reflection.Metadata.Ecma335;
 using DannyGoodacre.Core;
 using DannyGoodacre.Core.CommandQuery;
 using DannyGoodacre.Core.CommandQuery.Abstractions;
@@ -15,7 +14,7 @@ public interface IRegisterNewUser
     Task<Result<UserInfoResponse>> ExecuteAsync(string username, string password, CancellationToken cancellationToken);
 }
 
-internal sealed record RegisterNewUser : ICommand
+internal sealed record RegisterNewUserCommand : ICommand
 {
     public required string Username { get; init; }
 
@@ -26,18 +25,18 @@ internal sealed class CreateUserHandler(ILogger<CreateUserHandler> logger,
                                         IUnitOfWork unitOfWork,
                                         IUserStore<IdentityUser> userStore,
                                         IUserManager<IdentityUser> userManager)
-    : TransactionCommandHandler<RegisterNewUser, UserInfoResponse>(logger, unitOfWork), IRegisterNewUser
+    : TransactionCommandHandler<RegisterNewUserCommand, UserInfoResponse>(logger, unitOfWork), IRegisterNewUser
 {
     protected override string CommandName => "Create User";
 
-    protected override void Validate(ValidationState validationState, RegisterNewUser command)
+    protected override void Validate(ValidationState validationState, RegisterNewUserCommand command)
     {
         validationState.IsNotNullEmptyOrWhitespace(command.Username,  nameof(command.Username));
 
         validationState.IsNotNullEmptyOrWhitespace(command.Password, nameof(command.Password));
     }
 
-    protected async override Task<Result<UserInfoResponse>> InternalExecuteAsync(RegisterNewUser command, CancellationToken cancellationToken)
+    protected async override Task<Result<UserInfoResponse>> InternalExecuteAsync(RegisterNewUserCommand command, CancellationToken cancellationToken)
     {
         var user = new IdentityUser();
 
@@ -45,22 +44,13 @@ internal sealed class CreateUserHandler(ILogger<CreateUserHandler> logger,
 
         var result = await userManager.CreateAsync(user, command.Password);
 
-        if (!result.IsSuccess)
-        {
-            return result.ToResult<UserInfoResponse>();
-        }
-
-        // TODO
-        return Result.Success(new UserInfoResponse
-        {
-            UserId = null,
-            Username = null,
-            IsApproved = false
-        });
+        return result.IsSuccess
+            ? Result.Success(user.ToUserInfoResponse())
+            : result.ToResult<UserInfoResponse>();
     }
 
     public Task<Result<UserInfoResponse>> ExecuteAsync(string username, string password, CancellationToken cancellationToken)
-        => ExecuteAsync(new RegisterNewUser
+        => ExecuteAsync(new RegisterNewUserCommand
         {
             Username = username,
             Password = password

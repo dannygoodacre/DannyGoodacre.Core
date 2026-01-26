@@ -30,7 +30,6 @@ public class ApplicationBuilderExtensionsTests : TestBase
 
     private Mock<RoleManager<IdentityRole>> _roleManagerMock = null!;
 
-    // We can use a mock instance since we're testing an extension method.
     private Mock<IApplicationBuilder> _applicationBuilderMock = null!;
 
     [SetUp]

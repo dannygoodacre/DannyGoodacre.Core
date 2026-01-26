@@ -43,28 +43,7 @@ internal static class ResultExtensions
         public IResult ToHttpResponse()
             => result.Status switch
             {
-                Status.Success => Results.NoContent(),
-                Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
-                Status.DomainError => Results.Problem(result.Error, statusCode: 400),
-                Status.NotFound => Results.NotFound(),
-                Status.Cancelled => Results.StatusCode(499),
-                _ => Results.InternalServerError(),
-            };
-
-        public IResult ToCreationHttpResponse()
-            => result.Status switch
-            {
-                Status.Success => Results.Created(),
-                Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
-                Status.DomainError => Results.Problem(result.Error, statusCode: 400),
-                Status.NotFound => Results.NotFound(),
-                Status.Cancelled => Results.StatusCode(499),
-                _ => Results.InternalServerError(),
-            };
-
-        private IResult ToUnsuccessfulHttpResponse()
-            => result.Status switch
-            {
+                Status.Success => Results.Ok(result.Value),
                 Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
                 Status.DomainError => Results.Problem(result.Error, statusCode: 400),
                 Status.NotFound => Results.NotFound(),

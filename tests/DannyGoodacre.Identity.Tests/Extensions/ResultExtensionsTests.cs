@@ -23,7 +23,7 @@ public class ResultExtensionsTests : TestBase
     }
 
     [Test]
-    public void ToResult_WhenIdentityFailed_ShouldReturnInternalError()
+    public void ToResult_WhenIdentityFailed_ShouldReturnDomainError()
     {
         // Arrange
         var identityResult = IdentityResult.Failed(new IdentityError
@@ -36,7 +36,7 @@ public class ResultExtensionsTests : TestBase
         var result = identityResult.ToResult();
 
         // Assert
-        AssertInternalError(result, "Failed : Test Code");
+        AssertDomainError(result, "Failed : Test Code");
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class ResultExtensionsTests : TestBase
     }
 
     [Test]
-    public void ToResult_WhenSignInFailed_ShouldReturnInternalError()
+    public void ToResult_WhenSignInFailed_ShouldReturnDomainError()
     {
         // Arrange
         var signInResult = Microsoft.AspNetCore.Identity.SignInResult.Failed;
@@ -62,11 +62,11 @@ public class ResultExtensionsTests : TestBase
         var result = signInResult.ToResult();
 
         // Assert
-        AssertInternalError(result, "Failed");
+        AssertDomainError(result, "Failed");
     }
 
     [Test]
-    public void ToHttpResponse_WhenSuccess_ShouldReturnOk()
+    public void ToHttpResponse_WhenSuccess_ShouldReturnNoContent()
     {
         // Arrange
         var internalResult = Result.Success();
@@ -75,7 +75,7 @@ public class ResultExtensionsTests : TestBase
         var result = internalResult.ToHttpResponse();
 
         // Assert
-        Assert.That(result, Is.EqualTo(Results.Ok()));
+        Assert.That(result, Is.EqualTo(Results.NoContent()));
     }
 
     [Test]
@@ -96,16 +96,24 @@ public class ResultExtensionsTests : TestBase
     }
 
     [Test]
-    public void ToHttpResponse_WhenDomainError_ShouldReturnBadRequest()
+    public void ToHttpResponse_WhenDomainError_ShouldReturnProblemDetails400()
     {
         // Arrange
-        var internalResult = Result.DomainError("Test Domain Error");
+        const string errorMessage = "Test Domain Error";
+
+        var internalResult = Result.DomainError(errorMessage);
 
         // Act
         var result = internalResult.ToHttpResponse();
 
         // Assert
-        Assert.That(result, Is.TypeOf<BadRequest<string>>());
+        Assert.That(result, Is.TypeOf<ProblemHttpResult>());
+
+        var problemResult = result as ProblemHttpResult;
+
+        Assert.That(problemResult?.StatusCode, Is.EqualTo(400));
+
+        Assert.That(problemResult?.ProblemDetails.Detail, Is.EqualTo(errorMessage));
     }
 
     [Test]
@@ -122,7 +130,7 @@ public class ResultExtensionsTests : TestBase
     }
 
     [Test]
-    public void ToHttpResponse_WhenCancelled_ShouldReturnBadRequest()
+    public void ToHttpResponse_WhenCancelled_ShouldReturnStatus499()
     {
         // Arrange
         var internalResult = Result.Cancelled();
@@ -131,11 +139,11 @@ public class ResultExtensionsTests : TestBase
         var result = internalResult.ToHttpResponse();
 
         // Assert
-        Assert.That(result, Is.TypeOf<BadRequest<string>>());
+        Assert.That(result, Is.TypeOf<StatusCodeHttpResult>());
 
-        var badResult = result as BadRequest<string>;
+        var statusCodeResult = result as IStatusCodeHttpResult;
 
-        Assert.That(badResult?.Value, Is.EqualTo("The request was cancelled."));
+        Assert.That(statusCodeResult?.StatusCode, Is.EqualTo(499));
     }
 
     [Test]

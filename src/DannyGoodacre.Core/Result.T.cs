@@ -68,12 +68,11 @@ public class Result<T>
             Exception = exception
         };
 
-    public Result ToVoidResult()
+    public static implicit operator Result<T>(Result result)
         => new()
         {
-            Status = Status,
-            Error = Error,
-            Exception = Exception,
-            ValidationState = ValidationState,
+            Status = result.Status,
+            ValidationState = result.ValidationState,
+            Value = default
         };
 }

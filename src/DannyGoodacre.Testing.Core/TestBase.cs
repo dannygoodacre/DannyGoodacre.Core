@@ -97,7 +97,7 @@ public abstract class TestBase
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
+            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
         }
     }
 

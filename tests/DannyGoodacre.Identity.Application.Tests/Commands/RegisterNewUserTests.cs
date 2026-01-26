@@ -1,15 +1,15 @@
 using DannyGoodacre.Core;
 using DannyGoodacre.Identity.Application.Abstractions;
 using DannyGoodacre.Identity.Application.Commands;
+using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Core;
 
 namespace DannyGoodacre.Identity.Application.Tests.Commands;
 
 [TestFixture]
-internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<CreateUserHandler>
+internal class CreateNewUserCommandTests : TransactionCommandHandlerTestBase<CreateUserHandler, UserInfoResponse>
 {
-
-    protected override string CommandName => "Register New User";
+    protected override string CommandName => "Create User";
 
     private string _requestUsername = null!;
 
@@ -37,18 +37,18 @@ internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<CreateUs
         _userManagerMock = new Mock<IUserManager<IdentityUser>>(MockBehavior.Strict);
 
         CommandHandler = new CreateUserHandler(LoggerMock.Object,
-                                                    UnitOfWorkMock.Object,
-                                                    _userStoreMock.Object,
-                                                    _userManagerMock.Object);
+                                               UnitOfWorkMock.Object,
+                                               _userStoreMock.Object,
+                                               _userManagerMock.Object);
     }
 
-    protected override Task<Result> Act()
+    protected override Task<Result<UserInfoResponse>> Act()
         => CommandHandler.ExecuteAsync(_requestUsername, _requestPassword, CancellationToken);
 
     [TestCase(null!)]
     [TestCase("")]
     [TestCase(" ")]
-    public async Task RegisterNewUser_WhenUsernameInvalid_ShouldReturnInvalid(string username)
+    public async Task CreateNewUser_WhenUsernameInvalid_ShouldReturnInvalid(string username)
     {
         // Arrange
         _requestUsername = username;
@@ -65,7 +65,7 @@ internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<CreateUs
     }
 
     [Test]
-    public async Task RegisterNewUser_WhenCreateUserFails_ShouldReturnError()
+    public async Task CreateNewUser_WhenCreateUserFails_ShouldReturnError()
     {
         // Arrange
         const string testErrorMessage = "Test Error";
@@ -86,7 +86,7 @@ internal class RegisterNewUserTests : TransactionCommandHandlerTestBase<CreateUs
     }
 
     [Test]
-    public async Task RegisterNewUser_WhenSuccessful_ShouldReturnSuccess()
+    public async Task CreateNewUser_WhenSuccessful_ShouldReturnSuccess()
     {
         // Arrange
         SetupUserStore_SetUsernameAsync();

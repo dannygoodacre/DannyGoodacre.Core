@@ -1,4 +1,5 @@
 using DannyGoodacre.Identity.Application.Commands;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +10,7 @@ namespace DannyGoodacre.Identity.Tests.Extensions;
 public class IdentityApiEndpointRouteBuilderExtensionsTests : TestBase
 {
     [Test]
-    public void Foo()
+    public void MapIdentityEndpoints()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -20,9 +21,9 @@ public class IdentityApiEndpointRouteBuilderExtensionsTests : TestBase
 
         var serviceProvider = services.BuildServiceProvider();
 
-        var routeBuilderMock = new Mock<IEndpointRouteBuilder>();
-
         var dataSources = new List<EndpointDataSource>();
+
+        var routeBuilderMock = new Mock<IEndpointRouteBuilder>();
 
         routeBuilderMock
             .Setup(x => x.DataSources)
@@ -40,19 +41,25 @@ public class IdentityApiEndpointRouteBuilderExtensionsTests : TestBase
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(endpoints.Any(x => x.RoutePattern.RawText == "/auth/register"));
+            var register = GetEndpoint(endpoints, "/users", "POST");
+            Assert.That(register, Is.Not.Null);
 
-            var registerEndpoint = dataSources.SelectMany(x => x.Endpoints).OfType<RouteEndpoint>().FirstOrDefault(x => x.RoutePattern.RawText == "/auth/register");
+            var getUser = GetEndpoint(endpoints, "/users/{userId}", "GET");
+            Assert.That(getUser, Is.Not.Null);
 
-            var methodMetadata = registerEndpoint?.Metadata.GetMetadata<IHttpMethodMetadata>();
+            var login = GetEndpoint(endpoints, "/session", "POST");
+            Assert.That(login, Is.Not.Null);
 
-            Assert.That(methodMetadata?.HttpMethods, Contains.Item("POST"));
-            Assert.That(methodMetadata?.HttpMethods.Count, Is.EqualTo(1));
+            var logout = GetEndpoint(endpoints, "/session", "DELETE");
+            Assert.That(logout, Is.Not.Null);
+
+            var authMetadata = logout?.Metadata.GetMetadata<IAuthorizeData>();
+            Assert.That(authMetadata, Is.Not.Null);
         }
     }
 
-    private void AssertEndpoint(string endpoint, string method)
-    {
-
-    }
+    private static RouteEndpoint? GetEndpoint(IEnumerable<RouteEndpoint> endpoints, string pattern, string method)
+        => endpoints.FirstOrDefault(e =>
+            e.RoutePattern.RawText == pattern
+            && e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.Contains(method) == true);
 }

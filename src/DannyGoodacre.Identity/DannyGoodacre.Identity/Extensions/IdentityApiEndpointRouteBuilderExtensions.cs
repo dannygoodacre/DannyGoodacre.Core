@@ -1,4 +1,5 @@
 using DannyGoodacre.Identity.Application.Commands;
+using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,18 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                                                                 registrationRequest.Password,
                                                                 cancellationToken);
 
+                return result.IsSuccess
+                    ? Results.Created($"/users/{result.Value?.Id}", result.Value)
+                    : result.ToHttpResponse();
+            });
+
+            group.MapGet("/users/{userId}", async Task<IResult> (
+                [FromServices] IGetUserInfo getUserInfo,
+                string userId,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await getUserInfo.ExecuteAsync(userId, cancellationToken);
+
                 return result.ToHttpResponse();
             });
 
@@ -39,7 +52,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             })
             .RequireAuthorization(x => x.RequireRole("Admin"));
 
-            group.MapPatch("/users/me/password", async Task<IResult> (
+            group.MapPost("/users/me/password", async Task<IResult> (
                 [FromServices] IChangePassword changePassword,
                 [FromBody] ChangePasswordRequest changePasswordRequest,
                 CancellationToken cancellationToken) =>
@@ -52,7 +65,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             })
             .RequireAuthorization();
 
-            group.MapPost("/session/me", async Task<IResult> (
+            group.MapPost("/session", async Task<IResult> (
                 [FromServices] ILogin login,
                 [FromBody] LoginRequest loginRequest,
                 CancellationToken cancellationToken) =>
@@ -64,7 +77,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 return result.ToHttpResponse();
             });
 
-            group.MapDelete("/session/me", async Task<IResult> (
+            group.MapDelete("/session", async Task<IResult> (
                 [FromServices] ILogout logout,
                 CancellationToken cancellationToken) =>
             {

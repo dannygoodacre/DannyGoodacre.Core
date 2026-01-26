@@ -62,7 +62,7 @@ internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<Appro
     }
 
     [Test]
-    public async Task ApproveUser_WhenUserNotFound_ShouldReturnDomainError()
+    public async Task ApproveUser_WhenUserNotFound_ShouldReturnNotFound()
     {
         // Arrange
         _testUser = null!;
@@ -75,7 +75,7 @@ internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<Appro
         var result = await Act();
 
         // Assert
-        AssertDomainError(result, "User not found");
+        AssertNotFound(result);
     }
 
     [Test]
