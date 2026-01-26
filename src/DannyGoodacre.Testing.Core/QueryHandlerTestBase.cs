@@ -9,6 +9,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResult> : TestBase
 
     protected abstract Task<Result<TResult>> Act();
 
+    protected readonly CancellationToken CancellationToken = CancellationToken.None;
     protected Mock<ILogger<TQueryHandler>> LoggerMock { get; private set; } = null!;
 
     protected TQueryHandler QueryHandler { get; set; } = null!;

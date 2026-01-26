@@ -24,7 +24,7 @@ internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<Appro
     [SetUp]
     public void SetUp()
     {
-        _requestUserId = Guid.NewGuid().ToString();
+        _requestUserId = "Request User Id";
 
         _userManagerMock = new Mock<IUserManager<IdentityUser>>(MockBehavior.Strict);
 
