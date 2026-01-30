@@ -11,9 +11,34 @@ internal static class ResultExtensions
     extension(IdentityResult result)
     {
         public Result ToResult()
-            => result.Succeeded
-                ? Result.Success()
-                : Result.DomainError(result.ToString());
+        {
+            if (result.Succeeded)
+            {
+                return Result.Success();
+            }
+
+            if (result.Errors.Any(x => x.Code.Property == "General"))
+            {
+                return Result.DomainError(result.ToString());
+            }
+
+            var state = new ValidationState();
+
+            foreach (var error in result.Errors)
+            {
+                var property = error.Code switch
+                {
+                    var x when x.Contains("UserName") => "Username",
+                    var x when x.Contains("Password") => "Password",
+                    var x when x.Contains("User") => "User",
+                    _ => "General"
+                };
+
+                state.AddError(property, error.Description);
+            }
+
+            return Result.Invalid(state);
+        }
     }
 
     extension(SignInResult result)
@@ -30,7 +55,7 @@ internal static class ResultExtensions
             => result.Status switch
             {
                 Status.Success => Results.NoContent(),
-                Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
+                Status.Invalid => Results.ValidationProblem(result.ValidationState!.Errors.ToDictionary(x => x.Key, x => x.Value.ToArray())),
                 Status.DomainError => Results.Problem(result.Error, statusCode: 400),
                 Status.NotFound => Results.NotFound(),
                 Status.Cancelled => Results.StatusCode(499),
@@ -44,7 +69,7 @@ internal static class ResultExtensions
             => result.Status switch
             {
                 Status.Success => Results.Ok(result.Value),
-                Status.Invalid => Results.BadRequest(result.ValidationState!.ToValidationProblemDetails()),
+                Status.Invalid => Results.ValidationProblem(result.ValidationState!.Errors.ToDictionary(x => x.Key, x => x.Value.ToArray())),
                 Status.DomainError => Results.Problem(result.Error, statusCode: 400),
                 Status.NotFound => Results.NotFound(),
                 Status.Cancelled => Results.StatusCode(499),

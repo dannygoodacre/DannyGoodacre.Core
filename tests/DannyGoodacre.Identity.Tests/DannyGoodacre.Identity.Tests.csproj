@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -12,12 +12,16 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.2" />
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
       <PackageReference Include="NUnit" Version="4.4.0" />
       <PackageReference Include="NUnit3TestAdapter" Version="6.0.1" />
     </ItemGroup>
 
     <ItemGroup>
+      <Reference Include="Microsoft.Data.Sqlite">
+        <HintPath>..\..\..\..\.nuget\packages\microsoft.data.sqlite.core\10.0.1\lib\net8.0\Microsoft.Data.Sqlite.dll</HintPath>
+      </Reference>
       <Reference Include="Microsoft.Extensions.Identity.Core">
         <HintPath>..\..\..\..\.nuget\packages\microsoft.extensions.identity.core\10.0.1\lib\net10.0\Microsoft.Extensions.Identity.Core.dll</HintPath>
       </Reference>
@@ -26,6 +30,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\DannyGoodacre.Identity\DannyGoodacre.Identity\DannyGoodacre.Identity.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj" />
+      <ProjectReference Include="..\DannyGoodacre.Identity.Tests.Harness\DannyGoodacre.Identity.Tests.Harness.csproj" />
     </ItemGroup>
 
     <ItemGroup>

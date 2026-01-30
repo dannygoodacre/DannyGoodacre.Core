@@ -44,9 +44,12 @@ internal sealed class CreateUserHandler(ILogger<CreateUserHandler> logger,
 
         var result = await userManager.CreateAsync(user, command.Password);
 
-        return result.IsSuccess
-            ? Result.Success(user.ToUserInfoResponse())
-            : result.ToResult<UserInfoResponse>();
+        if (result.IsSuccess)
+        {
+            return Result.Success(user.ToUserInfoResponse());
+        }
+
+        return result.ToResult<UserInfoResponse>();
     }
 
     public Task<Result<UserInfoResponse>> ExecuteAsync(string username, string password, CancellationToken cancellationToken)

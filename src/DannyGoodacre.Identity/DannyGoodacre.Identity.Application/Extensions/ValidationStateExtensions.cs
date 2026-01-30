@@ -16,7 +16,6 @@ internal static class ValidationStateExtensions
             validationState.AddError(name, "Must not be null, empty, or whitespace.");
 
             return false;
-
         }
     }
 }

@@ -1,3 +1,4 @@
+using DannyGoodacre.Core;
 using DannyGoodacre.Identity.Application.Commands;
 using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Models;
@@ -25,6 +26,17 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                 var result = await registerNewUser.ExecuteAsync(registrationRequest.Username,
                                                                 registrationRequest.Password,
                                                                 cancellationToken);
+
+                // return result.Status switch
+                // {
+                //
+                //     Status.Success => Results.Created($"/users/{result.Value?.Id}", result.Value),
+                //     Status.Invalid => Results.ValidationProblem(result.ValidationState!.Errors.ToDictionary(x => x.Key, x => x.Value.ToArray())),
+                //     Status.DomainError => Results.ValidationProblem(result.ValidationState!.Errors.ToDictionary(x => x.Key, x => x.Value.ToArray())),
+                //     Status.Cancelled => Results.StatusCode(499),
+                //     Status.NotFound => Results.NotFound(),
+                //     _ => Results.InternalServerError()
+                // };
 
                 return result.IsSuccess
                     ? Results.Created($"/users/{result.Value?.Id}", result.Value)
