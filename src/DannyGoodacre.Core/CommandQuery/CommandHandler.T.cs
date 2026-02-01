@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class CommandHandler<TCommandRequest, TResult>(ILogger logger) where TCommandRequest : ICommand
+public abstract class CommandHandler<TCommand, TResult>(ILogger logger) where TCommand : ICommand
 {
     protected abstract string CommandName { get; }
 
@@ -13,30 +13,30 @@ public abstract class CommandHandler<TCommandRequest, TResult>(ILogger logger) w
     /// Validate the command before execution.
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
-    /// <param name="commandRequest">The command request to validate.</param>
-    protected virtual void Validate(ValidationState validationState, TCommandRequest commandRequest)
+    /// <param name="command">The command to validate.</param>
+    protected virtual void Validate(ValidationState validationState, TCommand command)
     {
     }
 
     /// <summary>
     /// The internal command logic.
     /// </summary>
-    /// <param name="commandRequest">The valid command request to process.</param>
+    /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<Result<TResult>> InternalExecuteAsync(TCommandRequest commandRequest, CancellationToken cancellationToken);
+    protected abstract Task<Result<TResult>> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Run the command by validating first and, if successful, execute the internal logic.
     /// </summary>
-    /// <param name="commandRequest">The command request to validate and process.</param>
+    /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async virtual Task<Result<TResult>> ExecuteAsync(TCommandRequest commandRequest, CancellationToken cancellationToken)
+    protected async virtual Task<Result<TResult>> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
 
-        Validate(validationState, commandRequest);
+        Validate(validationState, command);
 
         if (validationState.HasErrors)
         {
@@ -54,7 +54,7 @@ public abstract class CommandHandler<TCommandRequest, TResult>(ILogger logger) w
 
         try
         {
-            return await InternalExecuteAsync(commandRequest, cancellationToken);
+            return await InternalExecuteAsync(command, cancellationToken);
         }
         catch (OperationCanceledException)
         {

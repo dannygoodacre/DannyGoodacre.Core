@@ -106,7 +106,7 @@ internal sealed class ChangePasswordTests : CommandHandlerTestBase<ChangePasswor
 
         SetupUserManager_FindByIdAsync();
 
-        _testChangePasswordResult = Result.DomainError(testErrorMessage);
+        _testChangePasswordResult = Result.Failed(testErrorMessage);
 
         SetupUserManager_ChangePasswordAsync();
 

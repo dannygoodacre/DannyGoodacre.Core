@@ -24,7 +24,7 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler>
 
     protected virtual int TestActualChanges => -1;
 
-    protected Mock<IUnitOfWork> UnitOfWorkMock { get; private set; } = null!;
+    protected Mock<ITransactionalUnitOfWork> UnitOfWorkMock { get; private set; } = null!;
 
     private Mock<ITransaction> TransactionMock { get; set; } = null!;
 
@@ -33,7 +33,7 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler>
     {
         base.BaseSetUp();
 
-        UnitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        UnitOfWorkMock = new Mock<ITransactionalUnitOfWork>(MockBehavior.Strict);
         TransactionMock = new Mock<ITransaction>(MockBehavior.Strict);
 
         SetupUnitOfWork_BeginTransactionAsync();

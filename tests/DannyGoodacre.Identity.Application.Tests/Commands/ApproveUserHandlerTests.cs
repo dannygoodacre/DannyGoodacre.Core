@@ -86,7 +86,7 @@ internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<Appro
 
         SetupUserManager_FindByIdAsync();
 
-        _testAddToRoleResult = Result.DomainError(testErrorMessage);
+        _testAddToRoleResult = Result.Failed(testErrorMessage);
 
         SetupUserManager_AddToRoleAsync();
 
@@ -109,7 +109,7 @@ internal class ApproveUserHandlerTests : TransactionCommandHandlerTestBase<Appro
 
         SetupUserManager_AddToRoleAsync();
 
-        _testUpdateAsyncResult = Result.DomainError(testErrorMessage);
+        _testUpdateAsyncResult = Result.Failed(testErrorMessage);
 
         SetupUserManager_UpdateAsync();
 

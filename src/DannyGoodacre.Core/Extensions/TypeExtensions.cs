@@ -16,10 +16,7 @@ internal static class TypeExtensions
                 {
                     var definition = baseType.GetGenericTypeDefinition();
 
-                    if (definition == typeof(CommandHandler<>)
-                        || definition == typeof(CommandHandler<,>)
-                        || definition == typeof(TransactionCommandHandler<>)
-                        || definition == typeof(TransactionCommandHandler<,>))
+                    if (definition == typeof(CommandHandler<>) || definition == typeof(CommandHandler<,>))
                     {
                         return true;
                     }

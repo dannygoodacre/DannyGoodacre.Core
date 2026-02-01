@@ -9,15 +9,15 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 {
     public class TestCommand : ICommand;
 
-    public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
-        : TransactionCommandHandler<TestCommand, int>(logger, unitOfWork)
+    public class TestTransactionCommandHandler(ILogger logger, ITransactionalUnitOfWork transactionalUnitOfWork)
+        : TransactionCommandHandler<TestCommand, int>(logger, transactionalUnitOfWork)
     {
         protected override string CommandName => TestName;
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestCommand commandRequest, CancellationToken cancellationToken)
-            => _internalExecuteAsync(commandRequest, cancellationToken);
+        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => _internalExecuteAsync(command, cancellationToken);
 
         public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
@@ -37,7 +37,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 
     private Mock<ILogger<TestTransactionCommandHandler>> _loggerMock = null!;
 
-    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private Mock<ITransactionalUnitOfWork> _unitOfWorkMock = null!;
 
     private Mock<ITransaction> _testTransaction = null!;
 
@@ -56,7 +56,7 @@ public class TransactionCommandWithValueHandlerTests : TestBase
 
         _loggerMock = new Mock<ILogger<TestTransactionCommandHandler>>(MockBehavior.Strict);
 
-        _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        _unitOfWorkMock = new Mock<ITransactionalUnitOfWork>(MockBehavior.Strict);
 
         _testTransaction = new Mock<ITransaction>();
 

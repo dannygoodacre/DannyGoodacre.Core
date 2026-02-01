@@ -101,7 +101,7 @@ public class ResultExtensionsTests : TestBase
         // Arrange
         const string errorMessage = "Test Domain Error";
 
-        var internalResult = Result.DomainError(errorMessage);
+        var internalResult = Result.Failed(errorMessage);
 
         // Act
         var result = internalResult.ToHttpResponse();

@@ -108,7 +108,7 @@ internal class LoginTests : CommandHandlerTestBase<LoginHandler>
 
         SetupUserManager_IsUserConfirmedAsync();
 
-        _testPasswordSignInResult = Result.DomainError(testErrorMessage);
+        _testPasswordSignInResult = Result.Failed(testErrorMessage);
 
         SetupSignInManager_PasswordSignInAsync();
 

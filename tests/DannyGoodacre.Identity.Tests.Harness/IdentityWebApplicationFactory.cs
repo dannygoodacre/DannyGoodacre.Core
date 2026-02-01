@@ -23,7 +23,7 @@ public sealed class IdentityWebApplicationFactory : WebApplicationFactory<Progra
 
             services.AddIdentity<TestIdentityContext>();
 
-            services.AddScoped<IUnitOfWork, TestUnitOfWork>();
+            services.AddScoped<ITransactionalUnitOfWork, TestTransactionalUnitOfWork>();
 
             var provider = services.BuildServiceProvider();
 

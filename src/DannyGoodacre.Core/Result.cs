@@ -28,10 +28,10 @@ public class Result
             ValidationState = validationState
         };
 
-    public static Result DomainError(string error)
+    public static Result Failed(string error)
         => new()
         {
-            Status = Status.DomainError,
+            Status = Status.Failed,
             Error = error
         };
 

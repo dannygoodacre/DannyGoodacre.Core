@@ -18,7 +18,9 @@ public class Program
 
         builder.Services.AddIdentity<ApplicationContext>();
 
-        builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+        builder.Services.AddScoped<IUnitOfWork, TransactionalUnitOfWork>();
+
+        builder.Services.AddScoped<ITransactionalUnitOfWork, TransactionalUnitOfWork>();
 
         builder.Services.AddEndpointsApiExplorer();
 
@@ -40,12 +42,12 @@ public class Program
             await context.Database.MigrateAsync();
         }
 
-        var seedResult = await app.SeedIdentityAsync("admin", "Password123$");
-
-        if (!seedResult.IsSuccess)
-        {
-            throw new InvalidOperationException($"Identity seeding failed: {seedResult.Error}");
-        }
+        // var seedResult = await app.SeedIdentityAsync("admin", "Password123$");
+        //
+        // if (!seedResult.IsSuccess)
+        // {
+        //     throw new InvalidOperationException($"Identity seeding failed: {seedResult.Error}");
+        // }
 
         app.MapIdentityEndpoints();
 
@@ -63,7 +65,6 @@ public class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
-
 
         await app.RunAsync();
     }

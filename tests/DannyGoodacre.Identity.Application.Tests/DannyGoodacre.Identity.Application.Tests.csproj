@@ -17,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DannyGoodacre.Identity\DannyGoodacre.Identity.Application\DannyGoodacre.Identity.Application.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj" />
     </ItemGroup>
 

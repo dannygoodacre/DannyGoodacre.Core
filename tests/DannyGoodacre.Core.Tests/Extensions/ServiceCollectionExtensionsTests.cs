@@ -33,7 +33,7 @@ public class ServiceCollectionExtensionsTests
             => Task.FromResult(Result<int>.Success(123));
     }
 
-    private class UnitOfWork : IUnitOfWork
+    private class TransactionalUnitOfWork : ITransactionalUnitOfWork
     {
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(1);
@@ -45,7 +45,7 @@ public class ServiceCollectionExtensionsTests
     private interface ITestUnitOfWorkCommand;
 
     private class TestTransactionCommandHandler(ILogger logger)
-        : TransactionCommandHandler<MyCommand>(logger, new UnitOfWork()), ITestUnitOfWorkCommand
+        : TransactionCommandHandler<MyCommand>(logger, new TransactionalUnitOfWork()), ITestUnitOfWorkCommand
     {
         protected override string CommandName => "Test Unit Of Work Command";
 
@@ -56,7 +56,7 @@ public class ServiceCollectionExtensionsTests
     private interface ITestUnitOfWorkCommandWithValue;
 
     private class TransactionCommandWithValueHandler(ILogger logger)
-        : TransactionCommandHandler<MyCommand, int>(logger, new UnitOfWork()), ITestUnitOfWorkCommandWithValue
+        : TransactionCommandHandler<MyCommand, int>(logger, new TransactionalUnitOfWork()), ITestUnitOfWorkCommandWithValue
     {
         protected override string CommandName => "Test Unit Of Work Command With Value";
 

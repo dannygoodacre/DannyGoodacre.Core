@@ -79,7 +79,7 @@ public class ResultValueTests
         // Assert
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.Failed));
             Assert.That(result.Error, Is.EqualTo(message));
         }
     }

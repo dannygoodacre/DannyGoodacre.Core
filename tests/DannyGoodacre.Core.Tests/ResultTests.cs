@@ -67,12 +67,12 @@ public class ResultTests : TestBase
         const string message = "Test Message";
 
         // Act
-        var result = Result.DomainError(message);
+        var result = Result.Failed(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.Failed));
             Assert.That(result.Error, Is.EqualTo(message));
         }
     }

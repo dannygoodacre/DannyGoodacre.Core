@@ -38,7 +38,7 @@ public class Result<T>
     public static Result<T> DomainError(string error)
         => new()
         {
-            Status = Status.DomainError,
+            Status = Status.Failed,
             Error = error
         };
 

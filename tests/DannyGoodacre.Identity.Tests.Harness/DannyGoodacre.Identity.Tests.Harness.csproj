@@ -7,10 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DannyGoodacre.Identity\DannyGoodacre.Identity\DannyGoodacre.Identity.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.2" />
     </ItemGroup>
 

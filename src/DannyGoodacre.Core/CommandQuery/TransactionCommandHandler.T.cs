@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogger logger, IUnitOfWork unitOfWork)
+public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogger logger, ITransactionalUnitOfWork transactionalUnitOfWork)
     : CommandHandler<TCommandRequest, TResult>(logger) where TCommandRequest : ICommand
 {
     /// <summary>
@@ -13,7 +13,7 @@ public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogge
     /// Defaults to -1 to disable validation.
     /// </value>
     /// <remarks>
-    /// This is compared against the result of <see cref="IUnitOfWork.SaveChangesAsync"/>.
+    /// This is compared against the result of <see cref="ITransactionalUnitOfWork.SaveChangesAsync"/>.
     /// </remarks>
     protected virtual int ExpectedChanges => -1;
 
@@ -21,18 +21,18 @@ public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogge
     /// Run the command by validating first and, if valid, execute the internal logic.
     /// If the command executes successfully, save the changes to the database.
     /// </summary>
-    /// <param name="commandRequest">The command request to validate and process.</param>
+    /// <param name="command">The command request to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>
     /// A <see cref="Result{T}"/> indicating the outcome of the operation.
     /// </returns>
-    protected async override Task<Result<TResult>> ExecuteAsync(TCommandRequest commandRequest, CancellationToken cancellationToken)
+    protected async override Task<Result<TResult>> ExecuteAsync(TCommandRequest command, CancellationToken cancellationToken)
     {
-        await using var transaction = await unitOfWork.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await transactionalUnitOfWork.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var result = await base.ExecuteAsync(commandRequest, cancellationToken);
+            var result = await base.ExecuteAsync(command, cancellationToken);
 
             if (!result.IsSuccess)
             {
@@ -41,7 +41,7 @@ public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogge
                 return result;
             }
 
-            var actualChanges = await unitOfWork.SaveChangesAsync(cancellationToken);
+            var actualChanges = await transactionalUnitOfWork.SaveChangesAsync(cancellationToken);
 
             if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
             {
@@ -52,7 +52,7 @@ public abstract class TransactionCommandHandler<TCommandRequest, TResult>(ILogge
                 return Result<TResult>.InternalError("Database integrity check failed.");
             }
 
-            await  transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
 
             return result;
         }

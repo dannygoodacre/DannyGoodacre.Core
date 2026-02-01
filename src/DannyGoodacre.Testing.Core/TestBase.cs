@@ -59,7 +59,7 @@ public abstract class TestBase
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.Failed));
             Assert.That(result.Error, Is.EqualTo(error));
         }
     }
@@ -69,7 +69,7 @@ public abstract class TestBase
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.IsSuccess, Is.False);
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Status, Is.EqualTo(Status.Failed));
             Assert.That(result.Error, Is.EqualTo(error));
         }
     }

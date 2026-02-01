@@ -9,8 +9,8 @@ public class TransactionCommandHandlerTests : TestBase
 {
     public class TestCommand : ICommand;
 
-    public class TestTransactionCommandHandler(ILogger logger, IUnitOfWork unitOfWork)
-        : TransactionCommandHandler<TestCommand>(logger, unitOfWork)
+    public class TestTransactionCommandHandler(ILogger logger, ITransactionalUnitOfWork transactionalUnitOfWork)
+        : TransactionCommandHandler<TestCommand>(logger, transactionalUnitOfWork)
     {
         protected override string CommandName => TestName;
 
@@ -33,7 +33,7 @@ public class TransactionCommandHandlerTests : TestBase
 
     private Mock<ILogger<TestTransactionCommandHandler>> _loggerMock = null!;
 
-    private Mock<IUnitOfWork> _unitOfWorkMock = null!;
+    private Mock<ITransactionalUnitOfWork> _unitOfWorkMock = null!;
 
     private Mock<ITransaction> _transactionMock = null!;
 
@@ -52,7 +52,7 @@ public class TransactionCommandHandlerTests : TestBase
 
         _loggerMock = new Mock<ILogger<TestTransactionCommandHandler>>(MockBehavior.Strict);
 
-        _unitOfWorkMock = new Mock<IUnitOfWork>(MockBehavior.Strict);
+        _unitOfWorkMock = new Mock<ITransactionalUnitOfWork>(MockBehavior.Strict);
 
         _transactionMock = new Mock<ITransaction>();
 

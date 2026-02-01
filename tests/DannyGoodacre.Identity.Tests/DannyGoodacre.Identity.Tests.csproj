@@ -28,7 +28,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DannyGoodacre.Identity\DannyGoodacre.Identity\DannyGoodacre.Identity.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj" />
       <ProjectReference Include="..\DannyGoodacre.Identity.Tests.Harness\DannyGoodacre.Identity.Tests.Harness.csproj" />
     </ItemGroup>

@@ -6,7 +6,7 @@ public enum Status
 
     Invalid,
 
-    DomainError,
+    Failed,
 
     Cancelled,
 

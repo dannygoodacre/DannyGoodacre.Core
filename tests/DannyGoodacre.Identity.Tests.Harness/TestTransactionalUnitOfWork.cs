@@ -1,15 +1,15 @@
 using DannyGoodacre.Core.CommandQuery.Abstractions;
 
-namespace Test;
+namespace DannyGoodacre.Identity.Tests.Harness;
 
-internal sealed class UnitOfWork(ApplicationContext context) : IUnitOfWork, IDisposable, IAsyncDisposable
+public sealed class TestTransactionalUnitOfWork(TestIdentityContext identityContext) : ITransactionalUnitOfWork, IDisposable, IAsyncDisposable
 {
     private bool _isDisposed;
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
-        => context.SaveChangesAsync(cancellationToken);
+        => identityContext.SaveChangesAsync(cancellationToken);
 
     public async Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken)
-        => new EfTransaction(await context.Database.BeginTransactionAsync(cancellationToken));
+        => new EfTransaction(await identityContext.Database.BeginTransactionAsync(cancellationToken));
 
     public void Dispose()
     {
@@ -18,7 +18,7 @@ internal sealed class UnitOfWork(ApplicationContext context) : IUnitOfWork, IDis
             return;
         }
 
-        context.Dispose();
+        identityContext.Dispose();
 
         _isDisposed = true;
     }
@@ -30,7 +30,7 @@ internal sealed class UnitOfWork(ApplicationContext context) : IUnitOfWork, IDis
             return;
         }
 
-        await context.DisposeAsync();
+        await identityContext.DisposeAsync();
 
         _isDisposed = true;
     }

@@ -72,7 +72,7 @@ internal class CreateNewUserCommandTests : TransactionCommandHandlerTestBase<Cre
 
         SetupUserStore_SetUsernameAsync();
 
-        _testCreateResult = Result.DomainError(testErrorMessage);
+        _testCreateResult = Result.Failed(testErrorMessage);
 
         SetupUserManager_CreateAsync();
 
