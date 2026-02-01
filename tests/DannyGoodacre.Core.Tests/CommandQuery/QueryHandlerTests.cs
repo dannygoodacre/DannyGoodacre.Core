@@ -7,19 +7,19 @@ namespace DannyGoodacre.Core.Tests.CommandQuery;
 [TestFixture]
 public class QueryHandlerTests : TestBase
 {
-    public class TestQueryRequest : IQueryRequest;
+    public class TestQuery : IQuery;
 
-    public class TestQueryHandler(ILogger logger) : QueryHandler<TestQueryRequest, int>(logger)
+    public class TestQueryHandler(ILogger logger) : QueryHandler<TestQuery, int>(logger)
     {
         protected override string QueryName => TestName;
 
-        protected override void Validate(ValidationState validationState, TestQueryRequest queryRequest)
-            => _testValidate(validationState, queryRequest);
+        protected override void Validate(ValidationState validationState, TestQuery query)
+            => _testValidate(validationState, query);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestQueryRequest queryRequest, CancellationToken cancellationToken)
-            => _testInternalExecuteAsync(queryRequest, cancellationToken);
+        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken)
+            => _testInternalExecuteAsync(query, cancellationToken);
 
-        public Task<Result<int>> TestExecuteAsync(TestQueryRequest command, CancellationToken cancellationToken)
+        public Task<Result<int>> TestExecuteAsync(TestQuery command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
     }
 
@@ -31,11 +31,11 @@ public class QueryHandlerTests : TestBase
 
     private Mock<ILogger<TestQueryHandler>> _loggerMock = null!;
 
-    private static Action<ValidationState, TestQueryRequest> _testValidate = null!;
+    private static Action<ValidationState, TestQuery> _testValidate = null!;
 
-    private static Func<TestQueryRequest, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
+    private static Func<TestQuery, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
 
-    private static TestQueryRequest _testQueryRequest = null!;
+    private static TestQuery _testQuery = null!;
 
     private static TestQueryHandler _testCommandHandler = null!;
 
@@ -52,7 +52,7 @@ public class QueryHandlerTests : TestBase
 
         _loggerMock = new Mock<ILogger<TestQueryHandler>>(MockBehavior.Strict);
 
-        _testQueryRequest = new TestQueryRequest();
+        _testQuery = new TestQuery();
 
         _testCommandHandler = new TestQueryHandler(_loggerMock.Object);
     }
@@ -139,5 +139,5 @@ public class QueryHandlerTests : TestBase
         AssertInternalError(result, testExceptionMessage);
     }
 
-    private Task<Result<int>> Act() => _testCommandHandler.TestExecuteAsync(_testQueryRequest, _testCancellationToken);
+    private Task<Result<int>> Act() => _testCommandHandler.TestExecuteAsync(_testQuery, _testCancellationToken);
 }

@@ -5,15 +5,25 @@ namespace DannyGoodacre.Core;
 /// </summary>
 public class Result
 {
-    public Status Status { get; private init; }
+    public Status Status { get; protected init; }
 
-    public string? Error { get; private init; }
+    public string? Error { get; protected init; }
 
-    public Exception? Exception { get; private init; }
+    public Exception? Exception { get; protected init; }
 
-    public ValidationState? ValidationState { get; private init; }
+    public ValidationState? ValidationState { get; protected init; }
 
     public bool IsSuccess => Status == Status.Success;
+
+    protected private Result() { }
+
+    protected private Result(Result result)
+    {
+        Status = result.Status;
+        Error = result.Error;
+        Exception = result.Exception;
+        ValidationState = result.ValidationState;
+    }
 
     public static Result Success()
         => new()
@@ -35,7 +45,7 @@ public class Result
             Error = error
         };
 
-    public static Result Cancelled()
+    public static Result Canceled()
         => new()
         {
             Status = Status.Cancelled

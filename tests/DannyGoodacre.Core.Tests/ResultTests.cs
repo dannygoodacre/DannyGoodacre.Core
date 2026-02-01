@@ -81,7 +81,7 @@ public class ResultTests : TestBase
     public void Cancelled()
     {
         // Act
-        var result = Result.Cancelled();
+        var result = Result.Canceled();
 
         // Assert
         Assert.That(result.Status, Is.EqualTo(Status.Cancelled));

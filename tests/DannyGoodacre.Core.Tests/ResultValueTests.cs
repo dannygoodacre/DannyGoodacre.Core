@@ -98,7 +98,7 @@ public class ResultValueTests
     public void Cancelled()
     {
         // Act
-        var result = Result<int>.Cancelled();
+        var result = Result<int>.Canceled();
 
         // Assert
         Assert.That(result.Status, Is.EqualTo(Status.Cancelled));

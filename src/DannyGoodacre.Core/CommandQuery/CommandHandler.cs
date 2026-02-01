@@ -3,70 +3,59 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class CommandHandler<TCommandRequest>(ILogger logger) where TCommandRequest : ICommandRequest
+public abstract class CommandHandler<TCommand>(ILogger logger)
+    : CommandHandlerBase<TCommand, Result>(logger)
+    where TCommand : ICommand
 {
-    protected abstract string CommandName { get; }
+    protected private override Result MapResult(Result result)
+        => result;
+}
 
-    protected ILogger Logger { get; } = logger;
+public abstract class CommandHandler<TCommand, TResult>(ILogger logger)
+    : CommandHandlerBase<TCommand, Result<TResult>>(logger)
+    where TCommand : ICommand
+{
+    protected private override Result<TResult> MapResult(Result result)
+        => new(result);
+}
 
-    /// <summary>
-    /// Validate the command before execution.
-    /// </summary>
-    /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
-    /// <param name="command">The command request to validate.</param>
-    protected virtual void Validate(ValidationState validationState, TCommandRequest command)
+public interface IDoThing
+{
+    Task<Result> ExecuteAsync(string value, CancellationToken cancellationToken = default);
+}
+
+internal sealed record DoThingCommand : ICommand
+{
+    public required string Value { get; init; }
+}
+
+internal sealed class DoThingHandler(ILogger logger, IService service) : CommandHandler<DoThingCommand>(logger)
+{
+    protected override string CommandName => "Do Thing";
+
+    protected override void Validate(ValidationState validationState, DoThingCommand command)
     {
+        if (string.IsNullOrWhiteSpace(command.Value))
+        {
+            validationState.AddError(nameof(command.Value), "Must not be null, empty, or whitespace.");
+        }
     }
 
-    /// <summary>
-    /// The internal command logic.
-    /// </summary>
-    /// <param name="command">The valid command request to process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<Result> InternalExecuteAsync(TCommandRequest command, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Run the command by validating first and, if valid, execute the internal logic.
-    /// </summary>
-    /// <param name="commandRequest">The command request to validate and process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
-    protected async virtual Task<Result> ExecuteAsync(TCommandRequest commandRequest, CancellationToken cancellationToken)
+    protected async override Task<Result> InternalExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
     {
-        var validationState = new ValidationState();
+        bool hasWorked = await service.RunAsync(command.Value);
 
-        Validate(validationState, commandRequest);
-
-        if (validationState.HasErrors)
-        {
-            Logger.LogError("Command '{Command}' failed validation: {ValidationState}", CommandName, validationState);
-
-            return Result.Invalid(validationState);
-        }
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            Logger.LogInformation("Command '{Command}' was cancelled before execution.", CommandName);
-
-            return Result.Cancelled();
-        }
-
-        try
-        {
-            return await InternalExecuteAsync(commandRequest, cancellationToken);
-        }
-        catch (OperationCanceledException)
-        {
-            Logger.LogInformation("Command '{Command}' was cancelled during execution.", CommandName);
-
-            return Result.Cancelled();
-        }
-        catch (Exception e)
-        {
-            Logger.LogCritical(e, "Command '{Command}' failed with exception: {Exception}", CommandName, e.Message);
-
-            return Result.InternalError(e.Message);
-        }
+        return hasWorked
+            ? Result.Success()
+            : Result.DomainError("Has not worked");
     }
+
+    // public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
+    //     => base.ExecuteAsync(command, cancellationToken);
+
+    public Task<Result> ExecuteAsync(string value, CancellationToken cancellationToken = default)
+        => ExecuteAsync(new DoThingCommand
+        {
+            Value = value
+        }, cancellationToken);
 }
