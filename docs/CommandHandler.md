@@ -18,14 +18,21 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 | `Validate` | `void` | No | Logic to inspect the content of `TCommand`. Use `validationState.AddError` to stop execution. |
 | `InternalExecuteAsync` | `Task<Result>` | Yes | The core logic. This only runs if `Validate` passes. |
 
-## Usage
+## Implementation
 
-### Implementation
+First define the `ICommand` instance.
+
+```csharp
+record DoThingCommand : ICommand
+{
+    public required string Property { get; init; }
+}
+```
 
 Inherit from `CommandHandler<TCommand>` and implement the necessary members.
 
 ```csharp
-class DoThingHandler(ILogger<DoThingHandler> logger, IService service) 
+class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service) 
     : CommandHandler<DoThingCommand>(logger)
 {
     protected override string CommandName => "Do Thing";
@@ -49,9 +56,11 @@ class DoThingHandler(ILogger<DoThingHandler> logger, IService service)
 }
 ```
 
-### Execution Patterns
+## Execution
 
-#### 1. Via an abstraction
+TODO: Separate file for this, covering all handlers?
+
+### 1. Via an abstraction
 
 Define a specific interface for the action:
 
@@ -69,7 +78,7 @@ public Task<Result> ExecuteAsync(string property, CancellationToken cancellation
     }, cancellationToken);
 ```
 
-#### 2. Direct Execution
+### 2. Directly
 
 If you prefer to directly access the command, then simply expose the base `ExecuteAsync` method:
 
@@ -79,6 +88,8 @@ public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken c
     => base.ExecuteAsync(command, cancellationToken);
 ```
 
-## Dependency Injection Registration
+## Service Registration
+
+TODO: Separate file for this, covering all handlers?
 
 To register the handlers, use the extension method `AddCommandHandlers`. This maps the handler as a scoped service to all implemented business interfaces and registers it as a concrete service.
