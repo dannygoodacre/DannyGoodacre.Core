@@ -1,6 +1,8 @@
 # CommandHandler
 
-The most basic of the command handlers, providing command validation, a consistent response format, and centralized error handling for executing business logic that has side effects but does not persist any changes.
+The `CommandHandler` is the base class for executing business logic with validation, consistent logging, and centralized error handling, providing a consistent response in the form of a `Result` instance.
+
+This is to be used in cases where the business logic has side effects but does not necessarily persist any state changes.
 
 ## Signature
 
@@ -8,20 +10,23 @@ The most basic of the command handlers, providing command validation, a consiste
 public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : ICommand
 ```
 
-## Members
+## Abstract & Virtual Members
 
-| Name | Type | Required | Description |
+| Name | Return Type | Required | Description |
 | ------ | ---- | - | ----------- |
-| `CommandName` | `string` | Yes | A human-readable name used for logging. |
-| `Validate` | `void` | No | An optional check of the `TCommand` instance. |
-| `InternalExecuteAsync` | `Task<Result>` | Yes | The core business logic here. This is only run if validation succeeds. |
+| `CommandName` | `string` | Yes | A human-readable name used for structured logging. |
+| `Validate` | `void` | No | Logic to inspect the content of `TCommand`. Use `validationState.AddError` to stop execution. |
+| `InternalExecuteAsync` | `Task<Result>` | Yes | The core logic. This only runs if `Validate` passes. |
 
 ## Usage
 
-Consider the following example implementation:
+### Implementation
+
+Inherit from `CommandHandler<TCommand>` and implement the necessary members.
 
 ```csharp
-class DoThingHandler(ILogger logger, IService service) : CommandHandler<DoThingCommand>(logger)
+class DoThingHandler(ILogger<DoThingHandler> logger, IService service) 
+    : CommandHandler<DoThingCommand>(logger)
 {
     protected override string CommandName => "Do Thing";
 
@@ -44,40 +49,36 @@ class DoThingHandler(ILogger logger, IService service) : CommandHandler<DoThingC
 }
 ```
 
-We have two ways of using this command:
+### Execution Patterns
 
-1. Defining an interface:
+#### 1. Via an abstraction
 
-    ```csharp
-    interface IDoThing
+Define a specific interface for the action:
+
+```csharp
+interface IDoThing
+{
+    Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default);
+}
+
+// Inside DoThingHandler
+public Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default)
+    => ExecuteAsync(new DoThingCommand
     {
-        Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default);
-    }
-    ```
+        Property = property
+    }, cancellationToken);
+```
 
-    Implementing this interface in the handler as follows:
+#### 2. Direct Execution
 
-    ```csharp
-    {
-        // Rest of DoThingHandler...
+If you prefer to directly access the command, then simply expose the base `ExecuteAsync` method:
 
-        public Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default)
-            => ExecuteAsync(new DoThingCommand
-            {
-                Value = value
-            }, cancellationToken);
-    }
-    ```
+```csharp
+// Inside DoThingHandler
+public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
+    => base.ExecuteAsync(command, cancellationToken);
+```
 
-2. Exposing the ExecuteAsync method directly:
+## Dependency Injection Registration
 
-    ```csharp
-    {
-        // Rest of DoThingHandler...
-
-        public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
-            => base.ExecuteAsync(command, cancellationToken);
-    }
-    ```
-
-TODO: Talk about registering the handlers using the included extension methods.
+To register the handlers, use the extension method `AddCommandHandlers`. This maps the handler as a scoped service to all implemented business interfaces and registers it as a concrete service.
