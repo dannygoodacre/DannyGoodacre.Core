@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using DannyGoodacre.Core.CommandQuery;
 
 namespace DannyGoodacre.Core.Extensions;
@@ -52,6 +53,9 @@ internal static class TypeExtensions
 
             return false;
         }
+        
+        public IEnumerable<Type> GetHandlerInterfaces()
+            => type.GetInterfaces()
+                .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));
     }
-
 }
