@@ -1,8 +1,8 @@
 # QueryHandler
 
-Aside from the output type parameter `TResult` and the returned `Result<TResult>`, the `QueryHandler` class is functionally identical to `CommandHandler`.
+Aside from the output type parameter `TResult` and the returned `Result<TResult>`, the `QueryHandler` class is functionally identical to `CommandHandler`. 
 
-It provides a semantic distinction for operations that purely retrieve data.
+This handler provides a semantic distinction for operations that purely retrieve data.
 
 ## Signature
 
@@ -10,7 +10,7 @@ It provides a semantic distinction for operations that purely retrieve data.
 public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery : IQuery
 ```
 
-Please refer to the [CommandHandler documentation](./CommandHandler.md) for details on members, validation logic, and execution flow, as `QueryHandler` follows the same lifecycle.
+Please refer to the [CommandHandler documentation](./CommandHandler.md) for details on members, validation logic, and execution flow, as `QueryHandler` follows the same lifecycle with an analogous query marker interface `IQuery`.
 
 ## Usage
 

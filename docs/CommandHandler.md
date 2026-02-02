@@ -20,7 +20,7 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 
 ## Implementation
 
-First define the `ICommand` instance.
+First implement the command marker interface `ICommand` for this specific command.
 
 ```csharp
 record DoThingCommand : ICommand
@@ -93,3 +93,5 @@ public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken c
 TODO: Separate file for this, covering all handlers?
 
 To register the handlers, use the extension method `AddCommandHandlers`. This maps the handler as a scoped service to all implemented business interfaces and registers it as a concrete service.
+
+TODO: Talk about the command handlers that also return values.
