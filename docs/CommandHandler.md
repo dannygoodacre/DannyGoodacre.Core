@@ -18,6 +18,66 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 
 ## Usage
 
-TODO: Defining interface, registering service.
+Consider the following example implementation:
 
-## Example
+```csharp
+class DoThingHandler(ILogger logger, IService service) : CommandHandler<DoThingCommand>(logger)
+{
+    protected override string CommandName => "Do Thing";
+
+    protected override void Validate(ValidationState validationState, DoThingCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.Property))
+        {
+            validationState.AddError(nameof(command.Property), "Must not be null, empty, or whitespace.");
+        }
+    }
+
+    protected async override Task<Result> InternalExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
+    {
+        bool hasWorked = await service.RunAsync(command.Property);
+
+        return hasWorked
+            ? Result.Success()
+            : Result.DomainError("Has not worked");
+    }
+}
+```
+
+We have two ways of using this command:
+
+1. Defining an interface:
+
+    ```csharp
+    interface IDoThing
+    {
+        Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default);
+    }
+    ```
+
+    Implementing this interface in the handler as follows:
+
+    ```csharp
+    {
+        // Rest of DoThingHandler...
+
+        public Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default)
+            => ExecuteAsync(new DoThingCommand
+            {
+                Value = value
+            }, cancellationToken);
+    }
+    ```
+
+2. Exposing the ExecuteAsync method directly:
+
+    ```csharp
+    {
+        // Rest of DoThingHandler...
+
+        public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
+            => base.ExecuteAsync(command, cancellationToken);
+    }
+    ```
+
+TODO: Talk about registering the handlers using the included extension methods.
