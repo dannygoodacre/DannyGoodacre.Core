@@ -13,8 +13,8 @@ public static class LoggerExtensions
         int times = 1)
     {
         Func<object, Type, bool> state = verifyContainsMessage
-            ? (v, t) => v.ToString()!.Contains(message)
-            : (v, t) => v.ToString() == message;
+            ? (v, _) => v.ToString()!.Contains(message)
+            : (v, _) => v.ToString() == message;
 
         loggerMock
             .Setup(x => x.Log(

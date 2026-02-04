@@ -3,17 +3,17 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract partial class PersistenceCommandHandlerBase<TCommand, TResult>
+public abstract partial class StateCommandHandlerBase<TCommand, TResult>
     : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
 {
-    internal PersistenceCommandHandlerBase(ILogger logger, IUnitOfWork unitOfWork) : base(logger)
+    internal StateCommandHandlerBase(ILogger logger, IStateUnit stateUnit) : base(logger)
     {
-        UnitOfWork = unitOfWork;
+        StateUnit = stateUnit;
     }
 
-    protected IUnitOfWork UnitOfWork { get; }
+    protected IStateUnit StateUnit { get; }
 
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
@@ -23,7 +23,7 @@ public abstract partial class PersistenceCommandHandlerBase<TCommand, TResult>
 
             if (result.IsSuccess)
             {
-                await UnitOfWork.SaveChangesAsync(cancellationToken);
+                await StateUnit.SaveChangesAsync(cancellationToken);
             }
 
             return result;
@@ -46,5 +46,5 @@ public abstract partial class PersistenceCommandHandlerBase<TCommand, TResult>
     private static partial void LogCanceledWhilePersistingChanges(ILogger logger, string command);
 
     [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed while persisting changes.")]
-    private static partial void LogFailedWhilePersistingChanges(ILogger logger, Exception ex, string command);
+    private static partial void LogFailedWhilePersistingChanges(ILogger logger, Exception exception, string command);
 }

@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using DannyGoodacre.Core.CommandQuery;
 
 namespace DannyGoodacre.Core.Extensions;
@@ -17,10 +16,8 @@ internal static class TypeExtensions
                 {
                     var definition = baseType.GetGenericTypeDefinition();
 
-                    if (definition == typeof(CommandHandler<>)
-                        || definition == typeof(CommandHandler<,>)
-                        || definition == typeof(TransactionCommandHandler<>)
-                        || definition == typeof(TransactionCommandHandler<,>))
+                    // TODO: Check this works for *all* command handlers
+                    if (definition == typeof(CommandHandlerBase<,>))
                     {
                         return true;
                     }
@@ -53,7 +50,7 @@ internal static class TypeExtensions
 
             return false;
         }
-        
+
         public IEnumerable<Type> GetHandlerInterfaces()
             => type.GetInterfaces()
                 .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));

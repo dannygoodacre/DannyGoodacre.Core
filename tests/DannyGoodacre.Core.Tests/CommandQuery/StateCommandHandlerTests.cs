@@ -1,11 +1,11 @@
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
-public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerTests.TestCommandHandler>
+public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<StateCommandHandlerTests.TestStateCommandHandler>
 {
     public sealed record TestCommand : ICommand;
 
-    public sealed class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand>(logger)
+    public sealed class TestStateCommandHandler(ILogger logger, IStateUnit stateUnit) : StateCommandHandler<TestCommand>(logger, stateUnit)
     {
         protected override string CommandName => TestName;
 
@@ -19,7 +19,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
             => ExecuteAsync(command, cancellationToken);
     }
 
-    private const string TestName = "Test Command Handler";
+    private const string TestName = "Test State Command Handler";
 
     private static TestCommand _testCommand = null!;
 
@@ -40,51 +40,15 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success());
 
-        CommandHandler = new TestCommandHandler(LoggerMock.Object);
+        CommandHandler = new TestStateCommandHandler(LoggerMock.Object, StateUnitMock.Object);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenValidationFails_ShouldReturnInvalid()
+    public async Task ExecuteAsync_WhenSuccessful_ShouldSaveChangesAndReturnSuccess()
     {
         // Arrange
-        const string testProperty = "Test Property";
+        SetupStateUnit_SaveChangesAsync();
 
-        const string testError = "Test Error";
-
-        _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
-
-        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
-
-        // Act
-        var result = await Act();
-
-        // Assert
-        AssertInvalid(result);
-    }
-
-    [Test]
-    public async Task ExecuteAsync_WhenCancelledBefore_ShouldReturnCanceled()
-    {
-        // Arrange
-        var cancellationTokenSource = new CancellationTokenSource();
-
-        TestCancellationToken = cancellationTokenSource.Token;
-
-        SetupLogger_CanceledBeforeExecution();
-
-        await cancellationTokenSource.CancelAsync();
-
-        // Act
-
-        var result = await Act();
-
-        // Assert
-        AssertCancelled(result);
-    }
-
-    [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
-    {
         // Act
         var result = await Act();
 
@@ -93,12 +57,16 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCancelledDuring_ShouldReturnCanceled()
+    public async Task ExecuteAsync_WhenCanceledWhilePersistingChanges_ShouldReturnCanceled()
     {
         // Arrange
-        _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
+        StateUnitMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == TestCancellationToken)))
+            .ThrowsAsync(new OperationCanceledException())
+            .Verifiable(Times.Once);
 
-        SetupLogger_CanceledDuringExecution();
+        SetupLogger_CanceledWhilePersistingChanges();
 
         // Act
         var result = await Act();
@@ -108,7 +76,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenExceptionOccurs_ShouldReturnInternalError()
+    public async Task ExecuteAsync_WhenExceptionOccursWhilePersistingChanges_ShouldReturnInternalError()
     {
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
@@ -117,7 +85,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
-        SetupLogger_Failed(exception);
+        SetupLogger_FailedWhilePersistingChanges(exception);
 
         // Act
         var result = await Act();

@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger) where TQuery : IQuery
+public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
+    where TQuery : IQuery
 {
     protected abstract string QueryName { get; }
 
@@ -65,7 +66,7 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger) wher
         }
         catch (Exception e)
         {
-            LogCriticalFailure(Logger, e, QueryName, e.Message);
+            LogCriticalFailure(Logger, e, QueryName);
 
             return Result<TResult>.InternalError(e.Message);
         }
@@ -74,12 +75,12 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger) wher
     [LoggerMessage(LogLevel.Error, "Query '{Query}' failed validation: {ValidationState}")]
     private static partial void LogFailedValidation(ILogger logger, string query, ValidationState validationState);
 
-    [LoggerMessage(LogLevel.Information, "Query '{Query}' was cancelled before execution.")]
+    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled before execution.")]
     private static partial void LogCanceledBeforeExecution(ILogger logger, string query);
 
-    [LoggerMessage(LogLevel.Information, "Query '{Query}' was cancelled during execution.")]
+    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled during execution.")]
     private static partial void LogCanceledDuringExecution(ILogger logger, string query);
 
-    [LoggerMessage(LogLevel.Critical, "Query '{Query}' failed with exception: {ExceptionMessage}")]
-    private static partial void LogCriticalFailure(ILogger logger, Exception ex, string query, string exceptionMessage);
+    [LoggerMessage(LogLevel.Critical, "Query '{Query}' failed.")]
+    private static partial void LogCriticalFailure(ILogger logger, Exception ex, string query);
 }

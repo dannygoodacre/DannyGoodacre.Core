@@ -1,22 +1,18 @@
-using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Core.CommandQuery.Abstractions;
-using Microsoft.Extensions.Logging;
-
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
-public class CommandHandlerValueTests : TestBase
+public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<CommandHandlerWithReturnValueTests.TestCommandHandler, int>
 {
-    public class TestCommand : ICommand;
+    public sealed class TestCommand : ICommand;
 
-    public class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand, int>(logger)
+    public sealed class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand, int>(logger)
     {
         protected override string CommandName => TestName;
 
         protected override void Validate(ValidationState validationState, TestCommand command)
             => _testValidate(validationState, command);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
         public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
@@ -25,36 +21,28 @@ public class CommandHandlerValueTests : TestBase
 
     private const string TestName = "Test Command Handler";
 
-    private int _testResultValue;
+    private const int TestResultValue = 123;
 
-    private CancellationToken _testCancellationToken;
-
-    private Mock<ILogger<TestCommandHandler>> _loggerMock = null!;
+    private static TestCommand _testCommand = null!;
 
     private static Action<ValidationState, TestCommand> _testValidate = null!;
 
     private static Func<TestCommand, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
 
-    private static TestCommand _testCommand = null!;
+    protected override string CommandName => TestName;
 
-    private static TestCommandHandler _testCommandHandler = null!;
+    protected override Task<Result<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
     {
-        _testResultValue = 123;
-
-        _testCancellationToken = CancellationToken.None;
+        _testCommand = new TestCommand();
 
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(_testResultValue));
+        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
 
-        _loggerMock = new Mock<ILogger<TestCommandHandler>>(MockBehavior.Strict);
-
-        _testCommand = new TestCommand();
-
-        _testCommandHandler = new TestCommandHandler(_loggerMock.Object);
+        CommandHandler = new TestCommandHandler(LoggerMock.Object);
     }
 
     [Test]
@@ -65,9 +53,9 @@ public class CommandHandlerValueTests : TestBase
 
         const string testError = "Test Error";
 
-        _loggerMock.Setup(LogLevel.Error, $"Command '{TestName}' failed validation: {testProperty}:{Environment.NewLine}  - {testError}");
-
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
+
+        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         var result = await Act();
@@ -77,18 +65,19 @@ public class CommandHandlerValueTests : TestBase
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCancelledBefore_ShouldReturnCancelled()
+    public async Task ExecuteAsync_WhenCancelledBefore_ShouldReturnCanceled()
     {
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
-        _testCancellationToken = cancellationTokenSource.Token;
+        TestCancellationToken = cancellationTokenSource.Token;
 
-        _loggerMock.Setup(LogLevel.Information, $"Command '{TestName}' was cancelled before execution.");
+        SetupLogger_CanceledBeforeExecution();
 
         await cancellationTokenSource.CancelAsync();
 
         // Act
+
         var result = await Act();
 
         // Assert
@@ -102,16 +91,16 @@ public class CommandHandlerValueTests : TestBase
         var result = await Act();
 
         // Assert
-        AssertSuccess(result, _testResultValue);
+        AssertSuccess(result, TestResultValue);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCancelledDuring_ShouldReturnCancelled()
+    public async Task ExecuteAsync_WhenCancelledDuring_ShouldReturnCanceled()
     {
         // Arrange
-        _loggerMock.Setup(LogLevel.Information, $"Command '{TestName}' was cancelled during execution.");
-
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
+
+        SetupLogger_CanceledDuringExecution();
 
         // Act
         var result = await Act();
@@ -128,9 +117,9 @@ public class CommandHandlerValueTests : TestBase
 
         var exception = new Exception(testExceptionMessage);
 
-        _loggerMock.Setup(LogLevel.Critical, $"Command '{TestName}' failed with exception: {testExceptionMessage}", exception: exception);
-
         _testInternalExecuteAsync = (_, _) => throw exception;
+
+        SetupLogger_Failed(exception);
 
         // Act
         var result = await Act();
@@ -138,6 +127,4 @@ public class CommandHandlerValueTests : TestBase
         // Assert
         AssertInternalError(result, testExceptionMessage);
     }
-
-    private Task<Result<int>> Act() => _testCommandHandler.TestExecuteAsync(_testCommand, _testCancellationToken);
 }

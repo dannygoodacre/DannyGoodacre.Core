@@ -3,11 +3,19 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>(ILogger logger, IUnitOfWork unitOfWork)
-    : PersistenceCommandHandlerBase<TCommand, TResult>(logger, unitOfWork)
+public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
+    : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
 {
+    internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit)
+        : base(logger)
+    {
+        TransactionUnit = transactionUnit;
+    }
+
+    private ITransactionUnit TransactionUnit { get; }
+
     /// <summary>
     /// The number of state entries expected to be persisted upon completion.
     /// </summary>
@@ -15,13 +23,13 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>(I
     /// Defaults to -1 to disable validation.
     /// </value>
     /// <remarks>
-    /// This is compared against the result of <see cref="IUnitOfWork.SaveChangesAsync"/>.
+    /// This is compared against the result of <see cref="IStateUnit.SaveChangesAsync"/>.
     /// </remarks>
     protected virtual int ExpectedChanges => -1;
 
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {
-        await using var transaction = await UnitOfWork.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
 
         try
         {
@@ -34,7 +42,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>(I
                 return result;
             }
 
-            var actualChanges = await UnitOfWork.SaveChangesAsync(cancellationToken);
+            var actualChanges = await TransactionUnit.SaveChangesAsync(cancellationToken);
 
             if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
             {
@@ -42,7 +50,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>(I
 
                 LogUnexpectedNumberOfChanges(Logger, CommandName, ExpectedChanges, actualChanges);
 
-                return MapResult(Result.InternalError("Datastore integrity check failed."));
+                return MapResult(Result.InternalError("State integrity check failed."));
             }
 
             await transaction.CommitAsync(cancellationToken);

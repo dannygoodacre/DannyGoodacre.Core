@@ -1,39 +1,64 @@
 using System.Reflection;
-using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Core.CommandQuery.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.Tests.Extensions;
 
 [TestFixture]
-public class ServiceCollectionExtensionsTests
+public sealed class ServiceCollectionExtensionsTests
 {
-    private class MyCommand : ICommand;
-
     private interface ITestCommand;
 
-    private class TestCommandHandler(ILogger logger)
-        : CommandHandler<MyCommand>(logger), ITestCommand
+    private sealed class TestCommandHandler(ILogger logger)
+        : CommandHandler<ICommand>(logger), ITestCommand
     {
         protected override string CommandName => "Test Command";
 
-        protected override Task<Result> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
             => Task.FromResult(Result.Success());
     }
 
-    private interface ITestCommandWithValue;
+    private interface ITestCommandWithReturnValue;
 
-    private class TestCommandWithValueHandler(ILogger logger)
-        : CommandHandler<MyCommand, int>(logger), ITestCommandWithValue
+    private sealed class TestCommandWithReturnValueHandler(ILogger logger)
+        : CommandHandler<ICommand, int>(logger), ITestCommandWithReturnValue
     {
-        protected override string CommandName => "Test Command With Value";
+        protected override string CommandName => "Test Command With Return Value";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
-            => Task.FromResult(Result<int>.Success(123));
+        protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(Result.Success(123));
     }
 
-    private class UnitOfWork : IUnitOfWork
+    private sealed class StateUnit : IStateUnit
+    {
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(1);
+    }
+
+    private interface IStateCommand;
+
+    private sealed class TestStateCommandHandler(ILogger logger)
+        : StateCommandHandler<ICommand>(logger, new StateUnit()), IStateCommand
+    {
+
+        protected override string CommandName => "Test State Command";
+
+        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(Result.Success());
+    }
+
+    private interface IStateCommandWithReturnValue;
+
+    private sealed class TestStateCommandHandlerWithReturnValue(ILogger logger)
+        : StateCommandHandler<ICommand, int>(logger, new StateUnit()), IStateCommandWithReturnValue
+    {
+
+        protected override string CommandName => "Test State Command With Return Value";
+
+        protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(Result.Success(123));
+    }
+
+    private sealed class TestTransactionUnit : ITransactionUnit
     {
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(1);
@@ -42,38 +67,36 @@ public class ServiceCollectionExtensionsTests
             => throw new NotImplementedException();
     }
 
-    private interface ITestUnitOfWorkCommand;
+    private interface ITestTransactionCommand;
 
-    private class TestTransactionCommandHandler(ILogger logger)
-        : TransactionCommandHandler<MyCommand>(logger, new UnitOfWork()), ITestUnitOfWorkCommand
+    private sealed class TestTransactionCommandHandler(ILogger logger)
+        : TransactionCommandHandler<ICommand>(logger, new TestTransactionUnit()), ITestTransactionCommand
     {
-        protected override string CommandName => "Test Unit Of Work Command";
+        protected override string CommandName => "Test Transaction Command";
 
-        protected override Task<Result> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
             => Task.FromResult(Result.Success());
     }
 
-    private interface ITestUnitOfWorkCommandWithValue;
+    private interface ITestTransactionCommandWithReturnValue;
 
-    private class TransactionCommandWithValueHandler(ILogger logger)
-        : TransactionCommandHandler<MyCommand, int>(logger, new UnitOfWork()), ITestUnitOfWorkCommandWithValue
+    private sealed class TestTransactionCommandWithReturnValue(ILogger logger)
+        : TransactionCommandHandler<ICommand, int>(logger, new TestTransactionUnit()), ITestTransactionCommandWithReturnValue
     {
-        protected override string CommandName => "Test Unit Of Work Command With Value";
+        protected override string CommandName => "Test Transaction Command With Return Value";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyCommand command, CancellationToken cancellationToken)
-            => Task.FromResult(Result<int>.Success(123));
+        protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(Result.Success(123));
     }
-
-    private class MyQuery : IQuery;
 
     private interface ITestQuery;
 
-    private class TestQueryHandler(ILogger logger) : QueryHandler<MyQuery, int>(logger), ITestQuery
+    private sealed class TestQueryHandler(ILogger logger) : QueryHandler<IQuery, int>(logger), ITestQuery
     {
         protected override string QueryName => "Test Query";
 
-        protected override Task<Result<int>> InternalExecuteAsync(MyQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(Result<int>.Success(123));
+        protected override Task<Result<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken)
+            => Task.FromResult(Result.Success(123));
     }
 
     [Test]
@@ -92,43 +115,53 @@ public class ServiceCollectionExtensionsTests
         // Assert
         var provider = services.BuildServiceProvider();
 
-        var testCommand = provider.GetService<ITestCommand>();
+        var command = provider.GetService<ITestCommand>();
 
-        Assert.That(testCommand, Is.Not.Null);
+        Assert.That(command, Is.Not.Null);
 
-        var testCommandWithValue = provider.GetService<ITestCommand>();
+        var commandWithValue = provider.GetService<ITestCommand>();
 
-        Assert.That(testCommandWithValue, Is.Not.Null);
+        Assert.That(commandWithValue, Is.Not.Null);
 
-        var testUnitOfWorkCommand = provider.GetService<ITestUnitOfWorkCommand>();
+        var testUnitOfWorkCommand = provider.GetService<ITestTransactionCommand>();
 
         Assert.That(testUnitOfWorkCommand, Is.Not.Null);
 
-        var testUnitOfWorkCommandWithValue = provider.GetService<ITestUnitOfWorkCommandWithValue>();
+        var testUnitOfWorkCommandWithValue = provider.GetService<ITestTransactionCommandWithReturnValue>();
 
         Assert.That(testUnitOfWorkCommandWithValue, Is.Not.Null);
 
         using var scope = provider.CreateScope();
 
-        var instance1 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
-        var instance2 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
+        var commandHandler1 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
+        var commandHandler2 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
 
-        Assert.That(instance1, Is.SameAs(instance2));
+        Assert.That(commandHandler1, Is.SameAs(commandHandler2));
 
-        var instance3 = scope.ServiceProvider.GetRequiredService<ITestCommandWithValue>();
-        var instance4 = scope.ServiceProvider.GetRequiredService<ITestCommandWithValue>();
+        var commandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
+        var commandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
 
-        Assert.That(instance3, Is.SameAs(instance4));
+        Assert.That(commandHandlerWithReturnValue1, Is.SameAs(commandHandlerWithReturnValue2));
 
-        var instance5 = scope.ServiceProvider.GetRequiredService<ITestUnitOfWorkCommand>();
-        var instance6 = scope.ServiceProvider.GetRequiredService<ITestUnitOfWorkCommand>();
+        var stateCommandHandler1 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
+        var stateCommandHandler2 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
 
-        Assert.That(instance5, Is.SameAs(instance6));
+        Assert.That(stateCommandHandler1, Is.SameAs(stateCommandHandler2));
 
-        var instance7 = scope.ServiceProvider.GetRequiredService<ITestUnitOfWorkCommandWithValue>();
-        var instance8 = scope.ServiceProvider.GetRequiredService<ITestUnitOfWorkCommandWithValue>();
+        var stateCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
+        var stateCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
 
-        Assert.That(instance7, Is.SameAs(instance8));
+        Assert.That(stateCommandHandlerWithReturnValue1, Is.SameAs(stateCommandHandlerWithReturnValue2));
+
+        var transactionCommandHandler1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
+        var transactionCommandHandler2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
+
+        Assert.That(transactionCommandHandler1, Is.SameAs(transactionCommandHandler2));
+
+        var transactionCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
+        var transactionCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
+
+        Assert.That(transactionCommandHandlerWithReturnValue1, Is.SameAs(transactionCommandHandlerWithReturnValue2));
     }
 
     [Test]
@@ -153,9 +186,9 @@ public class ServiceCollectionExtensionsTests
 
         using var scope = provider.CreateScope();
 
-        var instance1 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
-        var instance2 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
+        var query1 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
+        var query2 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
 
-        Assert.That(instance1, Is.SameAs(instance2));
+        Assert.That(query1, Is.SameAs(query2));
     }
 }

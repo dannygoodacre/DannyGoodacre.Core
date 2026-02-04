@@ -1,46 +1,39 @@
-using DannyGoodacre.Core.CommandQuery;
-using DannyGoodacre.Core.CommandQuery.Abstractions;
 using DannyGoodacre.Core.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.Tests.Extensions;
 
 [TestFixture]
-public class TypeExtensionsTests
+public sealed class TypeExtensionsTests
 {
-    private class Command : ICommand;
-
-    private class Query : IQuery;
-
-    private class SimpleCommandHandler(ILogger logger) : CommandHandler<Command>(logger)
+    private class SimpleCommandHandler(ILogger logger) : CommandHandler<ICommand>(logger)
     {
         protected override string CommandName => "Simple Command";
 
-        protected override Task<Result> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
+        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
             => Task.FromResult(Result.Success());
     }
 
-    private class CommandWithValueHandler(ILogger logger) : CommandHandler<Command, int>(logger)
+    private sealed class CommandWithValueHandler(ILogger logger) : CommandHandler<ICommand, int>(logger)
     {
         protected override string CommandName => "Result Command";
 
-        protected override Task<Result<int>> InternalExecuteAsync(Command command, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
             => Task.FromResult(Result<int>.Success(123));
     }
 
-    private class DeepCommandHandler(ILogger logger) : SimpleCommandHandler(logger);
+    private sealed class DeepCommandHandler(ILogger logger) : SimpleCommandHandler(logger);
 
-    private class SimpleQueryHandler(ILogger logger) : QueryHandler<Query, int>(logger)
+    private class SimpleQueryHandler(ILogger logger) : QueryHandler<IQuery, int>(logger)
     {
         protected override string QueryName => "Simple Query";
 
-        protected override Task<Result<int>> InternalExecuteAsync(Query query, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken)
             => Task.FromResult(Result<int>.Success(123));
     }
 
-    private class DeepQueryHandler(ILogger logger) : SimpleQueryHandler(logger);
+    private sealed class DeepQueryHandler(ILogger logger) : SimpleQueryHandler(logger);
 
-    private class NotAHandler;
+    private sealed class NotAHandler;
 
     [TestCase(typeof(SimpleCommandHandler), ExpectedResult = true)]
     [TestCase(typeof(CommandWithValueHandler), ExpectedResult = true)]

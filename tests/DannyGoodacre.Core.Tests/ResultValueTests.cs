@@ -1,7 +1,7 @@
 namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]
-public class ResultValueTests
+public sealed class ResultValueTests
 {
 [Test]
     public void IsSuccess_WhenSuccessful_ReturnsTrue()

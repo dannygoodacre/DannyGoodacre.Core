@@ -14,6 +14,9 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
 
     protected ILogger Logger { get; }
 
+    /// <summary>
+    /// The display name of the command.
+    /// </summary>
     protected abstract string CommandName { get; }
 
     /// <summary>
@@ -24,17 +27,19 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     protected virtual void Validate(ValidationState validationState, TCommand command) { }
 
     /// <summary>
-    /// The internal command logic.
+    /// The core command logic.
     /// </summary>
     /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
+    /// <returns>
+    /// A <see cref="Result"/> indicating the outcome of the operation.
+    /// </returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     protected private abstract TResult MapResult(Result result);
 
     /// <summary>
-    /// Run the command by validating first and, if valid, execute the internal logic.
+    /// Execute the command by validating it first and, if valid, execute the internal logic.
     /// </summary>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
@@ -71,7 +76,7 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
         }
         catch (Exception ex)
         {
-            LogFailed(Logger, ex, CommandName);
+            // LogFailed(Logger, ex, CommandName);
 
             return MapResult(Result.InternalError(ex.Message));
         }
@@ -87,5 +92,5 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     private static partial void LogCanceledDuringExecution(ILogger logger, string command);
 
     [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed.")]
-    private static partial void LogFailed(ILogger logger, Exception ex, string command);
+    private static partial void LogFailed(ILogger logger, Exception exception, string command);
 }

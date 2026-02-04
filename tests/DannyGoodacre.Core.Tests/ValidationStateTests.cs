@@ -1,7 +1,7 @@
 namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]
-public class ValidationStateTests : TestBase
+public sealed class ValidationStateTests : TestBase
 {
     [Test]
     public void Constructor_WhenErrorsIsEmpty_ShouldReturnNoErrors()
