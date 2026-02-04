@@ -85,7 +85,11 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
 
         var exception = new Exception(testExceptionMessage);
 
-        _testInternalExecuteAsync = (_, _) => throw exception;
+        StateUnitMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == TestCancellationToken)))
+            .ThrowsAsync(exception)
+            .Verifiable(Times.Once);
 
         SetupLogger_FailedWhilePersistingChanges(exception);
 
