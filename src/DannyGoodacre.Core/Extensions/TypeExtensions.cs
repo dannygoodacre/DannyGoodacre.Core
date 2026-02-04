@@ -16,7 +16,6 @@ internal static class TypeExtensions
                 {
                     var definition = baseType.GetGenericTypeDefinition();
 
-                    // TODO: Check this works for *all* command handlers
                     if (definition == typeof(CommandHandlerBase<,>))
                     {
                         return true;
