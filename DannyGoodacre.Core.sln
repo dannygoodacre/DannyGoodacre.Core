@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Core.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DannyGoodacre.Testing.Core", "src\DannyGoodacre.Testing.Core\DannyGoodacre.Testing.Core.csproj", "{798665CA-C5A6-48DD-9A2D-6A28918993B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Temp", "Temp\Temp.csproj", "{A8FAE3EB-41EB-4067-A64B-66F12AC0E311}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,6 +30,10 @@ Global
 		{798665CA-C5A6-48DD-9A2D-6A28918993B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{798665CA-C5A6-48DD-9A2D-6A28918993B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{798665CA-C5A6-48DD-9A2D-6A28918993B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8FAE3EB-41EB-4067-A64B-66F12AC0E311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8FAE3EB-41EB-4067-A64B-66F12AC0E311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8FAE3EB-41EB-4067-A64B-66F12AC0E311}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8FAE3EB-41EB-4067-A64B-66F12AC0E311}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F59872B5-4009-489C-AC5D-68CA5740851C} = {2EF13EA6-1CE3-43AA-A1D1-33BC3A4836B0}

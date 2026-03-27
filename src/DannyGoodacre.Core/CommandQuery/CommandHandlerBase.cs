@@ -36,11 +36,6 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     /// </returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Translate the <see cref="Result"/> instance from the internal handler to type <c>TResult</c>.
-    /// </summary>
-    /// <param name="result">The void result.</param>
-    /// <returns>The <c>TResult</c> result.</returns>
     protected private abstract TResult MapResult(Result result);
 
     /// <summary>

@@ -2,7 +2,7 @@
 
 The `CommandHandler` is the base class for executing business logic with validation, consistent logging, and centralized error handling, providing a consistent response in the form of a `Result` instance.
 
-This is to be used in cases where the business logic has side effects but does not necessarily persist any state changes.
+This is to be used when the business logic has side effects but does not persist any state changes.
 
 ## Signature
 
@@ -10,7 +10,7 @@ This is to be used in cases where the business logic has side effects but does n
 public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : ICommand
 ```
 
-## Abstract & Virtual Members
+## Members
 
 | Name | Return Type | Required | Description |
 | ------ | ---- | - | ----------- |
@@ -20,7 +20,7 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 
 ## Implementation
 
-First implement the command marker interface `ICommand` for this specific command.
+First implement `ICommand` for this specific command.
 
 ```csharp
 record DoThingCommand : ICommand
@@ -29,10 +29,10 @@ record DoThingCommand : ICommand
 }
 ```
 
-Inherit from `CommandHandler<TCommand>` and implement the necessary members.
+Then inherit from `CommandHandler<TCommand>` and implement the necessary members.
 
 ```csharp
-class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service) 
+class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service)
     : CommandHandler<DoThingCommand>(logger)
 {
     protected override string CommandName => "Do Thing";
@@ -51,6 +51,25 @@ class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service)
 
         return hasWorked
             ? Result.Success()
+            : Result.DomainError("Has not worked");
+    }
+}
+```
+
+For a command that returns a value, instead inherit from `CommandHandler<TCommand, TResult>`. In this example, the returned type is an integer.
+
+```csharp
+class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service)
+    : CommandHandler<DoThingCommand, int>(logger)
+{
+    // Omitted for brevity...
+
+    protected async override Task<Result<int>> InternalExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
+    {
+        bool someNumber = await service.GetAsync(command.Property);
+
+        return someNumber != 0
+            ? Result.Success(someNumber)
             : Result.DomainError("Has not worked");
     }
 }
