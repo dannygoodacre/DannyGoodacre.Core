@@ -1,6 +1,6 @@
 # Service Registration
 
-To register the handlers, use the extension methods `AddCommandHandlers` and `AddQueryHandlers`. These map the handlers as scoped services to all implemented business interfaces and also registers it as a concrete service.
+To register the handlers, use the extension methods `AddCommandHandlers` and `AddQueryHandlers`. These map the handlers as scoped services to all implemented business interfaces and also register them as concrete services.
 
 # Calling a Handler
 

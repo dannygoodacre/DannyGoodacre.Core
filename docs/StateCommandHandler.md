@@ -17,7 +17,7 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
 
 See [CommandHandler Members](./CommandHandler.md#members).
 
-## Implementation
+## Usage
 
 The following example class implements the `IStateUnit` interface by wrapping an [EF Core](https://learn.microsoft.com/en-us/ef/core/) context. However, note that the abstraction is provider-agnostic.
 

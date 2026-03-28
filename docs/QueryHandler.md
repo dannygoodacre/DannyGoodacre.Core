@@ -2,7 +2,7 @@
 
 This handler provides a semantic distinction for operations that purely retrieve data.
 
-Aside from the output type parameter `TResult` and the returned `Result<TResult>`, the `QueryHandler` class is functionally identical to `CommandHandler`.
+Aside from the output type parameter `TResult` and the returned `Result<TResult>`, the `QueryHandler` class is functionally identical to [CommandHandler](./CommandHandler.md).
 
 ## Signature
 
@@ -23,7 +23,7 @@ record GetStuffByIdQuery : IQuery
 class GetStuffByIdHandler(ILogger<GetStuffByIdHandler> logger, IStuffRepository repository)
     : QueryHandler<GetStuffByIdQuery, StuffInfo>(logger)
 {
-    protected override string CommandName => "Get Stuff By ID";
+    protected override string QueryName => "Get Stuff By ID";
 
     protected override async Task<Result<StuffInfo>> InternalExecuteAsync(GetUserByIdQuery query, CancellationToken cancellationToken = default)
     {

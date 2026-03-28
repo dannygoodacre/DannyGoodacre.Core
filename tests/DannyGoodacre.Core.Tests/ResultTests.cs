@@ -84,7 +84,7 @@ public sealed class ResultTests : TestBase
         var result = Result.Canceled();
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
+        Assert.That(result.Status, Is.EqualTo(Status.Canceled));
     }
 
     [Test]

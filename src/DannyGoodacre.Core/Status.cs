@@ -8,7 +8,7 @@ public enum Status
 
     DomainError,
 
-    Cancelled,
+    Canceled,
 
     NotFound,
 

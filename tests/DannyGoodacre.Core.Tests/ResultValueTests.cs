@@ -101,7 +101,7 @@ public sealed class ResultValueTests
         var result = Result<int>.Canceled();
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
+        Assert.That(result.Status, Is.EqualTo(Status.Canceled));
     }
 
     [Test]

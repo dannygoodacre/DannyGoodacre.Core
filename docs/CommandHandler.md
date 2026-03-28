@@ -7,7 +7,8 @@ This is to be used when the business logic has side effects but does not persist
 ## Signature
 
 ```csharp
-public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : ICommand
+public abstract class CommandHandler<TCommand>(ILogger logger)
+    where TCommand : ICommand
 ```
 
 ## Members
@@ -18,7 +19,7 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 | `Validate` | `void` | No | Logic to inspect the content of `TCommand`. Use `validationState.AddError` to stop execution. |
 | `InternalExecuteAsync` | `Task<Result>` | Yes | The core logic. This only runs if `Validate` passes. |
 
-## Implementation
+## Usage
 
 First implement `ICommand` for this specific command.
 

@@ -40,7 +40,7 @@ public class Result<T> : Result
     public new static Result<T> Canceled()
         => new()
         {
-            Status = Status.Cancelled
+            Status = Status.Canceled
         };
 
     public new static Result<T> NotFound()

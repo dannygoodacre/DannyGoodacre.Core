@@ -17,14 +17,13 @@ public abstract class TransactionCommandHandler<TCommand>(ILogger logger, ITrans
 
 ## Members
 
-
 | Name | Return Type | Required | Description |
 | --- | --- | --- | --- |
 | `ExpectedChanges` | `int` | No | The number of expected changes made to the underlying data store by the command. Do not set to disable validation. |
 
 Additionally see [CommandHandler Members](./CommandHandler.md#members).
 
-## Implementation
+## Usage
 
 The following example class implements `ITransactionUnit` and `ITransaction` using [EF Core](https://learn.microsoft.com/en-us/ef/core/). However, note that the abstraction is provider-agnostic.
 

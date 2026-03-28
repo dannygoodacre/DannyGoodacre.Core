@@ -48,7 +48,7 @@ public class Result
     public static Result Canceled()
         => new()
         {
-            Status = Status.Cancelled
+            Status = Status.Canceled
         };
 
     public static Result NotFound()

@@ -61,5 +61,6 @@ These classes support various operational outcomes via the `Status` enum:
 | Success | Operation completed normally |
 | Invalid | Input failed validation rules (carries a `ValidationState`) |
 | DomainError | A business logic rule was violated |
+| Canceled | The request was canceled by the caller |
 | NotFound | The requested resource does not exist |
 | InternalError | An unexpected system failure or exception occurred |
