@@ -25,7 +25,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// <remarks>
     /// This is compared against the result of <see cref="IStateUnit.SaveChangesAsync"/>.
     /// </remarks>
-    protected virtual int ExpectedChanges => -1;
+    protected virtual int ExpectedChanges { get; set; } = -1;
 
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {

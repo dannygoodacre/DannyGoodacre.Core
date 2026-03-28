@@ -13,7 +13,7 @@ public abstract partial class StateCommandHandlerBase<TCommand, TResult>
         StateUnit = stateUnit;
     }
 
-    protected IStateUnit StateUnit { get; }
+    private IStateUnit StateUnit { get; }
 
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {

@@ -1,6 +1,6 @@
 # CommandHandler
 
-The `CommandHandler` is the base class for executing business logic with validation, consistent logging, and centralized error handling, providing a consistent response in the form of a `Result` instance.
+The `CommandHandler` is the base class for executing business logic with validation, consistent logging, and centralized error handling, providing a consistent response in the form of a `Result` or `Result<T>` object.
 
 This is to be used when the business logic has side effects but does not persist any state changes.
 
@@ -13,7 +13,7 @@ public abstract class CommandHandler<TCommand>(ILogger logger) where TCommand : 
 ## Members
 
 | Name | Return Type | Required | Description |
-| ------ | ---- | - | ----------- |
+| --- | --- | --- | --- |
 | `CommandName` | `string` | Yes | A human-readable name used for structured logging. |
 | `Validate` | `void` | No | Logic to inspect the content of `TCommand`. Use `validationState.AddError` to stop execution. |
 | `InternalExecuteAsync` | `Task<Result>` | Yes | The core logic. This only runs if `Validate` passes. |
@@ -62,7 +62,7 @@ For a command that returns a value, instead inherit from `CommandHandler<TComman
 class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service)
     : CommandHandler<DoThingCommand, int>(logger)
 {
-    // Omitted for brevity...
+    // ...
 
     protected async override Task<Result<int>> InternalExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
     {
@@ -74,43 +74,3 @@ class DoThingHandler(ILogger<DoThingHandler> logger, ISomeService service)
     }
 }
 ```
-
-## Execution
-
-TODO: Separate file for this, covering all handlers?
-
-### 1. Via an abstraction
-
-Define a specific interface for the action:
-
-```csharp
-interface IDoThing
-{
-    Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default);
-}
-
-// Inside DoThingHandler
-public Task<Result> ExecuteAsync(string property, CancellationToken cancellationToken = default)
-    => ExecuteAsync(new DoThingCommand
-    {
-        Property = property
-    }, cancellationToken);
-```
-
-### 2. Directly
-
-If you prefer to directly access the command, then simply expose the base `ExecuteAsync` method:
-
-```csharp
-// Inside DoThingHandler
-public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
-    => base.ExecuteAsync(command, cancellationToken);
-```
-
-## Service Registration
-
-TODO: Separate file for this, covering all handlers?
-
-To register the handlers, use the extension method `AddCommandHandlers`. This maps the handler as a scoped service to all implemented business interfaces and registers it as a concrete service.
-
-TODO: Talk about the command handlers that also return values.

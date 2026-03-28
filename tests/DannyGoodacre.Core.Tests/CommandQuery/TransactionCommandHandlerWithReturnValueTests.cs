@@ -10,7 +10,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
     {
         protected override string CommandName => TestName;
 
-        protected override int ExpectedChanges => _testExpectedChanges;
+        protected new int ExpectedChanges = _testExpectedChanges;
 
         protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
