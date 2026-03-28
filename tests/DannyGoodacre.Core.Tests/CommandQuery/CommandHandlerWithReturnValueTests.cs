@@ -1,48 +1,48 @@
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
-public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQueryHandler, int>
+public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<CommandHandlerWithReturnValueTests.TestCommandHandler, int>
 {
-    public sealed class TestQuery : IQuery;
+    public sealed class TestCommand : ICommand;
 
-    public sealed class TestQueryHandler(ILogger logger) : QueryHandler<TestQuery, int>(logger)
+    public sealed class TestCommandHandler(ILogger logger) : CommandHandler<TestCommand, int>(logger)
     {
-        protected override string QueryName => TestName;
+        protected override string CommandName => TestName;
 
-        protected override void Validate(ValidationState validationState, TestQuery query)
-            => _testValidate(validationState, query);
+        protected override void Validate(ValidationState validationState, TestCommand command)
+            => _testValidate(validationState, command);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken)
-            => _testInternalExecuteAsync(query, cancellationToken);
+        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+            => _testInternalExecuteAsync(command, cancellationToken);
 
-        public Task<Result<int>> TestExecuteAsync(TestQuery command, CancellationToken cancellationToken)
+        public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
     }
 
-    private const string TestName = "Test Query Handler";
+    private const string TestName = "Test Command Handler";
 
     private const int TestResultValue = 123;
 
-    private static TestQuery _testQuery = null!;
+    private static TestCommand _testCommand = null!;
 
-    private static Action<ValidationState, TestQuery> _testValidate = null!;
+    private static Action<ValidationState, TestCommand> _testValidate = null!;
 
-    private static Func<TestQuery, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
 
-    protected override string QueryName => TestName;
+    protected override string CommandName => TestName;
 
-    protected override Task<Result<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, CancellationToken);
+    protected override Task<Result<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
     {
+        _testCommand = new TestCommand();
+
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(TestResultValue));
+        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
 
-        _testQuery = new TestQuery();
-
-        QueryHandler = new TestQueryHandler(LoggerMock.Object);
+        CommandHandler = new TestCommandHandler(LoggerMock.Object);
     }
 
     [Test]
@@ -70,7 +70,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
-        CancellationToken = cancellationTokenSource.Token;
+        TestCancellationToken = cancellationTokenSource.Token;
 
         SetupLogger_CanceledBeforeExecution();
 

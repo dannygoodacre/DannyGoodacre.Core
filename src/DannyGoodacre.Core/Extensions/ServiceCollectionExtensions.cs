@@ -17,7 +17,9 @@ public static class ServiceCollectionExtensions
 
             foreach (var handlerType in handlerTypes)
             {
-                var interfaces = handlerType.GetInterfaces();
+                services.AddScoped(handlerType);
+
+                var interfaces = handlerType.GetHandlerInterfaces();
 
                 foreach (var serviceType in interfaces)
                 {
@@ -36,7 +38,9 @@ public static class ServiceCollectionExtensions
 
             foreach (var handlerType in handlerTypes)
             {
-                var interfaces = handlerType.GetInterfaces();
+                services.AddScoped(handlerType);
+
+                var interfaces = handlerType.GetHandlerInterfaces();
 
                 foreach (var serviceType in interfaces)
                 {

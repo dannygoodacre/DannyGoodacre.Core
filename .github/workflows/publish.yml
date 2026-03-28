@@ -12,20 +12,20 @@ jobs:
             contents: read
 
         steps:
-            - uses: actions/checkout@v4
-            
+            - uses: actions/checkout@v6
+
             - name: Setup .NET
-              uses: actions/setup-dotnet@v4
+              uses: actions/setup-dotnet@v5
               with:
                 dotnet-version: '10.0.x'
 
             - name: Pack
               run: |
-                dotnet pack DannyGoodacre.Core/DannyGoodacre.Core.csproj \
+                dotnet pack src/DannyGoodacre.Core/DannyGoodacre.Core.csproj \
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
-                
-                dotnet pack DannyGoodacre.Tests.Core/DannyGoodacre.Tests.Core.csproj \
+
+                dotnet pack src/DannyGoodacre.Testing.Core/DannyGoodacre.Testing.Core.csproj \
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
 

@@ -19,8 +19,11 @@
 
     <ItemGroup>
         <Using Include="DannyGoodacre.Testing.Core" />
-        <Using Include="NUnit.Framework" />
+        <Using Include="DannyGoodacre.Core.CommandQuery" />
+        <Using Include="DannyGoodacre.Core.CommandQuery.Abstractions" />
+        <Using Include="Microsoft.Extensions.Logging" />
         <Using Include="Moq" />
+        <Using Include="NUnit.Framework" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,12 +1,12 @@
 namespace DannyGoodacre.Core.CommandQuery.Abstractions;
 
 /// <summary>
-/// Provides functionality for initiating an <see cref="ITransaction"/> instance.
+/// Extends the state unit to support explicit transaction management.
 /// </summary>
-public interface ITransactionProvider
+public interface ITransactionUnit : IStateUnit
 {
     /// <summary>
-    /// Start a new transaction.
+    /// Start a new transaction boundary to ensure multiple operations succeed or fail atomically.
     /// </summary>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>An <see cref="ITransaction"/> instance.</returns>

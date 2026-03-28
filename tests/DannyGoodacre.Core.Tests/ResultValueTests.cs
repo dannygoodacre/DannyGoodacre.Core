@@ -1,7 +1,7 @@
 namespace DannyGoodacre.Core.Tests;
 
 [TestFixture]
-public class ResultValueTests
+public sealed class ResultValueTests
 {
 [Test]
     public void IsSuccess_WhenSuccessful_ReturnsTrue()
@@ -98,10 +98,10 @@ public class ResultValueTests
     public void Cancelled()
     {
         // Act
-        var result = Result<int>.Cancelled();
+        var result = Result<int>.Canceled();
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Cancelled));
+        Assert.That(result.Status, Is.EqualTo(Status.Canceled));
     }
 
     [Test]

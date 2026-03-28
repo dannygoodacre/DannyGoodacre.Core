@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Core.CommandQuery;
 
-public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where TQueryRequest : IQueryRequest
+public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
+    where TQuery : IQuery
 {
     protected abstract string QueryName { get; }
 
@@ -15,25 +16,25 @@ public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
     /// <param name="queryRequest">The query request to validate.</param>
-    protected virtual void Validate(ValidationState validationState, TQueryRequest queryRequest)
+    protected virtual void Validate(ValidationState validationState, TQuery queryRequest)
     {
     }
 
     /// <summary>
     /// The internal query logic.
     /// </summary>
-    /// <param name="query">The valid query request to process.</param>
+    /// <param name="query">The valid query to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<Result<TResult>> InternalExecuteAsync(TQueryRequest query, CancellationToken cancellationToken);
+    protected abstract Task<Result<TResult>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken);
 
     /// <summary>
     /// Run the query by validating first and, if successful, execute the internal logic.
     /// </summary>
-    /// <param name="query">The query request to validate and process.</param>
+    /// <param name="query">The query to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async Task<Result<TResult>> ExecuteAsync(TQueryRequest query, CancellationToken cancellationToken)
+    protected async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken)
     {
         var validationState = new ValidationState();
 
@@ -41,16 +42,16 @@ public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where
 
         if (validationState.HasErrors)
         {
-            Logger.LogError("Query '{Query}' failed validation: {ValidationState}", QueryName, validationState);
+            LogFailedValidation(Logger, QueryName, validationState);
 
             return Result<TResult>.Invalid(validationState);
         }
 
         if (cancellationToken.IsCancellationRequested)
         {
-            Logger.LogInformation("Query '{Query}' was cancelled before execution.", QueryName);
+            LogCanceledBeforeExecution(Logger, QueryName);
 
-            return Result<TResult>.Cancelled();
+            return Result<TResult>.Canceled();
         }
 
         try
@@ -59,15 +60,27 @@ public abstract class QueryHandler<TQueryRequest, TResult>(ILogger logger) where
         }
         catch (OperationCanceledException)
         {
-            Logger.LogInformation("Query '{Query}' was cancelled during execution.", QueryName);
+            LogCanceledDuringExecution(Logger, QueryName);
 
-            return Result<TResult>.Cancelled();
+            return Result<TResult>.Canceled();
         }
         catch (Exception e)
         {
-            Logger.LogCritical(e, "Query '{Query}' failed with exception: {Exception}", QueryName, e.Message);
+            LogCriticalFailure(Logger, e, QueryName);
 
             return Result<TResult>.InternalError(e.Message);
         }
     }
+
+    [LoggerMessage(LogLevel.Error, "Query '{Query}' failed validation: {ValidationState}")]
+    private static partial void LogFailedValidation(ILogger logger, string query, ValidationState validationState);
+
+    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled before execution.")]
+    private static partial void LogCanceledBeforeExecution(ILogger logger, string query);
+
+    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled during execution.")]
+    private static partial void LogCanceledDuringExecution(ILogger logger, string query);
+
+    [LoggerMessage(LogLevel.Critical, "Query '{Query}' failed.")]
+    private static partial void LogCriticalFailure(ILogger logger, Exception ex, string query);
 }

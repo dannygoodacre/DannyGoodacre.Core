@@ -1,37 +1,39 @@
 namespace DannyGoodacre.Core.Tests.CommandQuery;
 
 [TestFixture]
-public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTestBase<TransactionCommandHandlerTests.TestTransactionCommandHandler>
+public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionCommandHandlerTestBase<TransactionCommandHandlerWithReturnValueTests.TestTransactionCommandHandler, int>
 {
     public sealed record TestCommand : ICommand;
 
     public sealed class TestTransactionCommandHandler(ILogger logger, ITransactionUnit transactionUnit)
-        : TransactionCommandHandler<TestCommand>(logger, transactionUnit)
+        : TransactionCommandHandler<TestCommand, int>(logger, transactionUnit)
     {
         protected override string CommandName => TestName;
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
-        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+        public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
     }
 
     private const string TestName = "Test Transaction Command Handler";
 
+    private const int TestResultValue = 123;
+
     private static int _testExpectedChanges;
 
     private static int _testActualChanges;
 
-    private static Func<TestCommand, CancellationToken, Task<Result>> _internalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
 
     private readonly TestCommand _testCommand = new();
 
     protected override string CommandName => TestName;
 
-    protected override Task<Result> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<Result<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     protected override int TestActualChanges => _testActualChanges;
 
@@ -40,7 +42,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
     {
         _testExpectedChanges = -1;
 
-        _internalExecuteAsync = (_, _) => Task.FromResult(Result.Success());
+        _internalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
 
         CommandHandler = new TestTransactionCommandHandler(LoggerMock.Object, TransactionUnitMock.Object);
     }
@@ -51,7 +53,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
         // Arrange
         const string testError = "Test Internal Error";
 
-        _internalExecuteAsync = (_, _) => Task.FromResult(Result.InternalError(testError));
+        _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.InternalError(testError));
 
         SetupTransaction_RollbackAsync();
 
