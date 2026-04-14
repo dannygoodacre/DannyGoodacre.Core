@@ -27,7 +27,8 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
-    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
+    // ReSharper disable once MemberCanBeProtected.Global
+    public new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
     {
         await using var transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
 

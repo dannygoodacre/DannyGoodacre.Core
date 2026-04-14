@@ -44,7 +44,8 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
-    protected async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    // ReSharper disable once MemberCanBeProtected.Global
+    public async virtual Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
 
@@ -76,7 +77,7 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
         }
         catch (Exception ex)
         {
-            // LogFailed(Logger, ex, CommandName);
+            LogFailed(Logger, ex, CommandName);
 
             return MapResult(Result.InternalError(ex.Message));
         }
