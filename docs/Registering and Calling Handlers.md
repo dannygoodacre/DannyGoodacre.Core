@@ -26,10 +26,5 @@ public Task<Result> ExecuteAsync(string property, CancellationToken cancellation
 
 ## Directly
 
-Simply expose the base `ExecuteAsync` method with a new public method, passing in a command/query request object directly.
+Simply call the base `ExecuteAsync` method, passing in a command/query request object directly.
 
-```csharp
-// Inside DoThingHandler
-public new Task<Result> ExecuteAsync(DoThingCommand command, CancellationToken cancellationToken = default)
-    => base.ExecuteAsync(command, cancellationToken);
-```
