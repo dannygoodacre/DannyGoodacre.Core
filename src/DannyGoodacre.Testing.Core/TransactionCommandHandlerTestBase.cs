@@ -40,8 +40,7 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
 
     protected void SetupLogger_UnexpectedNumberOfChanges(int expected, int actual)
         => LoggerMock
-            .Setup(LogLevel.Error,
-                $"Command '{CommandName}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
+            .Setup(LogLevel.Error, $"Command '{CommandName}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
 
     protected void SetupLogger_CanceledDuringRollback()
         => LoggerMock

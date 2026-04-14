@@ -19,11 +19,11 @@ public abstract partial class StateCommandHandlerBase<TCommand, TResult>
     {
         try
         {
-            var result = await base.ExecuteAsync(command, cancellationToken);
+            TResult result = await base.ExecuteAsync(command, cancellationToken);
 
             if (result.IsSuccess)
             {
-                await StateUnit.SaveChangesAsync(cancellationToken);
+                _ = await StateUnit.SaveChangesAsync(cancellationToken);
             }
 
             return result;

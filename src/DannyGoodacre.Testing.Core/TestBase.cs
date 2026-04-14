@@ -5,8 +5,7 @@ namespace DannyGoodacre.Testing.Core;
 public abstract class TestBase
 {
     [TearDown]
-    public void BaseTearDown()
-        => VerifyAllAndNoOtherCalls();
+    public void BaseTearDown() => VerifyAllAndNoOtherCalls();
 
     protected static void AssertSuccess(Result result)
     {
@@ -132,26 +131,26 @@ public abstract class TestBase
 
     private void VerifyAllAndNoOtherCalls()
     {
-        var mockFields = GetType()
+        IEnumerable<FieldInfo> mockFields = GetType()
             .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(f => f.FieldType.IsGenericType
-                        && f.FieldType.GetGenericTypeDefinition() == typeof(Mock<>));
+            .Where(x => x.FieldType.IsGenericType
+                        && x.FieldType.GetGenericTypeDefinition() == typeof(Mock<>));
 
-        foreach (var mockField in mockFields)
+        foreach (FieldInfo mockField in mockFields)
         {
-            var mock = mockField.GetValue(this);
+            object? mock = mockField.GetValue(this);
 
             if (mock is null)
             {
                 continue;
             }
 
-            var type = mock.GetType();
+            Type type = mock.GetType();
 
-            var verifyAllMethod = type.GetMethod("VerifyAll", Type.EmptyTypes);
+            MethodInfo? verifyAllMethod = type.GetMethod("VerifyAll", Type.EmptyTypes);
             verifyAllMethod?.Invoke(mock, null);
 
-            var verifyNoOtherCallsMethod = type.GetMethod("VerifyNoOtherCalls", Type.EmptyTypes);
+            MethodInfo? verifyNoOtherCallsMethod = type.GetMethod("VerifyNoOtherCalls", Type.EmptyTypes);
             verifyNoOtherCallsMethod?.Invoke(mock, null);
         }
     }

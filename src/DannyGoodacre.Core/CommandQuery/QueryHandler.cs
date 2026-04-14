@@ -16,9 +16,7 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
     /// <param name="queryRequest">The query request to validate.</param>
-    protected virtual void Validate(ValidationState validationState, TQuery queryRequest)
-    {
-    }
+    protected virtual void Validate(ValidationState validationState, TQuery queryRequest) { }
 
     /// <summary>
     /// The internal query logic.
@@ -35,7 +33,7 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
     // ReSharper disable once MemberCanBeProtected.Global
-    public async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken)
+    public async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
 

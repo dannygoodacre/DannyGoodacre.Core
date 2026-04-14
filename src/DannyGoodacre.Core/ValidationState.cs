@@ -11,7 +11,7 @@ public class ValidationState
 
     public void AddError(string property, string error)
     {
-        if (_errors.TryGetValue(property, out var err))
+        if (_errors.TryGetValue(property, out List<string>? err))
         {
             err.Add(error);
 
