@@ -15,15 +15,15 @@ public abstract partial class StateCommandHandlerBase<TCommand, TResult>
 
     private IStateUnit StateUnit { get; }
 
-    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    public async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await base.ExecuteAsync(command, cancellationToken);
+            TResult result = await base.ExecuteAsync(command, cancellationToken);
 
             if (result.IsSuccess)
             {
-                await StateUnit.SaveChangesAsync(cancellationToken);
+                _ = await StateUnit.SaveChangesAsync(cancellationToken);
             }
 
             return result;

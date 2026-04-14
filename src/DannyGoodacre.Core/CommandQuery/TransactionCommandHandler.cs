@@ -14,8 +14,7 @@ public abstract class TransactionCommandHandler<TCommand>(ILogger logger, ITrans
     : TransactionCommandHandlerBase<TCommand, Result>(logger, transactionUnit)
     where TCommand : ICommand
 {
-    protected private override Result MapResult(Result result)
-        => result;
+    protected private override Result MapResult(Result result) => result;
 }
 
 /// <summary>
@@ -30,6 +29,5 @@ public abstract class TransactionCommandHandler<TCommand, TResult>(ILogger logge
     : TransactionCommandHandlerBase<TCommand, Result<TResult>>(logger, transactionUnit)
     where TCommand : ICommand
 {
-    protected private override Result<TResult> MapResult(Result result)
-        => new(result);
+    protected private override Result<TResult> MapResult(Result result) => new(result);
 }

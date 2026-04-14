@@ -13,8 +13,7 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
     : StateCommandHandlerBase<TCommand, Result>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected private override Result MapResult(Result result)
-        => result;
+    protected private override Result MapResult(Result result) => result;
 }
 
 /// <summary>
@@ -28,6 +27,5 @@ public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, ISt
     : StateCommandHandlerBase<TCommand, Result<TResult>>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected private override Result<TResult> MapResult(Result result)
-        => new(result);
+    protected private override Result<TResult> MapResult(Result result) => new(result);
 }

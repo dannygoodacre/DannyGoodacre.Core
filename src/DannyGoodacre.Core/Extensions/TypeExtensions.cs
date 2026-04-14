@@ -8,13 +8,13 @@ internal static class TypeExtensions
     {
         public bool IsCommandHandler()
         {
-            var baseType = type.BaseType;
+            Type? baseType = type.BaseType;
 
             while (baseType is not null)
             {
                 if (baseType.IsGenericType)
                 {
-                    var definition = baseType.GetGenericTypeDefinition();
+                    Type definition = baseType.GetGenericTypeDefinition();
 
                     if (definition == typeof(CommandHandlerBase<,>))
                     {
@@ -30,13 +30,13 @@ internal static class TypeExtensions
 
         public bool IsQueryHandler()
         {
-            var baseType = type.BaseType;
+            Type? baseType = type.BaseType;
 
             while (baseType is not null)
             {
                 if (baseType.IsGenericType)
                 {
-                    var definition = baseType.GetGenericTypeDefinition();
+                    Type definition = baseType.GetGenericTypeDefinition();
 
                     if (definition == typeof(QueryHandler<,>))
                     {

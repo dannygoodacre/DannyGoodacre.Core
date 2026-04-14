@@ -11,17 +11,17 @@ public static class ServiceCollectionExtensions
     {
         public IServiceCollection AddCommandHandlers(params Assembly[] assemblies)
         {
-            var handlerTypes = assemblies
+            IEnumerable<Type> handlerTypes = assemblies
                 .SelectMany(x => x.GetTypes())
                 .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsCommandHandler());
 
-            foreach (var handlerType in handlerTypes)
+            foreach (Type handlerType in handlerTypes)
             {
-                services.AddScoped(handlerType);
+                _ = services.AddScoped(handlerType);
 
-                var interfaces = handlerType.GetHandlerInterfaces();
+                IEnumerable<Type> interfaces = handlerType.GetHandlerInterfaces();
 
-                foreach (var serviceType in interfaces)
+                foreach (Type serviceType in interfaces)
                 {
                     services.AddScoped(serviceType, handlerType);
                 }
@@ -32,17 +32,17 @@ public static class ServiceCollectionExtensions
 
         public IServiceCollection AddQueryHandlers(params Assembly[] assemblies)
         {
-            var handlerTypes = assemblies
+            IEnumerable<Type> handlerTypes = assemblies
                 .SelectMany(x => x.GetTypes())
                 .Where(x => x is { IsAbstract: false, IsClass: true } && x.IsQueryHandler());
 
-            foreach (var handlerType in handlerTypes)
+            foreach (Type handlerType in handlerTypes)
             {
                 services.AddScoped(handlerType);
 
-                var interfaces = handlerType.GetHandlerInterfaces();
+                IEnumerable<Type> interfaces = handlerType.GetHandlerInterfaces();
 
-                foreach (var serviceType in interfaces)
+                foreach (Type serviceType in interfaces)
                 {
                     services.AddScoped(serviceType, handlerType);
                 }

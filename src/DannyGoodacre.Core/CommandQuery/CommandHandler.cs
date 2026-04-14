@@ -13,8 +13,7 @@ public abstract class CommandHandler<TCommand>(ILogger logger)
     : CommandHandlerBase<TCommand, Result>(logger)
     where TCommand : ICommand
 {
-    protected private override Result MapResult(Result result)
-        => result;
+    protected private override Result MapResult(Result result) => result;
 }
 
 /// <summary>
@@ -28,6 +27,5 @@ public abstract class CommandHandler<TCommand, TResult>(ILogger logger)
     : CommandHandlerBase<TCommand, Result<TResult>>(logger)
     where TCommand : ICommand
 {
-    protected private override Result<TResult> MapResult(Result result)
-        => new(result);
+    protected private override Result<TResult> MapResult(Result result) => new(result);
 }

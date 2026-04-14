@@ -27,13 +27,13 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
-    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken)
+    public async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
+        await using ITransaction transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
 
         try
         {
-            var result = await base.ExecuteAsync(command, cancellationToken);
+            TResult result = await base.ExecuteAsync(command, cancellationToken);
 
             if (!result.IsSuccess)
             {
@@ -42,7 +42,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
                 return result;
             }
 
-            var actualChanges = await TransactionUnit.SaveChangesAsync(cancellationToken);
+            int actualChanges = await TransactionUnit.SaveChangesAsync(cancellationToken);
 
             if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
             {
