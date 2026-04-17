@@ -1,8 +1,24 @@
 # DannyGoodacre.Core
 
+A collection of libraries used across my .NET projects.
+
+## DannyGoodacre.Cqrs
+
 A lightweight framework implementing the [Command Query Separation](https://martinfowler.com/bliki/CommandQuerySeparation.html) pattern in .NET, providing a standardized way to handle application logic and maintain state integrity with a unified, result-oriented flow.
 
 See the [docs](./docs/) for a detailed guide to the various classes provided.
+
+## DannyGoodacre.Primitives
+
+WIP: Result, Result<T>, and ValidationState classes for structuring responses.
+
+## DannyGoodacre.Testing
+
+TODO
+
+## DannyGoodacre.Cqrs.Testing
+
+TODO
 
 ## TL;DR
 
