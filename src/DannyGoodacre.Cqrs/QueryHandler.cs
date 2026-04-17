@@ -6,8 +6,14 @@ namespace DannyGoodacre.Cqrs;
 public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     where TQuery : IQuery
 {
+    /// <summary>
+    /// The display name of the command.
+    /// </summary>
     protected abstract string QueryName { get; }
 
+    /// <summary>
+    /// The <see cref="ILogger"/> instance for structured reporting.
+    /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
     protected ILogger Logger { get; } = logger;
 
@@ -15,7 +21,7 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     /// Validate the query before execution.
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
-    /// <param name="queryRequest">The query request to validate.</param>
+    /// <param name="queryRequest">The query to validate.</param>
     protected virtual void Validate(ValidationState validationState, TQuery queryRequest) { }
 
     /// <summary>
@@ -32,7 +38,6 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     /// <param name="query">The query to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    // ReSharper disable once MemberCanBeProtected.Global
     public async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
@@ -63,11 +68,11 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
 
             return Result<TResult>.Canceled();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            LogCriticalFailure(Logger, e, QueryName);
+            LogCriticalFailure(Logger, ex, QueryName);
 
-            return Result<TResult>.InternalError(e.Message);
+            return Result<TResult>.InternalError(ex.Message);
         }
     }
 
@@ -81,5 +86,5 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     private static partial void LogCanceledDuringExecution(ILogger logger, string query);
 
     [LoggerMessage(LogLevel.Critical, "Query '{Query}' failed.")]
-    private static partial void LogCriticalFailure(ILogger logger, Exception ex, string query);
+    private static partial void LogCriticalFailure(ILogger logger, Exception exception, string query);
 }

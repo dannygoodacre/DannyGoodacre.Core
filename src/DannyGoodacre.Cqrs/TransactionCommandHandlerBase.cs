@@ -14,10 +14,17 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
         TransactionUnit = transactionUnit;
     }
 
-    private ITransactionUnit TransactionUnit { get; }
+    /// <summary>
+    /// The transaction provider for the lifecycle of this command.
+    /// </summary>
+    /// <remarks>
+    /// This is used in derived classes to perform additional data persistence and transaction control.
+    /// </remarks>
+    // ReSharper disable once MemberCanBePrivate.Global
+    protected ITransactionUnit TransactionUnit { get; }
 
     /// <summary>
-    /// The number of state entries expected to be persisted upon completion.
+    /// The number of state entries expected to be persisted upon completion of the command.
     /// </summary>
     /// <value>
     /// Defaults to -1 to disable validation.

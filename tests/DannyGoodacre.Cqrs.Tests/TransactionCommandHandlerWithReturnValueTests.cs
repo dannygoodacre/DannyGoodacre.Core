@@ -86,7 +86,6 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
         // Assert
         AssertInternalError(result, "Attempted to persist an unexpected number of changes.");
-
     }
 
     [Test]

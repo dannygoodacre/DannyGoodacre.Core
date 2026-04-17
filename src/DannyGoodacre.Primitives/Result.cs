@@ -64,8 +64,8 @@ public class Result
             Error = error
         };
 
-    public static Result InternalError(Exception exception) =>
-        new()
+    public static Result InternalError(Exception exception)
+        => new()
         {
             Status = Status.InternalError,
             Exception = exception

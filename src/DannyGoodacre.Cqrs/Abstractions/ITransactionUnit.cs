@@ -1,7 +1,7 @@
 namespace DannyGoodacre.Cqrs;
 
 /// <summary>
-/// Extends the state unit to support explicit transaction management.
+/// Defines an abstraction extending the state unit to support explicit transaction management.
 /// </summary>
 public interface ITransactionUnit : IStateUnit
 {

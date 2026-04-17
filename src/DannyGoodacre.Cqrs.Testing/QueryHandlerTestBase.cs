@@ -28,17 +28,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
 
         LoggerMock
             .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Information)))
-            .Returns(true);
-
-        LoggerMock
-            .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Error)))
-            .Returns(true);
-
-        LoggerMock
-            .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Critical)))
+                It.IsAny<LogLevel>()))
             .Returns(true);
     }
 

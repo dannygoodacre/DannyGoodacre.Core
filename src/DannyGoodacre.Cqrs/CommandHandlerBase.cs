@@ -12,22 +12,25 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
         Logger = logger;
     }
 
-    protected ILogger Logger { get; }
-
     /// <summary>
     /// The display name of the command.
     /// </summary>
     protected abstract string CommandName { get; }
 
     /// <summary>
+    /// The <see cref="ILogger"/> instance for structured reporting.
+    /// </summary>
+    protected ILogger Logger { get; }
+
+    /// <summary>
     /// Validate the command before execution.
     /// </summary>
     /// <param name="validationState">A <see cref="ValidationState"/> to populate with the operation's outcome.</param>
-    /// <param name="command">The command request to validate.</param>
+    /// <param name="command">The command to validate.</param>
     protected virtual void Validate(ValidationState validationState, TCommand command) { }
 
     /// <summary>
-    /// The core command logic.
+    /// The internal command logic.
     /// </summary>
     /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
@@ -36,15 +39,12 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     /// </returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
-    protected private abstract TResult MapResult(Result result);
-
     /// <summary>
     /// Execute the command by validating it first and, if valid, execute the internal logic.
     /// </summary>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
-    // ReSharper disable once MemberCanBeProtected.Global
     public async virtual Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
@@ -82,6 +82,8 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
             return MapResult(Result.InternalError(ex.Message));
         }
     }
+
+    protected private abstract TResult MapResult(Result result);
 
     [LoggerMessage(LogLevel.Error, "Command '{Command}' failed validation: {ValidationState}")]
     private static partial void LogFailedValidation(ILogger logger, string command, ValidationState validationState);
