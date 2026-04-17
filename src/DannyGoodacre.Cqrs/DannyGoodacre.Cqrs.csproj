@@ -3,11 +3,11 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <PackageId>DannyGoodacre.Cqrs</PackageId>
-        <Version>0.5.0</Version>
+        <Version>0.6.0</Version>
         <Authors>Danny Goodacre</Authors>
-        <Description>A lightweight CQRS and clean architecture foundation library, including a result pattern and state management.</Description>
+        <Description>A lightweight CQRS and clean architecture foundation library including state and transaction control.</Description>
         <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
