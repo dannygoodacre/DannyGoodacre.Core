@@ -10,15 +10,14 @@ See the [docs](./docs/) for a detailed guide to the various classes provided.
 
 ## DannyGoodacre.Primitives
 
-WIP: Result, Result<T>, and ValidationState classes for structuring responses.
-
+Result and Result\<T\> classes for robust result handling and a validation state for standardized error responses. 
 ## DannyGoodacre.Testing
 
-TODO
+A base class for testing using [NUnit](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-csharp-with-nunit) and [Moq](https://github.com/devlooped/moq), providing assertion methods tailored for `Result` types and an automated teardown mechanism invoking `VerifyAllAndNoOtherCalls` to ensure mock integrity.
 
 ## DannyGoodacre.Cqrs.Testing
 
-TODO
+Base classes for testing CQRS handlers defined using `DannyGoodacre.Cqrs`.
 
 ## TL;DR
 
