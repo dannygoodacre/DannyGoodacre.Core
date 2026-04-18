@@ -17,7 +17,7 @@ public class Result
 
     protected private Result() { }
 
-    protected Result(Result result)
+    protected private Result(Result result)
     {
         Status = result.Status;
         Error = result.Error;
