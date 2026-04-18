@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
+        <ProjectReference Include="..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
     </ItemGroup>
 
 </Project>
