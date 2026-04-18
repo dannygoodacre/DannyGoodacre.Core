@@ -11,6 +11,7 @@ See the [docs](./docs/) for a detailed guide to the various classes provided.
 ## DannyGoodacre.Primitives
 
 Result and Result\<T\> classes for robust result handling and a validation state for standardized error responses. 
+
 ## DannyGoodacre.Testing
 
 A base class for testing using [NUnit](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-csharp-with-nunit) and [Moq](https://github.com/devlooped/moq), providing assertion methods tailored for `Result` types and an automated teardown mechanism invoking `VerifyAllAndNoOtherCalls` to ensure mock integrity.
