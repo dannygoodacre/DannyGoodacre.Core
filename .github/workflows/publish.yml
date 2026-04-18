@@ -21,11 +21,19 @@ jobs:
 
             - name: Pack
               run: |
-                dotnet pack src/DannyGoodacre.Core/DannyGoodacre.Core.csproj \
+                dotnet pack src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj \
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
 
-                dotnet pack src/DannyGoodacre.Testing.Core/DannyGoodacre.Testing.Core.csproj \
+                dotnet pack src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj \
+                --configuration Release \
+                --output ${{ github.workspace }}/nupkg
+                
+                dotnet pack src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj \
+                --configuration Release \
+                --output ${{ github.workspace }}/nupkg
+                
+                dotnet pack src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj \
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
 
