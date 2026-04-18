@@ -1,4 +1,4 @@
-using DannyGoodacre.Testing.Core;
+using DannyGoodacre.Testing;
 using NUnit.Framework;
 
 namespace DannyGoodacre.Primitives.Tests;

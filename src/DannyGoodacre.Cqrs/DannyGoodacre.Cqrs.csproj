@@ -17,11 +17,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Tests"/>
+      <ProjectReference Include="..\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
+        <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Tests"/>
     </ItemGroup>
 
 </Project>

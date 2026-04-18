@@ -3,7 +3,7 @@ using DannyGoodacre.Primitives;
 using Moq;
 using NUnit.Framework;
 
-namespace DannyGoodacre.Testing.Core;
+namespace DannyGoodacre.Testing;
 
 public abstract class TestBase
 {
