@@ -1,0 +1,12 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="./src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj" />
+        <Project Path="./src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj" />
+        <Project Path="./src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj" />
+        <Project Path="./src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="./tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />
+        <Project Path="./tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
+    </Folder>
+</Solution>

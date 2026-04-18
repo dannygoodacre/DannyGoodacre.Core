@@ -1,0 +1,160 @@
+﻿using System.Reflection;
+using DannyGoodacre.Primitives;
+using Moq;
+using NUnit.Framework;
+
+namespace DannyGoodacre.Testing;
+
+public abstract class TestBase
+{
+    [TearDown]
+    public void BaseTearDown() => VerifyAllAndNoOtherCalls();
+
+    protected static void AssertSuccess(Result result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+        }
+    }
+
+    protected static void AssertSuccess<T>(Result<T> result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+        }
+    }
+
+    protected static void AssertSuccess<T>(Result<T> result, T expectedValue)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.True);
+            Assert.That(result.Status, Is.EqualTo(Status.Success));
+            Assert.That(result.Value, Is.EqualTo(expectedValue));
+        }
+    }
+
+    protected static void AssertInvalid(Result result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
+        }
+    }
+
+    protected static void AssertInvalid<T>(Result<T> result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
+        }
+    }
+
+    protected static void AssertDomainError(Result result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertDomainError<T>(Result<T> result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertCanceled(Result result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
+        }
+    }
+
+    protected static void AssertCanceled<T>(Result<T> result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
+        }
+    }
+
+    protected static void AssertNotFound(Result result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
+        }
+    }
+
+    protected static void AssertNotFound<T>(Result<T> result)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
+        }
+    }
+
+    protected static void AssertInternalError(Result result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertInternalError<T>(Result<T> result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    private void VerifyAllAndNoOtherCalls()
+    {
+        IEnumerable<FieldInfo> mockFields = GetType()
+            .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
+            .Where(x => x.FieldType.IsGenericType
+                        && x.FieldType.GetGenericTypeDefinition() == typeof(Mock<>));
+
+        foreach (FieldInfo mockField in mockFields)
+        {
+            object? mock = mockField.GetValue(this);
+
+            if (mock is null)
+            {
+                continue;
+            }
+
+            Type type = mock.GetType();
+
+            MethodInfo? verifyAllMethod = type.GetMethod("VerifyAll", Type.EmptyTypes);
+            verifyAllMethod?.Invoke(mock, null);
+
+            MethodInfo? verifyNoOtherCallsMethod = type.GetMethod("VerifyNoOtherCalls", Type.EmptyTypes);
+            verifyNoOtherCallsMethod?.Invoke(mock, null);
+        }
+    }
+}
