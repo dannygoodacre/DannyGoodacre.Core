@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <PackageId>DannyGoodacre.Primitives</PackageId>
-        <Version>0.6.0</Version>
+        <Version>0.7.0</Version>
         <Authors>Danny Goodacre</Authors>
         <Description>A lightweight primitives library providing Result types and a structured validation state for method responses.</Description>
         <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>

@@ -38,7 +38,7 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     /// <param name="query">The query to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    public async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
+    protected async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
     {
         var validationState = new ValidationState();
 

@@ -3,7 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <PackageId>DannyGoodacre.Testing</PackageId>
-        <Version>0.6.0</Version>
+        <Version>0.7.0</Version>
         <Authors>Danny Goodacre</Authors>
         <Description>A lightweight testing foundation library.</Description>
         <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>

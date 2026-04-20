@@ -15,7 +15,7 @@ public abstract partial class StateCommandHandlerBase<TCommand, TResult>
 
     private IStateUnit StateUnit { get; }
 
-    public async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try
         {
