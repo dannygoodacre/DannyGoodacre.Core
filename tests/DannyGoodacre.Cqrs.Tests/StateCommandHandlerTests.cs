@@ -21,7 +21,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        public new Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
     }
 
