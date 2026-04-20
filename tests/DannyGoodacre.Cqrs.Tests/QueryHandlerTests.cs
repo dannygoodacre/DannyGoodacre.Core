@@ -17,8 +17,11 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         protected override void Validate(ValidationState validationState, TestQuery query)
             => _testValidate(validationState, query);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken)
+        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(query, cancellationToken);
+
+        public Task<Result<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
+            => ExecuteAsync(query, cancellationToken);
     }
 
     private const string TestName = "Test Query Handler";
@@ -33,7 +36,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
     protected override string QueryName => TestName;
 
-    protected override Task<Result<int>> Act() => QueryHandler.ExecuteAsync(_testQuery, CancellationToken);
+    protected override Task<Result<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, CancellationToken);
 
     [SetUp]
     public void SetUp()

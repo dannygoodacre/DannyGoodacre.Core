@@ -19,6 +19,9 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
+
+        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+            => ExecuteAsync(command, cancellationToken);
     }
 
     private const string TestName = "Test Command Handler";
@@ -31,7 +34,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
     protected override string CommandName => TestName;
 
-    protected override Task<Result> Act() => CommandHandler.ExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<Result> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     [SetUp]
     public void SetUp()

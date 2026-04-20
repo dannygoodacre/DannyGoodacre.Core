@@ -20,6 +20,9 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
         protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
+
+        public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+            => ExecuteAsync(command, cancellationToken);
     }
 
     private const string TestName = "Test Transaction Command Handler";
@@ -36,7 +39,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
     protected override string CommandName => TestName;
 
-    protected override Task<Result<int>> Act() => CommandHandler.ExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<Result<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     protected override int TestActualChanges => _testActualChanges;
 

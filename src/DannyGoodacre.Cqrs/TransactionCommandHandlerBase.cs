@@ -34,7 +34,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
-    public async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         await using ITransaction transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
 
