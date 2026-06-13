@@ -30,7 +30,7 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// Defaults to -1 to disable validation.
     /// </value>
     /// <remarks>
-    /// This is compared against the result of <see cref="ITransactionUnit.SaveChangesAsync"/>.
+    /// This is compared against the result of <see cref="IStateUnit.SaveChangesAsync"/>.
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
