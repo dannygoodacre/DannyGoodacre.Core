@@ -8,6 +8,7 @@ namespace DannyGoodacre.Cqrs;
 /// application state.
 /// </summary>
 /// <param name="logger">The logger used for structured reporting.</param>
+/// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
 public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit stateUnit)
     : StateCommandHandlerBase<TCommand, Result>(logger, stateUnit)
@@ -21,6 +22,7 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
 /// application state and return a value.
 /// </summary>
 /// <param name="logger">The logger used for structured reporting.</param>
+/// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
 /// <typeparam name="TResult">The type of the return value in <see cref="Result{T}"/>.</typeparam>
 public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, IStateUnit stateUnit)
