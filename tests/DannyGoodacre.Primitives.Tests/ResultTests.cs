@@ -81,7 +81,24 @@ public sealed class ResultTests : TestBase
     }
 
     [Test]
-    public void Cancelled()
+    public void Conflict()
+    {
+        // Arrange
+        const string message = "Test Message";
+
+        // Act
+        var result = Result.Conflict(message);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+            Assert.That(result.Error, Is.EqualTo(message));
+        }
+    }
+
+    [Test]
+    public void Canceled()
     {
         // Act
         var result = Result.Canceled();
