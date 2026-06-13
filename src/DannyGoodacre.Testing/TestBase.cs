@@ -76,6 +76,26 @@ public abstract class TestBase
         }
     }
 
+    protected static void AssertConflict(Result result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
+    protected static void AssertConflict<T>(Result<T> result, string error)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+            Assert.That(result.Error, Is.EqualTo(error));
+        }
+    }
+
     protected static void AssertCanceled(Result result)
     {
         using (Assert.EnterMultipleScope())

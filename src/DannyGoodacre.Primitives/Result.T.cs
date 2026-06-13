@@ -37,6 +37,13 @@ public class Result<T> : Result
             Error = error
         };
 
+    public new static Result<T> Conflict(string error)
+        => new()
+        {
+            Status = Status.Conflict,
+            Error = error
+        };
+
     public new static Result<T> Canceled()
         => new()
         {

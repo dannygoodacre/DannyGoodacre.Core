@@ -86,13 +86,20 @@ public sealed class ResultWithValueTests
     }
 
     [Test]
-    public void NotFound()
+    public void Conflict()
     {
+        // Arrange
+        const string message = "Test Message";
+
         // Act
-        var result = Result<int>.NotFound();
+        var result = Result<int>.Conflict(message);
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.NotFound));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+            Assert.That(result.Error, Is.EqualTo(message));
+        }
     }
 
     [Test]
@@ -103,6 +110,16 @@ public sealed class ResultWithValueTests
 
         // Assert
         Assert.That(result.Status, Is.EqualTo(Status.Canceled));
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        var result = Result<int>.NotFound();
+
+        // Assert
+        Assert.That(result.Status, Is.EqualTo(Status.NotFound));
     }
 
     [Test]
