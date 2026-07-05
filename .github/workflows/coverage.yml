@@ -43,8 +43,7 @@ jobs:
           reportgenerator \
             -reports:./coverage_data/*/coverage.cobertura.xml \
             -targetdir:coverage_report \
-            -reporttypes:"Html;MarkdownSummaryGithub" \
-            -assemblyfilters:"-DannyGoodacre.Testing;-DannyGoodacre.Cqrs.Testing"
+            -reporttypes:"Html;MarkdownSummaryGithub"
 
       - name: Add Artifact Link to Summary File
         run: |
