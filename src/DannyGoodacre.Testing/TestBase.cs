@@ -86,18 +86,6 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertInternalError(Result result)
-    {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
-
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-
-            Assert.That(result.Error, Is.Null);
-        }
-    }
-
     protected static void AssertInternalError(Result result, string error)
     {
         using (Assert.EnterMultipleScope())

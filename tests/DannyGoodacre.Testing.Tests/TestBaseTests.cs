@@ -256,7 +256,7 @@ public sealed class TestBaseTests
     }
 
     [Test]
-    public void AssertInternalError_WhenInternalError_DoesNotThrow()
+    public void AssertInternalError_WhenInternalErrorWithMessage_DoesNotThrow()
     {
         // Arrange
         const string message = "Test Error Message";
@@ -268,7 +268,7 @@ public sealed class TestBaseTests
     }
 
     [Test]
-    public void AssertInternalError_WhenInternalErrorAndMessagesDoNotMatch_DoesThrow()
+    public void AssertInternalError_WhenInternalErrorWithMessagesAndMessagesDoNotMatch_DoesThrow()
     {
         // Arrange
         const string expectedMessage = "Test Expected Message";
@@ -291,5 +291,31 @@ public sealed class TestBaseTests
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, message));
+    }
+
+    [Test]
+    public void AssertInternalError_WhenInternalErrorWithException_ShouldNotThrowException()
+    {
+        // Arrange
+        Exception exception = new("Test Exception");
+
+        Result result = Result.InternalError(exception);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertInternalError(result, exception));
+    }
+
+    [Test]
+    public void AssertInternalError_WhenInternalErrorWithExceptionAndExceptionsDoNotMatch_ShouldNotThrowException()
+    {
+        // Arrange
+        Exception expectedException = new("Test Expected Exception");
+
+        Exception actualException = new("Test Actual Exception");
+
+        Result result = Result.InternalError(actualException);
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, expectedException));
     }
 }
