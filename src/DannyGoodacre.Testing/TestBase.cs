@@ -34,7 +34,7 @@ public abstract class TestBase
         {
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Status, Is.EqualTo(Status.Success));
-            Assert.That(result.Value, Is.EqualTo(expectedValue));
+            Assert.That(result.Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
         }
     }
 
