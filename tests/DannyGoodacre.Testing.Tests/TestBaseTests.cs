@@ -8,14 +8,59 @@ public sealed class TestBaseTests
 {
     private sealed record TestModel(int Id, string Name, List<string> Items);
 
-    private sealed class TestWrapper : TestBase
+    private sealed class TestBase : Testing.TestBase
     {
-        public static void TestAssertSuccess<T>(Result<T> result, T expectedValue)
-            => AssertSuccess(result, expectedValue);
+        public static void TestAssertSuccess(Result result) => AssertSuccess(result);
+
+        public static void TestAssertSuccess<T>(Result<T> result, T expectedValue) => AssertSuccess(result, expectedValue);
+
+        public static void TestAssertInvalid(Result result) => AssertInvalid(result);
+
+        public static void TestAssertDomainError(Result result, string error) => AssertDomainError(result, error);
+
+        public static void TestAssertConflict(Result result, string error) => AssertConflict(result, error);
+
+        public static void TestAssertCanceled(Result result) => AssertCanceled(result);
+
+        public static void TestAssertNotFound(Result result) => AssertNotFound(result);
+
+        public static void TestAssertInternalError(Result result, string error) => AssertInternalError(result, error);
+
+        public static void TestAssertInternalError(Result result, Exception exception) => AssertInternalError(result, exception);
     }
 
     [Test]
-    public void AssertSuccess_WhenSuccessfulAndValuesMatch_ShouldNotThrowAssertionException()
+    public void AssertSuccess_WhenSuccess_DoesNotThrow()
+    {
+        // Arrange
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertSuccess(result));
+    }
+
+    [Test]
+    public void AssertSuccess_WhenNotSuccess_DoesThrow()
+    {
+        // Arrange
+        Result result = Result.InternalError("Test Error Message");
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result));
+    }
+
+    [Test]
+    public void AssertSuccess_WithValue_WhenSuccess_DoesNotThrow()
+    {
+        // Arrange
+        Result<int> result = Result<int>.Success(123);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertSuccess(result));
+    }
+
+    [Test]
+    public void AssertSuccess_WithValue_WhenSuccessAndValuesMatch_DoesNotThrow()
     {
         // Arrange
         TestModel expected = new(123, "Test Name", ["Test Item 1", "Test Item 2"]);
@@ -25,49 +70,226 @@ public sealed class TestBaseTests
         Result<TestModel> result = Result<TestModel>.Success(actual);
 
         // Act & Assert
-        Assert.DoesNotThrow(() => TestWrapper.TestAssertSuccess(result, expected));
+        Assert.DoesNotThrow(() => TestBase.TestAssertSuccess(result, expected));
     }
 
     [Test]
-    public void AssertSuccess_WhenNotSuccessful_ShouldThrowAssertionException()
+    public void AssertSuccess_WithValue_WhenNotSuccess_DoesThrow()
     {
         // Arrange
-        TestModel expected = new TestModel(1, "Test", ["A"]);
+        Result<int> result = Result<int>.InternalError("Test Error Message");
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result));
+    }
+
+    [Test]
+    public void AssertSuccess_WithValue_WhenNotSuccessAndExpectedValueProvided_DoesThrow()
+    {
+        // Arrange
+        TestModel expected = new(1, "Test", ["A"]);
 
         Result<TestModel> result = Result<TestModel>.InternalError("Test Error Message");
 
         // Act & Assert
-        MultipleAssertException? exception = Assert.Throws<MultipleAssertException>(()
-            => TestWrapper.TestAssertSuccess(result, expected));
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result, expected));
     }
 
     [Test]
-    public void AssertSuccess_WhenPropertiesMismatch_ShouldThrowAssertionException()
+    public void AssertSuccess_WithValue_WhenSuccessAndValuesDoNotMatch_DoesThrow()
     {
         // Arrange
-        TestModel expected = new TestModel(1, "Test Expected Name", ["Test Item 1"]);
+        TestModel expected = new(1, "Test Expected Name", ["Test Item 1"]);
 
-        TestModel actual = new TestModel(1, "Test Actual Name", ["Test Item 1"]);
+        TestModel actual = new(1, "Test Actual Name", ["Test Item 1"]);
 
         Result<TestModel> result = Result<TestModel>.Success(actual);
 
         // Act & Assert
-        MultipleAssertException? exception = Assert.Throws<MultipleAssertException>(()
-            => TestWrapper.TestAssertSuccess(result, expected));
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result, expected));
     }
 
     [Test]
-    public void AssertSuccess_WhenNestedPropertiesMismatch_ShouldThrowAssertionException()
+    public void AssertSuccess_WithValue_WhenSuccessAndNestedPropertiesDoNotMatch_DoesThrow()
     {
         // Arrange
-        TestModel expected = new TestModel(1, "Test Name", ["Test Expected Item 1"]);
+        TestModel expected = new(1, "Test Name", ["Test Expected Item 1"]);
 
-        TestModel actual = new TestModel(1, "Test Name", ["Test Actual Item 1"]);
+        TestModel actual = new(1, "Test Name", ["Test Actual Item 1"]);
 
         Result<TestModel> result = Result<TestModel>.Success(actual);
 
         // Act & Assert
-        MultipleAssertException? exception = Assert.Throws<MultipleAssertException>(()
-            => TestWrapper.TestAssertSuccess(result, expected));
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result, expected));
+    }
+
+    [Test]
+    public void AssertInvalid_WhenInvalid_DoesNotThrow()
+    {
+        // Arrange
+        ValidationState state = new();
+
+        state.AddError("Test Property", "Test Error");
+
+        Result result = Result.Invalid(state);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertInvalid(result));
+    }
+
+    [Test]
+    public void AssertInvalid_WhenNotInvalid_DoesThrow()
+    {
+        // Arrange
+        ValidationState state = new();
+
+        state.AddError("Test Property", "Test Error");
+
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInvalid(result));
+    }
+
+    [Test]
+    public void AssertDomainError_WhenDomainError_DoesNotThrow()
+    {
+        // Arrange
+        const string message = "Test Error Message";
+
+        Result result = Result.DomainError(message);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertDomainError(result, message));
+    }
+
+    [Test]
+    public void AssertDomainError_WhenDomainErrorAndMessagesDoNotMatch_DoesThrow()
+    {
+        // Arrange
+        const string expectedMessage = "Test Expected Message";
+
+        const string actualMessage = "Test Actual Message";
+
+        Result result = Result.DomainError(actualMessage);
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertDomainError(result, expectedMessage));
+    }
+
+    [Test]
+    public void AssertDomainError_WhenNotDomainError_DoesThrow()
+    {
+        // Arrange
+        const string message = "Test Error Message";
+
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertDomainError(result, message));
+    }
+
+    [Test]
+    public void AssertConflict_WhenConflict_DoesNotThrow()
+    {
+        // Arrange
+        const string message = "Test Conflict Message";
+
+        Result result = Result.Conflict(message);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertConflict(result, message));
+    }
+
+    [Test]
+    public void AssertConflict_WhenConflictAndMessagesDoNotMatch_DoesThrow()
+    {
+        // Arrange
+        const string expectedMessage = "Test Expected Message";
+
+        const string actualMessage = "Test Actual Message";
+
+        Result result = Result.Conflict(actualMessage);
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertConflict(result, expectedMessage));
+    }
+
+    [Test]
+    public void AssertCanceled_WhenCanceled_DoesNotThrow()
+    {
+        // Arrange
+        Result result = Result.Canceled();
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertCanceled(result));
+    }
+
+    [Test]
+    public void AssertCanceled_WhenNotCanceled_DoesThrow()
+    {
+        // Arrange
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertCanceled(result));
+    }
+
+    [Test]
+    public void AssertNotFound_WhenNotFound_DoesNotThrow()
+    {
+        // Arrange
+        Result result = Result.NotFound();
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertNotFound(result));
+    }
+
+    [Test]
+    public void AssertNotFound_WhenNotNotFound_DoesNotThrow()
+    {
+        // Arrange
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertNotFound(result));
+    }
+
+    [Test]
+    public void AssertInternalError_WhenInternalError_DoesNotThrow()
+    {
+        // Arrange
+        const string message = "Test Error Message";
+
+        Result result = Result.InternalError(message);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => TestBase.TestAssertInternalError(result, message));
+    }
+
+    [Test]
+    public void AssertInternalError_WhenInternalErrorAndMessagesDoNotMatch_DoesThrow()
+    {
+        // Arrange
+        const string expectedMessage = "Test Expected Message";
+
+        const string actualMessage = "Test Actual Message";
+
+        Result result = Result.InternalError(actualMessage);
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, expectedMessage));
+    }
+
+    [Test]
+    public void AssertInternalError_WhenNotInternalError_DoesThrow()
+    {
+        // Arrange
+        const string message = "Test Error Message";
+
+        Result result = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, message));
     }
 }

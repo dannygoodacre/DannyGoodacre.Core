@@ -6,23 +6,31 @@ namespace DannyGoodacre.Primitives.Tests;
 public sealed class ResultWithValueTests
 {
     [Test]
-    public void IsSuccess_WhenSuccessful_ReturnsTrue()
+    public void IsSuccess_WhenSuccessful_ShouldReturnTrue()
     {
+        // Arrange
+        const int value = 123;
+
+        Result<int> result = Result<int>.Success(value);
+
         // Act
-        var result = Result<int>.Success(123);
+        bool isSuccess = result.IsSuccess;
 
         // Assert
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(isSuccess, Is.True);
     }
 
     [Test]
-    public void IsSuccess_WhenUnsuccessful_ReturnsFalse()
+    public void IsSuccess_WhenUnsuccessful_ShouldReturnFalse()
     {
+        // Arrange
+        Result<int> result = Result<int>.InternalError("Test Error Message");
+
         // Act
-        var result = Result<int>.InternalError("Test Error");
+        bool isSuccess = result.IsSuccess;
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(isSuccess, Is.False);
     }
 
     [Test]
@@ -32,13 +40,20 @@ public sealed class ResultWithValueTests
         const int value = 123;
 
         // Act
-        var result = Result<int>.Success(value);
+        Result<int> result = Result<int>.Success(value);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(Status.Success));
+
             Assert.That(result.Value, Is.EqualTo(value));
+
+            Assert.That(result.Error, Is.Null);
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
         }
     }
 
@@ -46,7 +61,7 @@ public sealed class ResultWithValueTests
     public void Invalid()
     {
         // Arrange
-        var validationState = new ValidationState();
+        ValidationState validationState = new ValidationState();
 
         const string property1 = "Test Property 1";
         const string property2 = "Test Property 2";
@@ -58,13 +73,20 @@ public sealed class ResultWithValueTests
         validationState.AddError(property2, error2);
 
         // Act
-        var result = Result<int>.Invalid(validationState);
+        Result<int> result = Result<int>.Invalid(validationState);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-            Assert.That(result.ValidationState, Is.EqualTo(validationState));
+
+            Assert.That(result.Value, Is.Default);
+
+            Assert.That(result.Error, Is.Null);
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
         }
     }
 
@@ -75,13 +97,20 @@ public sealed class ResultWithValueTests
         const string message = "Test Message";
 
         // Act
-        var result = Result<int>.DomainError(message);
+        Result<int> result = Result<int>.DomainError(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(Status.DomainError));
+
+            Assert.That(result.Value, Is.Default);
+
             Assert.That(result.Error, Is.EqualTo(message));
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
         }
     }
 
@@ -92,13 +121,20 @@ public sealed class ResultWithValueTests
         const string message = "Test Message";
 
         // Act
-        var result = Result<int>.Conflict(message);
+        Result<int> result = Result<int>.Conflict(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+
+            Assert.That(result.Value, Is.Default);
+
             Assert.That(result.Error, Is.EqualTo(message));
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
         }
     }
 
@@ -106,63 +142,89 @@ public sealed class ResultWithValueTests
     public void Canceled()
     {
         // Act
-        var result = Result<int>.Canceled();
+        Result<int> result = Result<int>.Canceled();
 
         // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.Canceled));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
+
+            Assert.That(result.Value, Is.Default);
+
+            Assert.That(result.Error, Is.Null);
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
+        }
     }
 
     [Test]
     public void NotFound()
     {
         // Act
-        var result = Result<int>.NotFound();
-
-        // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.NotFound));
-    }
-
-    [Test]
-    public void InternalError()
-    {
-        // Act
-        var result = Result<int>.InternalError("Test Error");
-
-        // Assert
-        Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-    }
-
-    [Test]
-    public void InternalErrorWithMessage()
-    {
-        // Arrange
-        const string message = "Test Message";
-
-        // Act
-        var result = Result<int>.InternalError(message);
+        Result<int> result = Result<int>.NotFound();
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-            Assert.That(result.Error, Is.EqualTo(message));
+            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
+
+            Assert.That(result.Value, Is.Default);
+
+            Assert.That(result.Error, Is.Null);
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
         }
     }
 
     [Test]
-    public void InternalErrorWithException()
+    public void InternalError_WithMessage()
     {
         // Arrange
-        var exception = new Exception("Test Exception");
+        const string message = "Test Error Message";
 
         // Act
-        var result = Result<int>.InternalError(exception);
+        Result<int> result = Result<int>.InternalError(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
         {
             Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-            Assert.That(result.Exception, Is.EqualTo(exception));
+
+            Assert.That(result.Value, Is.Default);
+
+            Assert.That(result.Error, Is.EqualTo(message));
+
+            Assert.That(result.Exception, Is.Null);
+
+            Assert.That(result.ValidationState, Is.Null);
+        }
+    }
+
+    [Test]
+    public void InternalError_WithException()
+    {
+        // Arrange
+        Exception exception = new("Test Exception");
+
+        // Act
+        Result<int> result = Result<int>.InternalError(exception);
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
+
+            Assert.That(result.Value, Is.Default);
+
+            Assert.That(result.Error, Is.Null);
+
+            Assert.That(result.Exception, Is.EqualTo(exception).UsingPropertiesComparer());
+
+            Assert.That(result.ValidationState, Is.Null);
         }
     }
 }
