@@ -76,6 +76,20 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
         }
     }
 
+    protected Result<TResult> Success(TResult result) => Result<TResult>.Success(result);
+
+    protected Result<TResult> Invalid(ValidationState validationState) => Result<TResult>.Invalid(validationState);
+
+    protected Result<TResult> DomainError(string error) => Result<TResult>.DomainError(error);
+
+    protected Result<TResult> Conflict(string error) => Result<TResult>.Conflict(error);
+
+    protected Result<TResult> NotFound() => Result<TResult>.NotFound();
+
+    protected Result<TResult> InternalError(string error) => Result<TResult>.InternalError(error);
+
+    protected Result<TResult> InternalError(Exception exception) => Result<TResult>.InternalError(exception);
+
     [LoggerMessage(LogLevel.Error, "Query '{Query}' failed validation: {ValidationState}")]
     private static partial void LogFailedValidation(ILogger logger, string query, ValidationState validationState);
 

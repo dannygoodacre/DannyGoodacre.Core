@@ -83,6 +83,18 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
         }
     }
 
+    protected TResult Invalid(ValidationState validationState) => MapResult(Result.Invalid(validationState));
+
+    protected TResult DomainError(string error) => MapResult(Result.DomainError(error));
+
+    protected TResult Conflict(string error) => MapResult(Result.Conflict(error));
+
+    protected TResult NotFound() => MapResult(Result.NotFound());
+
+    protected TResult InternalError(string error) => MapResult(Result.InternalError(error));
+
+    protected TResult InternalError(Exception exception) => MapResult(Result.InternalError(exception));
+
     protected private abstract TResult MapResult(Result result);
 
     [LoggerMessage(LogLevel.Error, "Command '{Command}' failed validation: {ValidationState}")]
