@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
+      <ProjectReference Include="..\..\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
+      <ProjectReference Include="..\DannyGoodacre.Identity.Application.Abstractions\DannyGoodacre.Identity.Application.Abstractions.csproj" />
+      <ProjectReference Include="..\DannyGoodacre.Identity.Configuration\DannyGoodacre.Identity.Configuration.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Options">
+        <HintPath>..\..\..\..\..\.nuget\packages\microsoft.extensions.options\10.0.9\lib\net10.0\Microsoft.Extensions.Options.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+    
+</Project>

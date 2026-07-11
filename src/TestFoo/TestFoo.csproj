@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation">
+        <HintPath>..\..\..\..\.nuget\packages\microsoft.aspnetcore.cryptography.keyderivation\10.0.1\lib\net10.0\Microsoft.AspNetCore.Cryptography.KeyDerivation.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+</Project>

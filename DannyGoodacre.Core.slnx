@@ -1,15 +1,29 @@
 <Solution>
     <Folder Name="/src/">
-        <Project Path="./src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj" />
-        <Project Path="./src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj" />
-        <Project Path="./src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj" />
-        <Project Path="./src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
+        <Project Path="src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj" />
+        <Project Path="src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj" />
+        <Project Path="src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj" />
+        <Project Path="src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
         <Project Path="src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj" />
+        <Project Path="src/Test/Test.csproj" />
+        <Project Path="src/TestFoo/TestFoo.csproj" />
+    </Folder>
+    <Folder Name="/src/DannyGoodacre.Identity/">
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Application/DannyGoodacre.Identity.Application.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Application.Abstractions/DannyGoodacre.Identity.Application.Abstractions.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Configuration/DannyGoodacre.Identity.Configuration.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Core/DannyGoodacre.Identity.Core.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Data/DannyGoodacre.Identity.Data.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Hashing/DannyGoodacre.Identity.Hashing.csproj" />
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="./tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />
-        <Project Path="./tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Application.Tests/DannyGoodacre.Identity.Application.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Tests.Harness/DannyGoodacre.Identity.Tests.Harness.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Testing.Tests/DannyGoodacre.Testing.Tests.csproj" />
     </Folder>
 </Solution>
