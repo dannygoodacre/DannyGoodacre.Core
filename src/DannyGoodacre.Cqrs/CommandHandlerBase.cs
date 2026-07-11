@@ -89,6 +89,8 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
 
     protected TResult Conflict(string error) => MapResult(Result.Conflict(error));
 
+    protected TResult Canceled() => MapResult(Result.Canceled());
+
     protected TResult NotFound() => MapResult(Result.NotFound());
 
     protected TResult InternalError(string error) => MapResult(Result.InternalError(error));

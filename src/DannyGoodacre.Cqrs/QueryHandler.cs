@@ -84,6 +84,8 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
 
     protected Result<TResult> Conflict(string error) => Result<TResult>.Conflict(error);
 
+    protected Result<TResult> Canceled() => Result<TResult>.Canceled();
+
     protected Result<TResult> NotFound() => Result<TResult>.NotFound();
 
     protected Result<TResult> InternalError(string error) => Result<TResult>.InternalError(error);
