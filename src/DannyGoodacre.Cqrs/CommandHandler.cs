@@ -14,6 +14,8 @@ public abstract class CommandHandler<TCommand>(ILogger logger)
     where TCommand : ICommand
 {
     protected private override Result MapResult(Result result) => result;
+
+    protected Result Success() => Result.Success();
 }
 
 /// <summary>
@@ -28,4 +30,6 @@ public abstract class CommandHandler<TCommand, TResult>(ILogger logger)
     where TCommand : ICommand
 {
     protected private override Result<TResult> MapResult(Result result) => new(result);
+
+    protected Result<TResult> Success(TResult result) => Result<TResult>.Success(result);
 }
