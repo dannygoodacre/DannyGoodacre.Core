@@ -34,12 +34,12 @@ internal sealed class ApproveUserHandler(ILogger<ApproveUserHandler> logger,
 
         if (user is null)
         {
-            return Result.NotFound();
+            return NotFound();
         }
 
         user.IsApproved = true;
 
-        return Result.Success();
+        return Success();
     }
 
     public Task<Result> ExecuteAsync(string username, CancellationToken cancellationToken = default)

@@ -3,7 +3,7 @@ using DannyGoodacre.Identity.Core;
 
 namespace DannyGoodacre.Identity.Application.Extensions;
 
-public static class UserExtensions
+internal static class UserExtensions
 {
     extension(User user)
     {

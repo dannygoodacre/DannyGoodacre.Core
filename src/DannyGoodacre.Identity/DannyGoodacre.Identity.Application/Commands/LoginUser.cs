@@ -50,7 +50,7 @@ internal sealed class LoginUserHandler(ILogger<LoginUserHandler> logger,
 
         user.LastLogin = DateTime.UtcNow;
 
-        return Result.Success(user.SecurityStamp);
+        return Success(user.SecurityStamp);
     }
 
     public Task<Result<string>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default)
