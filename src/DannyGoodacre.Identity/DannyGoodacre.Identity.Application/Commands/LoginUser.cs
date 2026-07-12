@@ -29,7 +29,7 @@ internal sealed class LoginUserHandler(ILogger<LoginUserHandler> logger,
 
     protected async override Task<Result<string>> InternalExecuteAsync(LoginUserCommand command, CancellationToken cancellationToken = default)
     {
-        var user = await repository.GetWithTrackingAsync(command.Username, cancellationToken);
+        var user = await repository.GetByNameWithTrackingAsync(command.Username, cancellationToken);
 
         if (user is null)
         {

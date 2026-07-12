@@ -1,6 +1,7 @@
 using DannyGoodacre.Identity.Application;
 using DannyGoodacre.Identity.Data;
 using DannyGoodacre.Identity.Hashing;
+using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,10 +27,7 @@ public static class ServiceCollectionExtensions
                     configureOptions?.Invoke(options);
                 });
 
-            // if (typeof(TContext) != typeof(IdentityContext))
-            // {
-            //     services.AddScoped<IdentityContext>(provider => provider.GetRequiredService<TContext>());
-            // }
+            services.AddScoped<ICookieService, CookieService>();
 
             services.AddData<TContext>();
 

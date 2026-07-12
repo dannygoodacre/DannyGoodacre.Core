@@ -30,7 +30,7 @@ internal sealed class ApproveUserHandler(ILogger<ApproveUserHandler> logger,
     protected async override Task<Result> InternalExecuteAsync(ApproveUserCommand command,
                                                                CancellationToken cancellationToken = default)
     {
-        User? user = await repository.GetWithTrackingAsync(command.Username, cancellationToken);
+        User? user = await repository.GetByNameWithTrackingAsync(command.Username, cancellationToken);
 
         if (user is null)
         {

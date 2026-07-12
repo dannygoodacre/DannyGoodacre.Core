@@ -29,6 +29,7 @@ public static class IdentityApiEndpointRouteBuilderExtensions
             group.MapPost("/session", async Task<IResult> ([FromServices] ILoginUser loginUser,
                                                            [FromServices] ICookieService cookieService,
                                                            [FromBody] LoginRequest request,
+                                                           HttpContext httpContext,
                                                            CancellationToken cancellationToken) =>
             {
                 var result = await loginUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
@@ -44,10 +45,19 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                     new("SecurityStamp", result.Value)
                 };
 
-                await cookieService.IssueCookie(claims);
+                await cookieService.IssueCookieAsync(httpContext, claims);
 
                 return Results.NoContent();
             });
+
+            group.MapDelete("/session", async Task<IResult> ([FromServices] ICookieService cookieService,
+                                                             HttpContext httpContext) =>
+            {
+                await cookieService.RevokeCookieAsync(httpContext);
+
+                return Results.NoContent();
+            })
+            .RequireAuthorization();
 
             return group;
         }

@@ -8,5 +8,7 @@ public interface IUserRepository
 
     Task<bool> ExistsAsync(string username, CancellationToken cancellationToken = default);
 
-    Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default);
+    Task<User?> GetByNameAsync(string username, CancellationToken cancellationToken = default);
+
+    Task<User?> GetByNameWithTrackingAsync(string username, CancellationToken cancellationToken = default);
 }

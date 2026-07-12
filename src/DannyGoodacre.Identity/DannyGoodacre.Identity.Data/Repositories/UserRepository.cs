@@ -12,12 +12,13 @@ public class UserRepository(IdentityContext context) : IUserRepository
 
     public Task<bool> ExistsAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
-            .AnyAsync(user => user.Username == username, cancellationToken);
+            .AnyAsync(x => x.Username == username, cancellationToken);
 
-    public Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default)
+    public Task<User?> GetByNameAsync(string username, CancellationToken cancellationToken = default)
+        => context.Users
+            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+    public Task<User?> GetByNameWithTrackingAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
             .AsTracking()
-            .FirstOrDefaultAsync(
-                user => user.Username == username,
-                cancellationToken);
+            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
 }
