@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using DannyGoodacre.Identity.Application.Querys;
+using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Primitives;
 using Microsoft.AspNetCore.Authentication;

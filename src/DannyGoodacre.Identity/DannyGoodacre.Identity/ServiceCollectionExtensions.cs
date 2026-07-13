@@ -15,6 +15,12 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddIdentity<TContext>(Action<CookieAuthenticationOptions>? configureOptions = null)
             where TContext : IdentityContext
         {
+            services.AddScoped<SecurityStampValidatorService>();
+
+            services.AddScoped<IClaimsService, ClaimsService>();
+
+            services.AddScoped<ICookieService, CookieService>();
+
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
@@ -23,6 +29,8 @@ public static class ServiceCollectionExtensions
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.Cookie.SameSite = SameSiteMode.Strict;
                     options.LoginPath = "/session";
+
+                    options.EventsType = typeof(SecurityStampValidatorService);
 
                     configureOptions?.Invoke(options);
                 });

@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace DannyGoodacre.Identity.Core;
+namespace DannyGoodacre.Identity.Domain.Entities;
 
-public class User
+public sealed class User
 {
     [Key]
     public int Id { get; init; }
+
+    public Guid PublicId { get; set; }
 
     public required string Username { get; set; }
 
@@ -19,5 +21,7 @@ public class User
 
     public required string ConcurrencyStamp { get; set; }
 
-    public ICollection<Role> Roles { get; set; } = null!;
+    public ICollection<Role> Roles { get; set; } = [];
+
+    public ICollection<UserClaim> Claims { get; set; } = [];
 }

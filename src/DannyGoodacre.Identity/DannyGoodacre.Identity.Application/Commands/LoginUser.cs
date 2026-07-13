@@ -8,7 +8,7 @@ namespace DannyGoodacre.Identity.Application.Commands;
 
 public interface ILoginUser
 {
-    public Task<Result<string>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default);
+    public Task<Result<int>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default);
 }
 
 internal sealed record LoginUserCommand : ICommand
@@ -22,12 +22,12 @@ internal sealed class LoginUserHandler(ILogger<LoginUserHandler> logger,
                                        IStateUnit stateUnit,
                                        IUserRepository repository,
                                        IHashingService hashingService)
-    : StateCommandHandler<LoginUserCommand, string>(logger, stateUnit), ILoginUser
+    : StateCommandHandler<LoginUserCommand, int>(logger, stateUnit), ILoginUser
 {
 
     protected override string CommandName => "Login User";
 
-    protected async override Task<Result<string>> InternalExecuteAsync(LoginUserCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<Result<int>> InternalExecuteAsync(LoginUserCommand command, CancellationToken cancellationToken = default)
     {
         var user = await repository.GetByNameWithTrackingAsync(command.Username, cancellationToken);
 
@@ -50,10 +50,10 @@ internal sealed class LoginUserHandler(ILogger<LoginUserHandler> logger,
 
         user.LastLogin = DateTime.UtcNow;
 
-        return Success(user.SecurityStamp);
+        return Success(user.Id);
     }
 
-    public Task<Result<string>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default)
+    public Task<Result<int>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default)
         => ExecuteAsync(new LoginUserCommand
         {
             Username = username,

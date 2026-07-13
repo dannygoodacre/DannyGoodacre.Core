@@ -9,7 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
       <ProjectReference Include="..\DannyGoodacre.Identity.Application.Abstractions\DannyGoodacre.Identity.Application.Abstractions.csproj" />
-      <ProjectReference Include="..\DannyGoodacre.Identity.Core\DannyGoodacre.Identity.Core.csproj" />
+      <ProjectReference Include="..\DannyGoodacre.Identity.Domain\DannyGoodacre.Identity.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>

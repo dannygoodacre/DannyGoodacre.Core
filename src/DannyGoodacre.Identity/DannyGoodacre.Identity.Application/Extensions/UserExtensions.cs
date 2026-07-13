@@ -1,5 +1,5 @@
 using DannyGoodacre.Identity.Application.Models;
-using DannyGoodacre.Identity.Core;
+using DannyGoodacre.Identity.Domain.Entities;
 
 namespace DannyGoodacre.Identity.Application.Extensions;
 

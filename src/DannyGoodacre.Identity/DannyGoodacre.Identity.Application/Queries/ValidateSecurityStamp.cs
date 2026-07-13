@@ -1,11 +1,11 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Application.Extensions;
-using DannyGoodacre.Identity.Core;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 
-namespace DannyGoodacre.Identity.Application.Querys;
+namespace DannyGoodacre.Identity.Application.Queries;
 
 public interface IValidateSecurityStamp
 {

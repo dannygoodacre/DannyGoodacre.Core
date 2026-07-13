@@ -4,37 +4,37 @@ using DannyGoodacre.Identity.Application.Abstractions.Services;
 using DannyGoodacre.Identity.Application.Extensions;
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Application.Services;
-using DannyGoodacre.Identity.Core;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Identity.Application.Commands;
 
-public interface ICreateUser
+public interface IAddUser
 {
     Task<Result<UserInfo>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default);
 }
 
-internal sealed record CreateUserCommand : ICommand
+internal sealed record AddUserCommand : ICommand
 {
     public required string Username { get; init; }
 
     public required string Password { get; init; }
 }
 
-internal sealed class CreateUserHandler(ILogger<CreateUserHandler> logger,
-                                        IStateUnit stateUnit,
-                                        IPasswordValidatorService passwordValidatorService,
-                                        IHashingService hashingService,
-                                        IUserRepository repository)
-    : StateCommandHandler<CreateUserCommand, UserInfo>(logger, stateUnit), ICreateUser
+internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
+                                     IStateUnit stateUnit,
+                                     IPasswordValidatorService passwordValidatorService,
+                                     IHashingService hashingService,
+                                     IUserRepository repository)
+    : StateCommandHandler<AddUserCommand, UserInfo>(logger, stateUnit), IAddUser
 {
-    protected override string CommandName => "Create User";
+    protected override string CommandName => "Add User";
 
-    protected override void Validate(ValidationState state, CreateUserCommand command)
+    protected override void Validate(ValidationState state, AddUserCommand command)
         => passwordValidatorService.IsPasswordValid(state, command.Password);
 
-    protected async override Task<Result<UserInfo>> InternalExecuteAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<Result<UserInfo>> InternalExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default)
     {
         bool isUsernameTaken = await repository.ExistsAsync(command.Username, cancellationToken);
 
@@ -58,7 +58,7 @@ internal sealed class CreateUserHandler(ILogger<CreateUserHandler> logger,
     }
 
     public Task<Result<UserInfo>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new CreateUserCommand
+        => ExecuteAsync(new AddUserCommand
         {
             Username = username,
             Password = password

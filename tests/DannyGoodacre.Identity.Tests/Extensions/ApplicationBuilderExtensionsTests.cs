@@ -1,7 +1,4 @@
-using DannyGoodacre.Core;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 

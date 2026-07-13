@@ -1,8 +1,4 @@
-using DannyGoodacre.Identity.Application.Commands;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DannyGoodacre.Identity.Tests.Extensions;
 

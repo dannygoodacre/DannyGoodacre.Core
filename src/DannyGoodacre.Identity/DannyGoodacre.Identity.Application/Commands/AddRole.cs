@@ -5,38 +5,38 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Identity.Application.Commands;
 
-public interface ICreateRole
+public interface IAddRole
 {
     Task<Result> ExecuteAsync(string name, CancellationToken cancellationToken = default);
 }
 
-internal sealed record CreateRoleCommand : ICommand
+internal sealed record AddRoleCommand : ICommand
 {
     public required string Name { get; init; }
 }
 
-internal sealed class CreateRoleHandler(ILogger<CreateRoleHandler> logger,
+internal sealed class AddRoleHandler(ILogger<AddRoleHandler> logger,
                                         IStateUnit stateUnit,
                                         IRoleRepository repository)
-    : StateCommandHandler<CreateRoleCommand>(logger, stateUnit), ICreateRole
+    : StateCommandHandler<AddRoleCommand>(logger, stateUnit), IAddRole
 {
 
-    protected override string CommandName => "Create Role";
+    protected override string CommandName => "Add Role";
 
-    protected async override Task<Result> InternalExecuteAsync(CreateRoleCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<Result> InternalExecuteAsync(AddRoleCommand command, CancellationToken cancellationToken = default)
     {
         if (await repository.ExistsAsync(command.Name, cancellationToken))
         {
-            return Result.DomainError("Role already exists");
+            return DomainError("Role already exists");
         }
 
         repository.Add(command.Name);
 
-        return Result.Success();
+        return Success();
     }
 
     public Task<Result> ExecuteAsync(string name, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new CreateRoleCommand
+        => ExecuteAsync(new AddRoleCommand
         {
             Name = name
         }, cancellationToken);

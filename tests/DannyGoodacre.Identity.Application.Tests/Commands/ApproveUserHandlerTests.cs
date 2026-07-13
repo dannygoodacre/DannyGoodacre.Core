@@ -1,8 +1,9 @@
 using DannyGoodacre.Core;
 using DannyGoodacre.Identity.Application.Abstractions;
 using DannyGoodacre.Identity.Application.Commands;
-using DannyGoodacre.Identity.Core;
+
 using Microsoft.Extensions.Logging;
+using Microsoft.Testing.Platform.Logging;
 
 namespace DannyGoodacre.Identity.Application.Tests.Commands;
 
