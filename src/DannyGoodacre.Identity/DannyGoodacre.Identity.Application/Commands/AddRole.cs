@@ -1,5 +1,6 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
+using DannyGoodacre.Identity.Application.Extensions;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 
@@ -7,37 +8,66 @@ namespace DannyGoodacre.Identity.Application.Commands;
 
 public interface IAddRole
 {
-    Task<Result> ExecuteAsync(string name, CancellationToken cancellationToken = default);
+    Task<Result> ExecuteAsync(string name, List<Guid> claimIds, CancellationToken cancellationToken = default);
 }
 
 internal sealed record AddRoleCommand : ICommand
 {
     public required string Name { get; init; }
+
+    public required List<Guid> ClaimIds { get; init; }
 }
 
 internal sealed class AddRoleHandler(ILogger<AddRoleHandler> logger,
-                                        IStateUnit stateUnit,
-                                        IRoleRepository repository)
+                                     IStateUnit stateUnit,
+                                     IRoleRepository roleRepository,
+                                     IClaimRepository claimRepository)
     : StateCommandHandler<AddRoleCommand>(logger, stateUnit), IAddRole
 {
 
     protected override string CommandName => "Add Role";
 
+    protected override void Validate(ValidationState validationState, AddRoleCommand command)
+    {
+        validationState.IsNotNullEmptyOrWhitespace(command.Name, nameof(command.Name));
+
+        foreach (Guid claimId in command.ClaimIds)
+        {
+            validationState.IsNonEmptyGuid(claimId, nameof(command.ClaimIds));
+        }
+    }
+
     protected async override Task<Result> InternalExecuteAsync(AddRoleCommand command, CancellationToken cancellationToken = default)
     {
-        if (await repository.ExistsAsync(command.Name, cancellationToken))
+        if (await roleRepository.ExistsAsync(command.Name, cancellationToken))
         {
-            return DomainError("Role already exists");
+            return Conflict("Role already exists");
         }
 
-        repository.Add(command.Name);
+        List<Guid> missingClaimIds = [];
+
+        foreach (Guid claimId in command.ClaimIds)
+        {
+            if (!await claimRepository.ExistsAsync(claimId, cancellationToken))
+            {
+                missingClaimIds.Add(claimId);
+            }
+        }
+
+        if (missingClaimIds.Count > 0)
+        {
+            return DomainError($"Missing claims: {string.Join(' ', missingClaimIds.Select(x => x.ToString()))}.");
+        }
+
+        roleRepository.Add(command.Name);
 
         return Success();
     }
 
-    public Task<Result> ExecuteAsync(string name, CancellationToken cancellationToken = default)
+    public Task<Result> ExecuteAsync(string name, List<Guid> claimIds, CancellationToken cancellationToken = default)
         => ExecuteAsync(new AddRoleCommand
         {
-            Name = name
+            Name = name,
+            ClaimIds = claimIds
         }, cancellationToken);
 }

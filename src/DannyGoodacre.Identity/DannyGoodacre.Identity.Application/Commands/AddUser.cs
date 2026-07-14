@@ -40,7 +40,7 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
         if (isUsernameTaken)
         {
-            return DomainError("Username already taken");
+            return Conflict("Username already taken");
         }
 
         User user = new()

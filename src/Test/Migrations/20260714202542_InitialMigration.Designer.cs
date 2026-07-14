@@ -11,7 +11,7 @@ using Test;
 namespace Test.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20260713215026_InitialMigration")]
+    [Migration("20260714202542_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -25,6 +25,9 @@ namespace Test.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -47,6 +50,9 @@ namespace Test.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PublicId")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("UserId")

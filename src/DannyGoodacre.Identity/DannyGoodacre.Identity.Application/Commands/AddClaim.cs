@@ -1,5 +1,7 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
+using DannyGoodacre.Identity.Application.Extensions;
+using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
@@ -8,7 +10,7 @@ namespace DannyGoodacre.Identity.Application.Commands;
 
 public interface IAddClaim
 {
-    Task<Result> ExecuteAsync(string type, string value, CancellationToken cancellationToken = default);
+    Task<Result<ClaimResponse>> ExecuteAsync(string type, string value, CancellationToken cancellationToken = default);
 }
 
 internal sealed record AddClaimCommand : ICommand
@@ -18,23 +20,31 @@ internal sealed record AddClaimCommand : ICommand
     public required string Value { get; init; }
 }
 
-internal sealed class AddClaimHandler(ILogger<AddClaimHandler> logger, IStateUnit stateUnit, IClaimRepository repository)
-    : StateCommandHandler<AddClaimCommand>(logger, stateUnit), IAddClaim
+internal sealed class AddClaimHandler(ILogger<AddClaimHandler> logger,
+                                      IStateUnit stateUnit,
+                                      IClaimRepository repository)
+    : StateCommandHandler<AddClaimCommand, ClaimResponse>(logger, stateUnit), IAddClaim
 {
     protected override string CommandName => "Add Claim";
 
-    protected override Task<Result> InternalExecuteAsync(AddClaimCommand command, CancellationToken cancellationToken = default)
+    protected async override Task<Result<ClaimResponse>> InternalExecuteAsync(AddClaimCommand command, CancellationToken cancellationToken = default)
     {
-        _ = repository.Add(new Claim
+        if (await repository.ExistsAsync(command.Type, command.Value, cancellationToken))
         {
+            return Conflict("Claim already exists");
+        }
+
+        Claim claim = repository.Add(new Claim()
+        {
+            PublicId = Guid.NewGuid(),
             Type = command.Type,
             Value = command.Value
         });
 
-        return Task.FromResult(Success());
+        return Success(claim.ToResponse());
     }
 
-    public Task<Result> ExecuteAsync(string type, string value, CancellationToken cancellationToken = default)
+    public Task<Result<ClaimResponse>> ExecuteAsync(string type, string value, CancellationToken cancellationToken = default)
         => ExecuteAsync(new AddClaimCommand
         {
             Type = type,

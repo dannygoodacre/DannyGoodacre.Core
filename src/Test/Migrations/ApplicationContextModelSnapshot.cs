@@ -23,6 +23,9 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -44,6 +47,9 @@ namespace Test.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("PublicId")
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("UserId")

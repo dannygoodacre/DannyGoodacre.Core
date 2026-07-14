@@ -73,17 +73,18 @@ public static class IdentityApiEndpointRouteBuilderExtensions
                                                         [FromBody] CreateClaimRequest request,
                                                         CancellationToken cancellationToken) =>
             {
-                Result result = await addClaim.ExecuteAsync(request.Type, request.Value, cancellationToken);
+                Result<ClaimResponse> result = await addClaim.ExecuteAsync(request.Type, request.Value, cancellationToken);
 
+                // TODO: need to return created response instead of OK.
                 return result.ToHttpResponse();
             })
             .RequireAuthorization();
 
-            group.MapPost("role", async Task<IResult> ([FromServices] IAddRole createRole,
-                                                       [FromBody] string roleName,
+            group.MapPost("role", async Task<IResult> ([FromServices] IAddRole addRole,
+                                                       [FromBody] AddRoleRequest request,
                                                        CancellationToken cancellationToken) =>
             {
-                Result result = await createRole.ExecuteAsync(roleName, cancellationToken);
+                Result result = await addRole.ExecuteAsync(request.Name, request.ClaimIds, cancellationToken);
 
                 return result.ToHttpResponse();
             })

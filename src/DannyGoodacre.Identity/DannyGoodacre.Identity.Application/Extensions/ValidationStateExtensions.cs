@@ -36,6 +36,18 @@ internal static class ValidationStateExtensions
             return state;
         }
 
+        public bool IsNonEmptyGuid(Guid value, string name)
+        {
+            if (value != Guid.Empty)
+            {
+                return true;
+            }
+
+            state.AddError(name, "Must not be empty.");
+
+            return false;
+        }
+
         public ValidationState DoesContainNonAlphanumeric(string value, string name)
         {
             if (value.All(x => char.IsUpper(x) || char.IsLower(x) || char.IsDigit(x)))
