@@ -9,4 +9,6 @@ public interface IClaimRepository
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<bool> ExistsAsync(string type, string value, CancellationToken cancellationToken = default);
+
+    Task<Claim?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 }

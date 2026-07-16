@@ -5,14 +5,25 @@ namespace DannyGoodacre.Identity.Application.Extensions;
 
 internal static class ClaimExtensions
 {
-    extension(Claim value)
+    extension(Claim claim)
     {
         public ClaimResponse ToResponse()
             => new()
             {
-                Id = value.PublicId,
-                Type = value.Type,
-                Value = value.Value
+                Id = claim.PublicId,
+                Type = claim.Type,
+                Value = claim.Value
+            };
+    }
+
+    extension(RoleClaim claim)
+    {
+        public ClaimResponse ToResponse()
+            => new()
+            {
+                Id = claim.Claim.PublicId,
+                Type = claim.Type,
+                Value = claim.Value
             };
     }
 }

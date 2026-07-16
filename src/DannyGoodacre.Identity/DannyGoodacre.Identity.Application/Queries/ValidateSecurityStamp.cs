@@ -33,7 +33,7 @@ internal sealed class ValidateSecurityStampHandler(ILogger<ValidateSecurityStamp
 
     protected async override Task<Result<bool>> InternalExecuteAsync(ValidateSecurityStampQuery query, CancellationToken cancellationToken = default)
     {
-        User? user = await repository.GetByNameAsync(query.Username, cancellationToken);
+        User? user = await repository.GetAsync(query.Username, cancellationToken);
 
         return Success(user is not null && user.SecurityStamp != query.SecurityStamp);
     }

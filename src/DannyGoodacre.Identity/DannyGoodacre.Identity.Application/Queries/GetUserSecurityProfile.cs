@@ -25,7 +25,7 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
 
     protected async override Task<Result<UserSecurityProfile>> InternalExecuteAsync(GetUserSecurityProfileQuery query, CancellationToken cancellationToken = default)
     {
-        User? user = await repository.GetByNameAsync(query.Username, cancellationToken);
+        User? user = await repository.GetAsync(query.Username, cancellationToken);
 
         if (user is null)
         {

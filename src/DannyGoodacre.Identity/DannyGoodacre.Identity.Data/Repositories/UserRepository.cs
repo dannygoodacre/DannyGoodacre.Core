@@ -10,6 +10,10 @@ public class UserRepository(IdentityContext context) : IUserRepository
         => context.Users
             .Add(user).Entity;
 
+    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+        => context.Users
+            .AnyAsync(x => x.PublicId == id, cancellationToken);
+
     public Task<bool> ExistsAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
             .AnyAsync(x => x.Username == username, cancellationToken);
@@ -20,14 +24,18 @@ public class UserRepository(IdentityContext context) : IUserRepository
             .Include(x => x.Roles)
             .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
 
-    public Task<User?> GetByNameAsync(string username, CancellationToken cancellationToken = default)
+    public Task<User?> GetAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
             .Include(x => x.Claims)
             .Include(x => x.Roles)
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
 
-    public Task<User?> GetByNameWithTrackingAsync(string username, CancellationToken cancellationToken = default)
+    public Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
             .AsTracking()
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+
+    public void Remove(User user)
+        => context.Users
+            .Remove(user);
 }

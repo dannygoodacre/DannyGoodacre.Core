@@ -7,4 +7,6 @@ public interface IRoleRepository
     Role Add(string name);
 
     Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default);
+
+    Task<Role?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 }

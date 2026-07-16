@@ -17,4 +17,8 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
     public Task<bool> ExistsAsync(string type, string value, CancellationToken cancellationToken = default)
         => context.Claims
             .AnyAsync(x => x.Type == type && x.Value == value, cancellationToken);
+
+    public Task<Claim?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+        => context.Claims
+            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
 }

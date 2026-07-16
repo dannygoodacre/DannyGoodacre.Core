@@ -13,4 +13,10 @@ public class RoleRepository(IdentityContext context) : IRoleRepository
     public Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default)
         => context.Roles
             .AnyAsync(role => role.Name == name, cancellationToken);
+
+    public Task<Role?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+        => context.Roles
+            .Include(x => x.Claims)
+            .ThenInclude(x => x.Claim)
+            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
 }

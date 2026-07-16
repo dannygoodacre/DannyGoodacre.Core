@@ -10,6 +10,7 @@ internal static class UserExtensions
         public UserInfo ToUserInfoResponse()
             => new()
             {
+                Id = user.PublicId,
                 Username = user.Username,
                 IsApproved = user.IsApproved
             };
