@@ -4,7 +4,7 @@ namespace DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 
 public interface IRoleRepository
 {
-    Role Add(string name);
+    Role Add(Role role);
 
     Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default);
 

@@ -8,15 +8,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
-namespace DannyGoodacre.Identity;
+namespace DannyGoodacre.Identity.Endpoints;
 
 internal static class UserEndpoints
 {
     public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/users", async ([FromServices] IAddUser addUser,
-                                           [FromBody] RegistrationRequest request,
-                                           CancellationToken cancellationToken) =>
+        var group = endpoints
+            .MapGroup("users")
+            .WithTags("Identity: Users");
+
+        group.MapPost("", async ([FromServices] IAddUser addUser,
+                                 [FromBody] RegistrationRequest request,
+                                 CancellationToken cancellationToken) =>
         {
             Result<UserInfo> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
 
@@ -30,10 +34,21 @@ internal static class UserEndpoints
             return Results.CreatedAtRoute("GetUser", new { id = userInfo.Id }, userInfo);
         });
 
-        endpoints.MapGet("/users/{id:guid}", async ([FromServices] IGetUser getUser,
-                                                    [FromRoute] Guid id,
-                                                    HttpContext httpContext,
-                                                    CancellationToken cancellationToken) =>
+        group.MapPut("{id:guid}/approval", async ([FromServices] IApproveUser approveUser,
+                                                  Guid id,
+                                                  HttpContext httpContext,
+                                                  CancellationToken cancellationToken) =>
+        {
+            Result result = await approveUser.ExecuteAsync(id, cancellationToken);
+
+            return result.ToHttpResponse();
+        })
+        .RequireAuthorization();
+
+        group.MapGet("{id:guid}", async ([FromServices] IGetUser getUser,
+                                         [FromRoute] Guid id,
+                                         HttpContext httpContext,
+                                         CancellationToken cancellationToken) =>
         {
             if (!httpContext.IsSelfOrAdmin(id))
             {
@@ -47,11 +62,11 @@ internal static class UserEndpoints
         .WithName("GetUser")
         .RequireAuthorization();
 
-        endpoints.MapGet("/users/me", async ([FromServices] IGetUser getUser,
-                                             HttpContext httpContext,
-                                             CancellationToken cancellationToken) =>
+        group.MapGet("me", async ([FromServices] IGetUser getUser,
+                                  HttpContext httpContext,
+                                  CancellationToken cancellationToken) =>
         {
-            Guid? id = httpContext.GetUserId();
+            Guid? id = httpContext.UserId;
 
             if (id is null)
             {
@@ -64,10 +79,10 @@ internal static class UserEndpoints
         })
         .RequireAuthorization();
 
-        endpoints.MapDelete("/users/{id:guid}", async ([FromServices] IDeleteUser deleteUser,
-                                                       [FromRoute] Guid id,
-                                                       HttpContext httpContext,
-                                                       CancellationToken cancellationToken) =>
+        group.MapDelete("{id:guid}", async ([FromServices] IDeleteUser deleteUser,
+                                            [FromRoute] Guid id,
+                                            HttpContext httpContext,
+                                            CancellationToken cancellationToken) =>
         {
             if (!httpContext.IsSelfOrAdmin(id))
             {

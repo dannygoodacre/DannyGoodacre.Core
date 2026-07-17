@@ -32,7 +32,7 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
             return NotFound();
         }
 
-        List<string> roles = user.Roles.Select(x => x.Name).ToList();
+        List<string> roles = user.Roles.Select(x => x.Role.Name).ToList();
 
         // TODO: I don't like this being a tuple.
         List<(string, string)> claims = user.Claims.Select(x => (x.Type, x.Value)).ToList();

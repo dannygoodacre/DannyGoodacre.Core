@@ -5,24 +5,27 @@ using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Models;
 using DannyGoodacre.Identity.Services;
 using DannyGoodacre.Primitives;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
-namespace DannyGoodacre.Identity;
+namespace DannyGoodacre.Identity.Endpoints;
 
 internal static class SessionEndpoints
 {
     public static IEndpointRouteBuilder MapSessionEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapPost("/session", async Task<IResult> ([FromServices] ILoginUser loginUser,
-                                                           [FromServices] IGetUserSecurityProfile getUserSecurityProfile,
-                                                           [FromServices] IClaimsService claimsService,
-                                                           [FromServices] ICookieService cookieService,
-                                                           [FromBody] LoginRequest request,
-                                                           HttpContext httpContext,
-                                                           CancellationToken cancellationToken) =>
+        var group = endpoints.MapGroup("sessions").WithTags("Identity: Session");
+
+        group.MapPost("", async Task<IResult> ([FromServices] ILoginUser loginUser,
+                                               [FromServices] IGetUserSecurityProfile getUserSecurityProfile,
+                                               [FromServices] IClaimsService claimsService,
+                                               [FromServices] ICookieService cookieService,
+                                               [FromBody] LoginRequest request,
+                                               HttpContext httpContext,
+                                               CancellationToken cancellationToken) =>
         {
             Result<Guid> loginResult = await loginUser.ExecuteAsync(request.ToCommand(), cancellationToken);
 
@@ -47,27 +50,17 @@ internal static class SessionEndpoints
             return Results.NoContent();
         });
 
-        endpoints.MapGet("/session", (HttpContext httpContext) =>
-        {
-            var sessionInfo = new
-            {
-                IsAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false,
-                Username = httpContext.User.Identity?.Name,
-                Claims = httpContext.User.Claims.Select(c => new { c.Type, c.Value })
-            };
+        group.MapGet("me", (HttpContext httpContext) => Results.Ok(httpContext.SessionInfo))
+            .RequireAuthorization();
 
-            return Results.Ok(sessionInfo);
-        })
-        .RequireAuthorization();
-
-        endpoints.MapDelete("/session", async Task<IResult> ([FromServices] ICookieService cookieService,
+        group.MapDelete("me", async Task<IResult> ([FromServices] ICookieService cookieService,
                                                              HttpContext httpContext) =>
         {
             await cookieService.RevokeCookieAsync(httpContext);
 
             return Results.NoContent();
         })
-        .RequireAuthorization();
+        .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
 
         return endpoints;
     }

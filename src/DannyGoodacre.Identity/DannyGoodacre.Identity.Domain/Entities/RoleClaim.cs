@@ -14,8 +14,4 @@ public sealed class RoleClaim
     public int ClaimId { get; set; }
 
     public Claim Claim { get; set; } = null!;
-
-    public required string Type { get; set; }
-
-    public required string Value { get; set; }
 }

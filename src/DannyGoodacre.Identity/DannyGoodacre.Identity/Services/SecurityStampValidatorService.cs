@@ -9,10 +9,10 @@ using Microsoft.Extensions.Options;
 namespace DannyGoodacre.Identity.Services;
 
 internal sealed class SecurityStampValidatorService(IValidateSecurityStamp validateSecurityStamp,
-                                                    IOptions<IdentityOptions> options)
+                                                    IOptions<Configuration.IdentityOptions> options)
     : CookieAuthenticationEvents
 {
-    private readonly IdentityOptions _options = options.Value;
+    private readonly Configuration.IdentityOptions _options = options.Value;
 
     public async override Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {

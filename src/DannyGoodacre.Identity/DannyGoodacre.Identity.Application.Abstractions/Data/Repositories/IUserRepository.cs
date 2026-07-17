@@ -14,6 +14,8 @@ public interface IUserRepository
 
     Task<User?> GetAsync(string username, CancellationToken cancellationToken = default);
 
+    Task<User?> GetWithTrackingAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default);
 
     void Remove(User user);

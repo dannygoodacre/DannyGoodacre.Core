@@ -45,6 +45,7 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
         User user = new()
         {
+            PublicId = Guid.NewGuid(),
             Username = command.Username,
             IsApproved = false,
             PasswordHash = hashingService.Hash(command.Password),

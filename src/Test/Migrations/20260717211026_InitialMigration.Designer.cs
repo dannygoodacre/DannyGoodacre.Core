@@ -11,7 +11,7 @@ using Test;
 namespace Test.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20260714202542_InitialMigration")]
+    [Migration("20260717211026_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -55,12 +55,7 @@ namespace Test.Migrations
                     b.Property<Guid>("PublicId")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Roles");
                 });
@@ -76,14 +71,6 @@ namespace Test.Migrations
 
                     b.Property<int>("RoleId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -159,11 +146,25 @@ namespace Test.Migrations
                     b.ToTable("UserClaims");
                 });
 
-            modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.Role", b =>
+            modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserRole", b =>
                 {
-                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.User", null)
-                        .WithMany("Roles")
-                        .HasForeignKey("UserId");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserRole");
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.RoleClaim", b =>
@@ -202,6 +203,21 @@ namespace Test.Migrations
                     b.Navigation("Claim");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserRole", b =>
+                {
+                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.User", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.Role", b =>

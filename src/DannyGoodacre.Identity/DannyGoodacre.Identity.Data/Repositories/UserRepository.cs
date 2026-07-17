@@ -28,7 +28,13 @@ public class UserRepository(IdentityContext context) : IUserRepository
         => context.Users
             .Include(x => x.Claims)
             .Include(x => x.Roles)
+            .ThenInclude(x => x.Role)
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+
+    public Task<User?> GetWithTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+        => context.Users
+            .AsTracking()
+            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
 
     public Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default)
         => context.Users

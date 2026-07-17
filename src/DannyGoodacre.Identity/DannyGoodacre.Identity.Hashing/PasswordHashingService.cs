@@ -16,13 +16,13 @@ internal sealed class PasswordHashingService : IHashingService
 
     public string Hash(string password)
     {
-        var salt = new byte[SaltSize];
+        byte[] salt = new byte[SaltSize];
 
         RandomNumberGenerator.Fill(salt);
 
-        var subkey = KeyDerivation.Pbkdf2(password, salt, Prf, IterationCount, BytesRequested);
+        byte[] subkey = KeyDerivation.Pbkdf2(password, salt, Prf, IterationCount, BytesRequested);
 
-        var outputBytes = new byte[13 + salt.Length + subkey.Length];
+        byte[] outputBytes = new byte[13 + salt.Length + subkey.Length];
         outputBytes[0] = 0x01;
 
         WriteNetworkByteOrder(outputBytes, 1, (uint)Prf);
@@ -43,36 +43,36 @@ internal sealed class PasswordHashingService : IHashingService
             return false;
         }
 
-        var decodedHash = Convert.FromBase64String(hashedPassword);
+        byte[] decodedHash = Convert.FromBase64String(hashedPassword);
 
         if (decodedHash.Length < 13 || decodedHash[0] != 0x01)
         {
             return false;
         }
 
-        var prf = (KeyDerivationPrf)ReadNetworkByteOrder(decodedHash, 1);
-        var iterationCount = (int)ReadNetworkByteOrder(decodedHash, 5);
-        var saltLength = (int)ReadNetworkByteOrder(decodedHash, 9);
+        KeyDerivationPrf prf = (KeyDerivationPrf)ReadNetworkByteOrder(decodedHash, 1);
+        int iterationCount = (int)ReadNetworkByteOrder(decodedHash, 5);
+        int saltLength = (int)ReadNetworkByteOrder(decodedHash, 9);
 
         if (saltLength < 16)
         {
             return false;
         }
 
-        var salt = decodedHash.AsSpan(13, saltLength).ToArray();
+        byte[] salt = decodedHash.AsSpan(13, saltLength).ToArray();
 
-        var subkeyLength = decodedHash.Length - 13 - salt.Length;
+        int subkeyLength = decodedHash.Length - 13 - salt.Length;
 
         if (subkeyLength < 32)
         {
             return false;
         }
 
-        var expectedSubkey = new byte[subkeyLength];
+        byte[] expectedSubkey = new byte[subkeyLength];
 
         Buffer.BlockCopy(decodedHash, 13 + salt.Length, expectedSubkey, 0, expectedSubkey.Length);
 
-        var actualSubkey = KeyDerivation.Pbkdf2(password, salt, prf, iterationCount, subkeyLength);
+        byte[] actualSubkey = KeyDerivation.Pbkdf2(password, salt, prf, iterationCount, subkeyLength);
 
         return CryptographicOperations.FixedTimeEquals(actualSubkey, expectedSubkey);
     }

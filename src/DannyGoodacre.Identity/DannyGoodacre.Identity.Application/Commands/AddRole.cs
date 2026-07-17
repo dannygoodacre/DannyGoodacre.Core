@@ -1,6 +1,7 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Application.Extensions;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 
@@ -59,7 +60,18 @@ internal sealed class AddRoleHandler(ILogger<AddRoleHandler> logger,
             return DomainError($"Missing claims: {string.Join(' ', missingClaimIds.Select(x => x.ToString()))}.");
         }
 
-        roleRepository.Add(command.Name);
+        // TODO: Can I put this before the above foreach loop and improve this check?
+        Dictionary<Guid, int> claimIdMap = await claimRepository.GetIdMappingAsync(command.ClaimIds, cancellationToken);
+
+        roleRepository.Add(new Role
+        {
+            PublicId = Guid.NewGuid(),
+            Name = command.Name,
+            Claims = command.ClaimIds.Select(x => new RoleClaim
+            {
+                ClaimId = claimIdMap[x]
+            }).ToList()
+        });
 
         return Success();
     }

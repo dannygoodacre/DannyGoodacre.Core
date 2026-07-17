@@ -6,9 +6,9 @@ namespace DannyGoodacre.Identity.Data.Repositories;
 
 public class RoleRepository(IdentityContext context) : IRoleRepository
 {
-    public Role Add(string name)
+    public Role Add(Role role)
         => context.Roles
-            .Add(new Role { Name = name }).Entity;
+            .Add(role).Entity;
 
     public Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default)
         => context.Roles

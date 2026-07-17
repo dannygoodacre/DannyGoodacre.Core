@@ -9,12 +9,12 @@ namespace DannyGoodacre.Identity.Application.Commands;
 
 public interface IApproveUser
 {
-    Task<Result> ExecuteAsync(string username, CancellationToken cancellationToken = default);
+    Task<Result> ExecuteAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
 internal sealed record ApproveUserCommand : ICommand
 {
-    public required string Username { get; init; }
+    public required Guid Id { get; init; }
 }
 
 internal sealed class ApproveUserHandler(ILogger<ApproveUserHandler> logger,
@@ -25,12 +25,12 @@ internal sealed class ApproveUserHandler(ILogger<ApproveUserHandler> logger,
     protected override string CommandName => "Approve User";
 
     protected override void Validate(ValidationState validationState, ApproveUserCommand command)
-        => validationState.IsNotNullEmptyOrWhitespace(command.Username, nameof(command.Username));
+        => validationState.IsNonEmptyGuid(command.Id, nameof(command.Id));
 
     protected async override Task<Result> InternalExecuteAsync(ApproveUserCommand command,
                                                                CancellationToken cancellationToken = default)
     {
-        User? user = await repository.GetWithTrackingAsync(command.Username, cancellationToken);
+        User? user = await repository.GetWithTrackingAsync(command.Id, cancellationToken);
 
         if (user is null)
         {
@@ -42,9 +42,9 @@ internal sealed class ApproveUserHandler(ILogger<ApproveUserHandler> logger,
         return Success();
     }
 
-    public Task<Result> ExecuteAsync(string username, CancellationToken cancellationToken = default)
+    public Task<Result> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
         => ExecuteAsync(new ApproveUserCommand
         {
-            Username = username
+            Id = id
         }, cancellationToken);
 }

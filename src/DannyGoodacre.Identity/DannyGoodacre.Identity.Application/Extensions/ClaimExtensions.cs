@@ -22,8 +22,8 @@ internal static class ClaimExtensions
             => new()
             {
                 Id = claim.Claim.PublicId,
-                Type = claim.Type,
-                Value = claim.Value
+                Type = claim.Claim.Type,
+                Value = claim.Claim.Value
             };
     }
 }

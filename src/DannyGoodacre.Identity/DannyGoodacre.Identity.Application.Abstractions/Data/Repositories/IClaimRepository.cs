@@ -11,4 +11,6 @@ public interface IClaimRepository
     Task<bool> ExistsAsync(string type, string value, CancellationToken cancellationToken = default);
 
     Task<Claim?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<Dictionary<Guid, int>> GetIdMappingAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
 }

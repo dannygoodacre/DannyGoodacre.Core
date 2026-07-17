@@ -21,4 +21,9 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
     public Task<Claim?> GetAsync(Guid id, CancellationToken cancellationToken = default)
         => context.Claims
             .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
+
+    public Task<Dictionary<Guid, int>> GetIdMappingAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+        => context.Claims
+            .Where(x => ids.Contains(x.PublicId))
+            .ToDictionaryAsync(x => x.PublicId, x => x.Id, cancellationToken);
 }

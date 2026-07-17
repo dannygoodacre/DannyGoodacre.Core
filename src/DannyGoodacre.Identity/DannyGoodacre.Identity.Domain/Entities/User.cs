@@ -7,7 +7,7 @@ public sealed class User
     [Key]
     public int Id { get; init; }
 
-    public Guid PublicId { get; set; }
+    public required Guid PublicId { get; set; }
 
     public required string Username { get; set; }
 
@@ -21,7 +21,7 @@ public sealed class User
 
     public required string ConcurrencyStamp { get; set; }
 
-    public ICollection<Role> Roles { get; set; } = [];
+    public ICollection<UserRole> Roles { get; set; } = [];
 
     public ICollection<UserClaim> Claims { get; set; } = [];
 }

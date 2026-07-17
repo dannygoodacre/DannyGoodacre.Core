@@ -6,7 +6,6 @@
         <Project Path="src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
         <Project Path="src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj" />
         <Project Path="src/Test/Test.csproj" />
-        <Project Path="src/TestFoo/TestFoo.csproj" />
     </Folder>
     <Folder Name="/src/DannyGoodacre.Identity/">
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj" />
