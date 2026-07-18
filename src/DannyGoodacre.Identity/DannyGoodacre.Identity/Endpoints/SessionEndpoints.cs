@@ -43,7 +43,7 @@ internal static class SessionEndpoints
 
             UserSecurityProfile profile = result.Value;
 
-            ClaimsPrincipal claimsPrincipal = claimsService.Create(profile);
+            ClaimsPrincipal claimsPrincipal = claimsService.CreateClaimsPrincipal(profile);
 
             await cookieService.IssueCookieAsync(httpContext, claimsPrincipal.Claims.ToList());
 
@@ -54,13 +54,14 @@ internal static class SessionEndpoints
             .RequireAuthorization();
 
         group.MapDelete("me", async Task<IResult> ([FromServices] ICookieService cookieService,
-                                                             HttpContext httpContext) =>
+                                                   HttpContext httpContext) =>
         {
             await cookieService.RevokeCookieAsync(httpContext);
 
             return Results.NoContent();
         })
-        .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
+        .RequireAuthorization("Permission:Users.Logout");
+        // .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
 
         return endpoints;
     }

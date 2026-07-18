@@ -3,6 +3,7 @@ using DannyGoodacre.Identity.Data;
 using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -15,6 +16,10 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddIdentity<TContext>(Action<CookieAuthenticationOptions>? configureOptions = null)
             where TContext : IdentityContext
         {
+            services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
+
+            services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+
             services.AddScoped<SecurityStampValidatorService>();
 
             services.AddScoped<IClaimsService, ClaimsService>();

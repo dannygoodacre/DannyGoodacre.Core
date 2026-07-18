@@ -34,7 +34,8 @@ internal static class AdminEndpoints
             ClaimResponse claim = result.Value;
 
             return Results.CreatedAtRoute("GetClaim", new { id = claim.Id }, claim);
-        });
+        })
+        .RequireAuthorization($"Permission:{IdentityPermissions.Claims.Create}");
 
         group.MapGet("claims/{id:guid}", async Task<IResult> ([FromServices] IGetClaim getClaim,
                                                               [FromRoute] Guid id,
@@ -44,7 +45,8 @@ internal static class AdminEndpoints
 
             return result.ToHttpResponse();
         })
-        .WithName("GetClaim");
+        .WithName("GetClaim")
+        .RequireAuthorization($"Permission:{IdentityPermissions.Claims.Read}");
 
         group.MapPost("roles", async Task<IResult> ([FromServices] IAddRole addRole,
                                                     [FromBody] AddRoleRequest request,
@@ -53,7 +55,8 @@ internal static class AdminEndpoints
             Result result = await addRole.ExecuteAsync(request.Name, request.ClaimIds, cancellationToken);
 
             return result.ToHttpResponse();
-        });
+        })
+        .RequireAuthorization($"Permission:{IdentityPermissions.Roles.Create}");
 
         group.MapGet("roles/{id:guid}", async Task<IResult> ([FromServices] IGetRole getRole,
                                                              [FromRoute] Guid id,
@@ -63,7 +66,8 @@ internal static class AdminEndpoints
 
             return result.ToHttpResponse();
         })
-        .WithName("GetRole");
+        .WithName("GetRole")
+        .RequireAuthorization($"Permission:{IdentityPermissions.Roles.Read}");
 
         return endpoints;
     }

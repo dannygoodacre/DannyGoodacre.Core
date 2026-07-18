@@ -6,12 +6,12 @@ namespace DannyGoodacre.Identity.Services;
 
 internal interface IClaimsService
 {
-    ClaimsPrincipal Create(UserSecurityProfile profile);
+    ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile);
 }
 
 internal sealed class ClaimsService : IClaimsService
 {
-    public ClaimsPrincipal Create(UserSecurityProfile profile)
+    public ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile)
     {
         var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
 
