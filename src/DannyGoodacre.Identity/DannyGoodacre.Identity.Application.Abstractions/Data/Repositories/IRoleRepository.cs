@@ -10,5 +10,5 @@ public interface IRoleRepository
 
     Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default);
 
-    Task<Role?> GetAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Role?> GetAsync(Guid publicId, CancellationToken cancellationToken = default);
 }

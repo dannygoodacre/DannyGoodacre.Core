@@ -18,18 +18,18 @@ public class UserRepository(IdentityContext context) : IUserRepository
         => context.Users
             .AnyAsync(x => x.Username == username, cancellationToken);
 
-    public Task<User?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<User?> GetAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Users
-            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
 
     public Task<User?> GetAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
 
-    public Task<User?> GetWithTrackingAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<User?> GetWithTrackingAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Users
             .AsTracking()
-            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
 
     public Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default)
         => context.Users

@@ -10,9 +10,9 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
         => context.Claims
             .Add(claim).Entity;
 
-    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<bool> ExistsAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Claims
-            .AnyAsync(x => x.PublicId == id, cancellationToken);
+            .AnyAsync(x => x.PublicId == publicId, cancellationToken);
 
     public Task<bool> ExistsAsync(string type, string value, CancellationToken cancellationToken = default)
         => context.Claims
@@ -22,11 +22,11 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
         => context.Claims
             .ToListAsync(cancellationToken);
 
-    public Task<Claim?> GetAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<Claim?> GetAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Claims
-            .FirstOrDefaultAsync(x => x.PublicId == id, cancellationToken);
+            .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
 
-    public Task<Dictionary<Guid, int>> GetIdMappingAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    public Task<Dictionary<Guid, int>> GetIdMapAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
         => context.Claims
             .Where(x => ids.Contains(x.PublicId))
             .ToDictionaryAsync(x => x.PublicId, x => x.Id, cancellationToken);

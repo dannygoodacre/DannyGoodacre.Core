@@ -11,9 +11,9 @@ public sealed class UserClaimRepository(IdentityContext context) : IUserClaimRep
         => context.UserClaims
             .Add(userClaim).Entity;
 
-    public Task<HashSet<int>> GetClaimIdsAsync(Guid userId, CancellationToken cancellationToken)
+    public Task<HashSet<int>> GetClaimIdsAsync(int userId, CancellationToken cancellationToken)
         => context.UserClaims
-            .Where(x => x.User.PublicId == userId)
+            .Where(x => x.UserId == userId)
             .Select(x => x.ClaimId)
             .ToHashSetAsync(cancellationToken);
 

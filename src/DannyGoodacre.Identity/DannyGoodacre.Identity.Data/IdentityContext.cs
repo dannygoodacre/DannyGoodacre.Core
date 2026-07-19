@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DannyGoodacre.Identity.Data;
 
-public class IdentityContext(DbContextOptions options) : DbContext(options), IIdentityContext, IStateUnit
+public class IdentityContext(DbContextOptions options) : DbContext(options), IStateUnit
 {
     public DbSet<User> Users { get; set; }
 

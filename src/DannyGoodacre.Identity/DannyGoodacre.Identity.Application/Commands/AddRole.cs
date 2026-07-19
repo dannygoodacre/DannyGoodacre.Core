@@ -38,43 +38,37 @@ internal sealed class AddRoleHandler(ILogger<AddRoleHandler> logger,
         }
     }
 
-    protected async override Task<Result> InternalExecuteAsync(AddRoleCommand command, CancellationToken cancellationToken = default)
+protected async override Task<Result> InternalExecuteAsync(AddRoleCommand command, CancellationToken cancellationToken = default)
+{
+    if (await roleRepository.ExistsAsync(command.Name, cancellationToken))
     {
-        if (await roleRepository.ExistsAsync(command.Name, cancellationToken))
-        {
-            return Conflict("Role already exists");
-        }
-
-        List<Guid> missingClaimIds = [];
-
-        foreach (Guid claimId in command.ClaimIds)
-        {
-            if (!await claimRepository.ExistsAsync(claimId, cancellationToken))
-            {
-                missingClaimIds.Add(claimId);
-            }
-        }
-
-        if (missingClaimIds.Count > 0)
-        {
-            return DomainError($"Missing claims: {string.Join(' ', missingClaimIds.Select(x => x.ToString()))}.");
-        }
-
-        // TODO: Can I put this before the above foreach loop and improve this check?
-        Dictionary<Guid, int> claimIdMap = await claimRepository.GetIdMappingAsync(command.ClaimIds, cancellationToken);
-
-        roleRepository.Add(new Role
-        {
-            PublicId = Guid.NewGuid(),
-            Name = command.Name,
-            Claims = command.ClaimIds.Select(x => new RoleClaim
-            {
-                ClaimId = claimIdMap[x]
-            }).ToList()
-        });
-
-        return Success();
+        return Conflict("Role already exists");
     }
+
+    Dictionary<Guid, int> claimIdMap = await claimRepository.GetIdMapAsync(command.ClaimIds, cancellationToken);
+
+    List<Guid> missingClaimIds = command.ClaimIds
+        .Where(id => !claimIdMap.ContainsKey(id))
+        .ToList();
+
+    if (missingClaimIds.Count > 0)
+    {
+        return DomainError($"Missing claims: {string.Join(' ', missingClaimIds)}.");
+    }
+
+    roleRepository.Add(new Role
+    {
+        PublicId = Guid.NewGuid(),
+        Name = command.Name,
+        Claims = command.ClaimIds.Select(x => new RoleClaim
+        {
+            ClaimId = claimIdMap[x]
+        }).ToList()
+    });
+
+    return Success();
+}
+
 
     public Task<Result> ExecuteAsync(string name, List<Guid> claimIds, CancellationToken cancellationToken = default)
         => ExecuteAsync(new AddRoleCommand

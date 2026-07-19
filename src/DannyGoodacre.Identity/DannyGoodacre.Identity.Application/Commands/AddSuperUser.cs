@@ -34,7 +34,7 @@ internal sealed class AddSuperUserHandler(ILogger<AddSuperUserHandler> logger,
             user = userRepository.Add(User.CreateNew(command.Username, passwordHash, isApproved: true));
         }
 
-        HashSet<int> existingClaimIds = await userClaimRepository.GetClaimIdsAsync(user.PublicId, cancellationToken);
+        HashSet<int> existingClaimIds = await userClaimRepository.GetClaimIdsAsync(user.Id, cancellationToken);
 
         List<Claim> claims = await claimRepository.GetAllAsync(cancellationToken);
 
