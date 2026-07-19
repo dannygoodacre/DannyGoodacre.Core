@@ -6,5 +6,5 @@ public sealed record RoleResponse
 
     public required string Name { get; init; }
 
-    public required List<ClaimResponse> Claims { get; init; }
+    public required IReadOnlyCollection<ClaimResponse> Claims { get; init; }
 }

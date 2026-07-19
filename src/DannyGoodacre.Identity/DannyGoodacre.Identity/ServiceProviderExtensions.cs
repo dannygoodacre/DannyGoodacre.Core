@@ -65,7 +65,14 @@ public static class ServiceProviderExtensions
                 throw new Exception();
             }
 
+            IAddSuperUser addSuperUser = services.GetRequiredService<IAddSuperUser>();
 
+            Result addSuperUserResult = await addSuperUser.ExecuteAsync(adminSettings.Username, adminSettings.Password);
+
+            if (!addSuperUserResult.IsSuccess)
+            {
+                throw new Exception(addSuperUserResult.Error);
+            }
         }
     }
 }

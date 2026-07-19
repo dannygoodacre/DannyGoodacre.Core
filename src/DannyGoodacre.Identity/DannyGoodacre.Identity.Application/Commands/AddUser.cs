@@ -1,7 +1,6 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Application.Abstractions.Services;
-using DannyGoodacre.Identity.Application.Extensions;
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Application.Services;
 using DannyGoodacre.Identity.Domain.Entities;
@@ -25,8 +24,8 @@ internal sealed record AddUserCommand : ICommand
 internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
                                      IStateUnit stateUnit,
                                      IPasswordValidatorService passwordValidatorService,
-                                     IHashingService hashingService,
-                                     IUserRepository repository)
+                                     IUserRepository repository,
+                                     IHashingService hashingService)
     : StateCommandHandler<AddUserCommand, UserInfo>(logger, stateUnit), IAddUser
 {
     protected override string CommandName => "Add User";
@@ -36,22 +35,14 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
     protected async override Task<Result<UserInfo>> InternalExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default)
     {
-        bool isUsernameTaken = await repository.ExistsAsync(command.Username, cancellationToken);
-
-        if (isUsernameTaken)
+        if (await repository.ExistsAsync(command.Username, cancellationToken))
         {
             return Conflict("Username already taken");
         }
 
-        User user = repository.Add(new User
-        {
-            PublicId = Guid.NewGuid(),
-            Username = command.Username,
-            IsApproved = false,
-            PasswordHash = hashingService.Hash(command.Password),
-            SecurityStamp = Guid.NewGuid().ToString(),
-            ConcurrencyStamp = Guid.NewGuid().ToString(),
-        });
+        string passwordHash = hashingService.Hash(command.Password);
+
+        User user = repository.Add(User.CreateNew(command.Username, passwordHash));
 
         return Success(user.ToUserInfoResponse());
     }

@@ -1,3 +1,5 @@
+using DannyGoodacre.Identity.Domain;
+
 namespace DannyGoodacre.Identity.Application.Models;
 
 public sealed record UserSecurityProfile
@@ -10,6 +12,5 @@ public sealed record UserSecurityProfile
 
     public required IReadOnlyCollection<string> Roles { get; init; }
 
-    // TODO: Hacky, replace with a dictionary or something.
-    public required IReadOnlyCollection<(string Type, string Value)> Claims { get; init; }
+    public required IReadOnlyCollection<ClaimDefinition> Claims { get; init; }
 }

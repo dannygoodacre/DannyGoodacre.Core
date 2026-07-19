@@ -30,7 +30,7 @@ internal sealed class IdentityEndpointTests
         var registrationRequest = new RegistrationRequest
         {
             Username = username,
-            Password = password,
+            Password = password
         };
 
         // Act
@@ -60,7 +60,7 @@ internal sealed class IdentityEndpointTests
         var registrationRequest = new RegistrationRequest
         {
             Username = username,
-            Password = password,
+            Password = password
         };
 
         // Act

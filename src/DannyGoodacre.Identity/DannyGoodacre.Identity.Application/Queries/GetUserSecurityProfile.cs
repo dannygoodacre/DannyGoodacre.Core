@@ -1,6 +1,7 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Application.Models;
+using DannyGoodacre.Identity.Domain;
 using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
@@ -17,7 +18,9 @@ internal sealed record GetUserSecurityProfileQuery : IQuery
     public required string Username { get; init; }
 }
 
-internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfileHandler> logger, IUserRepository repository)
+internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfileHandler> logger,
+                                                    IUserRepository userRepository,
+                                                    IUserClaimRepository userClaimRepository)
     : QueryHandler<GetUserSecurityProfileQuery, UserSecurityProfile>(logger), IGetUserSecurityProfile
 {
 
@@ -25,17 +28,22 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
 
     protected async override Task<Result<UserSecurityProfile>> InternalExecuteAsync(GetUserSecurityProfileQuery query, CancellationToken cancellationToken = default)
     {
-        User? user = await repository.GetAsync(query.Username, cancellationToken);
+        User? user = await userRepository.GetAsync(query.Username, cancellationToken);
 
         if (user is null)
         {
             return NotFound();
         }
 
-        List<string> roles = user.Roles.Select(x => x.Role.Name).ToList();
+        List<Claim> userClaims = await userClaimRepository.GetManyAsync(user.Id, cancellationToken);
 
-        // TODO: I don't like this being a tuple.
-        List<(string, string)> claims = user.Claims.Select(x => (x.Type, x.Value)).ToList();
+        List<ClaimDefinition> claims = userClaims.Select(x => new ClaimDefinition
+        {
+            Type = x.Type,
+            Value = x.Value
+        }).ToList();
+
+        List<string> roles = user.Roles.Select(x => x.Role.Name).ToList();
 
         return Success(new UserSecurityProfile
         {
@@ -43,7 +51,7 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
             Username = user.Username,
             SecurityStamp = user.SecurityStamp,
             Claims = claims,
-            Roles = roles,
+            Roles = roles
         });
     }
 
