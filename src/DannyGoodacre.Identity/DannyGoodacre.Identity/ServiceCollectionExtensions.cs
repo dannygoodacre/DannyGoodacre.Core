@@ -1,6 +1,7 @@
 using DannyGoodacre.Identity.Application;
 using DannyGoodacre.Identity.Data;
 using DannyGoodacre.Identity.Hashing;
+using DannyGoodacre.Identity.Security;
 using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -16,13 +17,15 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddIdentity<TContext>(Action<CookieAuthenticationOptions>? configureOptions = null)
             where TContext : IdentityContext
         {
+            services.AddSingleton<IIdentityPermissionRegistry, IdentityPermissionRegistry>();
+
             services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
 
             services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
 
             services.AddScoped<SecurityStampValidatorService>();
 
-            services.AddScoped<IClaimsService, ClaimsService>();
+            services.AddScoped<IClaimService, ClaimService>();
 
             services.AddScoped<ICookieService, CookieService>();
 

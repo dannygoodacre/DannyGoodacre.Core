@@ -10,6 +10,10 @@ public class RoleRepository(IdentityContext context) : IRoleRepository
         => context.Roles
             .Add(role).Entity;
 
+    public void Remove(Role role)
+        => context.Roles
+            .Remove(role);
+
     public Task<bool> ExistsAsync(string name, CancellationToken cancellationToken = default)
         => context.Roles
             .AnyAsync(role => role.Name == name, cancellationToken);

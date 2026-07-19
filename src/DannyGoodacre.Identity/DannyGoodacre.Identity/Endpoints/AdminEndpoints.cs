@@ -2,12 +2,12 @@ using DannyGoodacre.Identity.Application.Commands;
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Models;
+using DannyGoodacre.Identity.Security;
 using DannyGoodacre.Primitives;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using ClaimResponse = DannyGoodacre.Identity.Application.Models.ClaimResponse;
 
 namespace DannyGoodacre.Identity.Endpoints;
 
@@ -20,22 +20,14 @@ internal static class AdminEndpoints
             .WithTags("Identity: Admin")
             .RequireAuthorization();
 
-        group.MapPost("claims", async Task<IResult> ([FromServices] IAddClaim addClaim,
-                                                     [FromBody] CreateClaimRequest request,
-                                                     CancellationToken cancellationToken) =>
+        group.MapGet("claims", async Task<IResult> ([FromServices] IGetAllClaims getAllClaims,
+                                                    CancellationToken cancellationToken) =>
         {
-            Result<ClaimResponse> result = await addClaim.ExecuteAsync(request.Type, request.Value, cancellationToken);
+            Result<List<ClaimResponse>> result = await getAllClaims.ExecuteAsync(cancellationToken);
 
-            if (!result.IsSuccess)
-            {
-                return result.ToHttpResponse();
-            }
-
-            ClaimResponse claim = result.Value;
-
-            return Results.CreatedAtRoute("GetClaim", new { id = claim.Id }, claim);
+            return result.ToHttpResponse();
         })
-        .RequireAuthorization($"Permission:{IdentityPermissions.Claims.Create}");
+        .RequireAuthorization($"Permission:{BuiltInPermissions.ClaimsRead}");
 
         group.MapGet("claims/{id:guid}", async Task<IResult> ([FromServices] IGetClaim getClaim,
                                                               [FromRoute] Guid id,
@@ -46,7 +38,7 @@ internal static class AdminEndpoints
             return result.ToHttpResponse();
         })
         .WithName("GetClaim")
-        .RequireAuthorization($"Permission:{IdentityPermissions.Claims.Read}");
+        .RequireAuthorization($"Permission:{BuiltInPermissions.ClaimsRead}");
 
         group.MapPost("roles", async Task<IResult> ([FromServices] IAddRole addRole,
                                                     [FromBody] AddRoleRequest request,
@@ -56,7 +48,7 @@ internal static class AdminEndpoints
 
             return result.ToHttpResponse();
         })
-        .RequireAuthorization($"Permission:{IdentityPermissions.Roles.Create}");
+        .RequireAuthorization($"Permission:{BuiltInPermissions.RolesCreate}");
 
         group.MapGet("roles/{id:guid}", async Task<IResult> ([FromServices] IGetRole getRole,
                                                              [FromRoute] Guid id,
@@ -67,7 +59,17 @@ internal static class AdminEndpoints
             return result.ToHttpResponse();
         })
         .WithName("GetRole")
-        .RequireAuthorization($"Permission:{IdentityPermissions.Roles.Read}");
+        .RequireAuthorization($"Permission:{BuiltInPermissions.RolesRead}");
+
+        group.MapDelete("roles/{id:guid}", async Task<IResult> ([FromServices] IDeleteRole deleteRole,
+                                                                [FromRoute] Guid id,
+                                                                CancellationToken cancellationToken) =>
+        {
+            Result result = await deleteRole.ExecuteAsync(id, cancellationToken);
+
+            return result.ToHttpResponse();
+        })
+        .RequireAuthorization($"Permission:{BuiltInPermissions.RolesDelete}");
 
         return endpoints;
     }

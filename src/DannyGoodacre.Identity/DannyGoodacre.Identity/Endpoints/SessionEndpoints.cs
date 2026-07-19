@@ -5,7 +5,6 @@ using DannyGoodacre.Identity.Application.Queries;
 using DannyGoodacre.Identity.Models;
 using DannyGoodacre.Identity.Services;
 using DannyGoodacre.Primitives;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +20,7 @@ internal static class SessionEndpoints
 
         group.MapPost("", async Task<IResult> ([FromServices] ILoginUser loginUser,
                                                [FromServices] IGetUserSecurityProfile getUserSecurityProfile,
-                                               [FromServices] IClaimsService claimsService,
+                                               [FromServices] IClaimService claimService,
                                                [FromServices] ICookieService cookieService,
                                                [FromBody] LoginRequest request,
                                                HttpContext httpContext,
@@ -43,7 +42,7 @@ internal static class SessionEndpoints
 
             UserSecurityProfile profile = result.Value;
 
-            ClaimsPrincipal claimsPrincipal = claimsService.CreateClaimsPrincipal(profile);
+            ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profile);
 
             await cookieService.IssueCookieAsync(httpContext, claimsPrincipal.Claims.ToList());
 

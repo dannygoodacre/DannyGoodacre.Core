@@ -31,5 +31,6 @@ internal sealed class CookieService : ICookieService
                                       authProperties);
     }
 
-    public Task RevokeCookieAsync(HttpContext httpContext) => httpContext.SignOutAsync();
+    public Task RevokeCookieAsync(HttpContext httpContext)
+        => httpContext.SignOutAsync();
 }

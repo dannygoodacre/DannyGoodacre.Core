@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace DannyGoodacre.Identity.Services;
 
-internal interface IClaimsService
+internal interface IClaimService
 {
     ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile);
 }
 
-internal sealed class ClaimsService : IClaimsService
+internal sealed class ClaimService : IClaimService
 {
     public ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile)
     {

@@ -47,6 +47,8 @@ public class Program
             throw;
         }
 
+        await services.SynchronizeIdentityPermissionsAsync();
+
         // var seedResult = await app.SeedIdentityAsync("admin", "Password123$");
         //
         // if (!seedResult.IsSuccess)

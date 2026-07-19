@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using DannyGoodacre.Identity.Domain;
 using DannyGoodacre.Identity.Models;
 using Microsoft.AspNetCore.Http;
 
@@ -23,7 +24,7 @@ internal static class HttpContextExtensions
                 UserId = httpContext.UserId,
                 Username = httpContext.User.Identity?.Name,
                 IsAuthenticated = httpContext.User.Identity?.IsAuthenticated ?? false,
-                Claims = httpContext.User.Claims.Select(x => new ClaimPair
+                Claims = httpContext.User.Claims.Select(x => new ClaimDefinition
                 {
                     Type = x.Type,
                     Value = x.Value

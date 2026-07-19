@@ -43,7 +43,7 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
             return Conflict("Username already taken");
         }
 
-        User user = new()
+        User user = repository.Add(new User
         {
             PublicId = Guid.NewGuid(),
             Username = command.Username,
@@ -51,9 +51,7 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
             PasswordHash = hashingService.Hash(command.Password),
             SecurityStamp = Guid.NewGuid().ToString(),
             ConcurrencyStamp = Guid.NewGuid().ToString(),
-        };
-
-        repository.Add(user);
+        });
 
         return Success(user.ToUserInfoResponse());
     }

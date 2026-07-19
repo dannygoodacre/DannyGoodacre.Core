@@ -1,6 +1,6 @@
-namespace DannyGoodacre.Identity.Models;
+namespace DannyGoodacre.Identity.Domain;
 
-public sealed record CreateClaimRequest
+public sealed record ClaimDefinition
 {
     public required string Type { get; init; }
 
