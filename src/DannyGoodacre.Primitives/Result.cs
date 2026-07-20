@@ -80,4 +80,9 @@ public class Result
 
     public static Result<T> Success<T>(T value)
         => Result<T>.Success(value);
+
+    public Result<TTarget> MapFailure<TTarget>()
+        => IsSuccess
+            ? throw new InvalidOperationException("Cannot map a successful result to a failure.")
+            : new Result<TTarget>(this);
 }
