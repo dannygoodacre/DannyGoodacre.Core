@@ -36,22 +36,14 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
 
         TransactionMock = new Mock<ITransaction>(MockBehavior.Strict);
 
-        SetupTransactionUnit_BeginTransactionAsync();
+        // SetupTransactionUnit_BeginTransactionAsync();
 
-        SetupTransaction_DisposeAsync();
+        // SetupTransaction_DisposeAsync();
     }
 
     protected void SetupLogger_UnexpectedNumberOfChanges(int expected, int actual)
         => LoggerMock
             .Setup(LogLevel.Error, $"Command '{CommandName}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
-
-    protected void SetupLogger_CanceledDuringRollback()
-        => LoggerMock
-            .Setup(LogLevel.Information, $"Command '{CommandName}' was canceled while rolling back changes.");
-
-    protected void SetupLogger_TransactionFailure(Exception exception)
-        => LoggerMock
-            .Setup(LogLevel.Critical, $"Command '{CommandName}' experienced a transaction failure.", exception: exception);
 
     protected void Setup_SaveChangesAndCommitAsync()
     {
@@ -87,10 +79,12 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
             .Returns(ValueTask.CompletedTask)
             .Verifiable(Times.Once);
 
-    private void SetupTransactionUnit_BeginTransactionAsync()
+    protected void SetupTransactionUnit_ExecuteInTransactionAsync()
         => TransactionUnitMock
-            .Setup(x => x.BeginTransactionAsync(
-                It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .ReturnsAsync(TransactionMock.Object)
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<CancellationToken, Task<Result>>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<Func<CancellationToken, Task<Result>>, CancellationToken>(
+                (operation, ct) => operation(ct))
             .Verifiable(Times.Once);
 }

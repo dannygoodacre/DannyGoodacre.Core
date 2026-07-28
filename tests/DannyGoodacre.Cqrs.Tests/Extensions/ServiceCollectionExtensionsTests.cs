@@ -62,14 +62,17 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.FromResult(Result.Success(123));
     }
 
-    private sealed class TestTransactionUnit : ITransactionUnit
-    {
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(1);
+private sealed class TestTransactionUnit : ITransactionUnit
+{
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(1);
 
-        public Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
-            => throw new NotImplementedException();
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+        where TResult : Result
+    {
+        return await operation(cancellationToken);
     }
+}
 
     private interface ITestTransactionCommand;
 

@@ -1,3 +1,5 @@
+using DannyGoodacre.Primitives;
+
 namespace DannyGoodacre.Cqrs;
 
 /// <summary>
@@ -5,10 +7,5 @@ namespace DannyGoodacre.Cqrs;
 /// </summary>
 public interface ITransactionUnit : IStateUnit
 {
-    /// <summary>
-    /// Start a new transaction boundary to ensure multiple operations succeed or fail atomically.
-    /// </summary>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="ITransaction"/> instance.</returns>
-    Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+    Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default) where TResult : Result;
 }

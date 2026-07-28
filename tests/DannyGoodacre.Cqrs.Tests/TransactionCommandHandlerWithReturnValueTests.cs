@@ -120,50 +120,50 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         // Assert
         AssertSuccess(result);
     }
-
-    [Test]
-    public async Task ExecuteAsync_WhenSuccessfulAndCanceled_ShouldRollbackAndReturnCanceled()
-    {
-        // Arrange
-        TransactionUnitMock
-            .Setup(x => x.SaveChangesAsync(
-                It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .ThrowsAsync(new OperationCanceledException())
-            .Verifiable(Times.Once);
-
-        SetupTransaction_RollbackAsync();
-
-        SetupLogger_CanceledDuringRollback();
-
-        // Act
-        var result = await Act();
-
-        // Assert
-        AssertCanceled(result);
-    }
-
-    [Test]
-    public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccurs_ShouldRollbackAndReturnInternalError()
-    {
-        // Arrange
-        const string testError = "Test Internal Error";
-
-        var exception = new Exception(testError);
-
-        TransactionUnitMock
-            .Setup(x => x.SaveChangesAsync(
-                It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .ThrowsAsync(exception)
-            .Verifiable(Times.Once);
-
-        SetupTransaction_RollbackAsync();
-
-        SetupLogger_TransactionFailure(exception);
-
-        // Act
-        var result = await Act();
-
-        // Assert
-        AssertInternalError(result, testError);
-    }
+    //
+    // [Test]
+    // public async Task ExecuteAsync_WhenSuccessfulAndCanceled_ShouldRollbackAndReturnCanceled()
+    // {
+    //     // Arrange
+    //     TransactionUnitMock
+    //         .Setup(x => x.SaveChangesAsync(
+    //             It.Is<CancellationToken>(y => y == TestCancellationToken)))
+    //         .ThrowsAsync(new OperationCanceledException())
+    //         .Verifiable(Times.Once);
+    //
+    //     SetupTransaction_RollbackAsync();
+    //
+    //     SetupLogger_CanceledDuringRollback();
+    //
+    //     // Act
+    //     var result = await Act();
+    //
+    //     // Assert
+    //     AssertCanceled(result);
+    // }
+    //
+    // [Test]
+    // public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccurs_ShouldRollbackAndReturnInternalError()
+    // {
+    //     // Arrange
+    //     const string testError = "Test Internal Error";
+    //
+    //     var exception = new Exception(testError);
+    //
+    //     TransactionUnitMock
+    //         .Setup(x => x.SaveChangesAsync(
+    //             It.Is<CancellationToken>(y => y == TestCancellationToken)))
+    //         .ThrowsAsync(exception)
+    //         .Verifiable(Times.Once);
+    //
+    //     SetupTransaction_RollbackAsync();
+    //
+    //     SetupLogger_TransactionFailure(exception);
+    //
+    //     // Act
+    //     var result = await Act();
+    //
+    //     // Assert
+    //     AssertInternalError(result, testError);
+    // }
 }

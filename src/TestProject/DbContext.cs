@@ -1,5 +1,7 @@
 using DannyGoodacre.Cqrs;
+using DannyGoodacre.Primitives;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TestProject;
 
@@ -12,13 +14,34 @@ public class IdentityContext(DbContextOptions options) : DbContext(options), ISt
     public new Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);
 
-    public async Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+        where TResult : Result
     {
         if (Database.CurrentTransaction is not null)
         {
-            return new NoOpTransaction();
+            return await operation(cancellationToken);
         }
 
-        return new Transaction(await Database.BeginTransactionAsync(cancellationToken));
+        IExecutionStrategy strategy = Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using IDbContextTransaction transaction = await Database.BeginTransactionAsync(cancellationToken);
+
+            TResult result = await operation(cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+
+                return result;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+
+            return result;
+
+        });
     }
 }

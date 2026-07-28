@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using DannyGoodacre.Primitives;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
@@ -112,27 +113,61 @@ public abstract class TestBase
 
     private void VerifyAllAndNoOtherCalls()
     {
-        IEnumerable<FieldInfo> mockFields = GetType()
-            .GetFields(BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(x => x.FieldType.IsGenericType
-                        && x.FieldType.GetGenericTypeDefinition() == typeof(Mock<>));
+        var mocks = GetAllMocksInHierarchy(this);
 
-        foreach (FieldInfo mockField in mockFields)
+        foreach (Mock mock in mocks)
         {
-            object? mock = mockField.GetValue(this);
-
-            if (mock is null)
-            {
-                continue;
-            }
-
             Type type = mock.GetType();
 
             MethodInfo? verifyAllMethod = type.GetMethod("VerifyAll", Type.EmptyTypes);
+
             verifyAllMethod?.Invoke(mock, null);
 
             MethodInfo? verifyNoOtherCallsMethod = type.GetMethod("VerifyNoOtherCalls", Type.EmptyTypes);
+
             verifyNoOtherCallsMethod?.Invoke(mock, null);
         }
+    }
+
+    private static List<dynamic> GetAllMocksInHierarchy(object instance)
+    {
+        List<dynamic> mocks = [];
+
+        Type? currentType = instance.GetType();
+
+        while (currentType is not null && currentType != typeof(object))
+        {
+            const BindingFlags flags = BindingFlags.Instance
+                                       | BindingFlags.Public
+                                       | BindingFlags.NonPublic
+                                       | BindingFlags.DeclaredOnly;
+
+            foreach (FieldInfo field in currentType.GetFields(flags))
+            {
+                object? value = field.GetValue(instance);
+
+                if (value is Mock)
+                {
+                    mocks.Add((dynamic)value);
+                }
+            }
+
+            foreach (PropertyInfo property in currentType.GetProperties(flags))
+            {
+                if (!property.CanRead || property.GetIndexParameters().Length > 0)
+                    continue;
+
+                object? value = property.GetValue(instance);
+
+                if (value is Mock)
+                {
+                    mocks.Add((dynamic)value);
+                }
+            }
+
+            currentType = currentType.BaseType;
+        }
+
+        return mocks;
     }
 }
