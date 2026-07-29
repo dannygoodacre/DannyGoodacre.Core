@@ -110,63 +110,63 @@ private sealed class TestTransactionUnit : ITransactionUnit
     public void AddCommandHandlers()
     {
         // Arrange
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddSingleton(Mock.Of<ILogger>());
 
-        var assembly = Assembly.GetExecutingAssembly();
+        Assembly assembly = Assembly.GetExecutingAssembly();
 
         // Act
         services.AddCommandHandlers(assembly);
 
         // Assert
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var command = provider.GetService<ITestCommand>();
+        ITestCommand? command = provider.GetService<ITestCommand>();
 
         Assert.That(command, Is.Not.Null);
 
-        var commandWithValue = provider.GetService<ITestCommand>();
+        ITestCommand? commandWithValue = provider.GetService<ITestCommand>();
 
         Assert.That(commandWithValue, Is.Not.Null);
 
-        var testUnitOfWorkCommand = provider.GetService<ITestTransactionCommand>();
+        ITestTransactionCommand? testUnitOfWorkCommand = provider.GetService<ITestTransactionCommand>();
 
         Assert.That(testUnitOfWorkCommand, Is.Not.Null);
 
-        var testUnitOfWorkCommandWithValue = provider.GetService<ITestTransactionCommandWithReturnValue>();
+        ITestTransactionCommandWithReturnValue? testUnitOfWorkCommandWithValue = provider.GetService<ITestTransactionCommandWithReturnValue>();
 
         Assert.That(testUnitOfWorkCommandWithValue, Is.Not.Null);
 
-        using var scope = provider.CreateScope();
+        using IServiceScope scope = provider.CreateScope();
 
-        var commandHandler1 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
-        var commandHandler2 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
+        ITestCommand commandHandler1 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
+        ITestCommand commandHandler2 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
 
         Assert.That(commandHandler1, Is.SameAs(commandHandler2));
 
-        var commandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
-        var commandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
+        ITestCommandWithReturnValue commandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
+        ITestCommandWithReturnValue commandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
 
         Assert.That(commandHandlerWithReturnValue1, Is.SameAs(commandHandlerWithReturnValue2));
 
-        var stateCommandHandler1 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
-        var stateCommandHandler2 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
+        IStateCommand stateCommandHandler1 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
+        IStateCommand stateCommandHandler2 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
 
         Assert.That(stateCommandHandler1, Is.SameAs(stateCommandHandler2));
 
-        var stateCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
-        var stateCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
+        IStateCommandWithReturnValue stateCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
+        IStateCommandWithReturnValue stateCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
 
         Assert.That(stateCommandHandlerWithReturnValue1, Is.SameAs(stateCommandHandlerWithReturnValue2));
 
-        var transactionCommandHandler1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
-        var transactionCommandHandler2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
+        ITestTransactionCommand transactionCommandHandler1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
+        ITestTransactionCommand transactionCommandHandler2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
 
         Assert.That(transactionCommandHandler1, Is.SameAs(transactionCommandHandler2));
 
-        var transactionCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
-        var transactionCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
+        ITestTransactionCommandWithReturnValue transactionCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
+        ITestTransactionCommandWithReturnValue transactionCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
 
         Assert.That(transactionCommandHandlerWithReturnValue1, Is.SameAs(transactionCommandHandlerWithReturnValue2));
     }
@@ -175,26 +175,26 @@ private sealed class TestTransactionUnit : ITransactionUnit
     public void AddQueryHandlers()
     {
         // Arrange
-        var services = new ServiceCollection();
+        ServiceCollection services = new();
 
         services.AddSingleton(Mock.Of<ILogger>());
 
-        var assembly = Assembly.GetExecutingAssembly();
+        Assembly assembly = Assembly.GetExecutingAssembly();
 
         // Act
         services.AddQueryHandlers(assembly);
 
         // Assert
-        var provider = services.BuildServiceProvider();
+        ServiceProvider provider = services.BuildServiceProvider();
 
-        var registeredHandler = provider.GetService<ITestQuery>();
+        ITestQuery? registeredHandler = provider.GetService<ITestQuery>();
 
         Assert.That(registeredHandler, Is.Not.Null);
 
-        using var scope = provider.CreateScope();
+        using IServiceScope scope = provider.CreateScope();
 
-        var query1 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
-        var query2 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
+        ITestQuery query1 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
+        ITestQuery query2 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
 
         Assert.That(query1, Is.SameAs(query2));
     }

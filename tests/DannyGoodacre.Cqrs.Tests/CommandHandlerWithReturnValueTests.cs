@@ -86,7 +86,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertInvalid(result);
@@ -96,7 +96,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
-        var cancellationTokenSource = new CancellationTokenSource();
+        CancellationTokenSource cancellationTokenSource = new();
 
         TestCancellationToken = cancellationTokenSource.Token;
 
@@ -108,7 +108,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         // Act
 
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -118,7 +118,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertSuccess(result, TestResultValue);
@@ -135,7 +135,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         SetupLogger_CanceledDuringExecution();
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -147,7 +147,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        var exception = new Exception(testExceptionMessage);
+        Exception exception = new(testExceptionMessage);
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
@@ -156,7 +156,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         SetupLogger_Failed(exception);
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -238,7 +238,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     public void InternalErrorWithException()
     {
         // Arrange
-        Exception testException = new Exception("Test Exception Message");
+        Exception testException = new("Test Exception Message");
 
         // Act
         Result<int> result = CommandHandler.TestInternalError(testException);

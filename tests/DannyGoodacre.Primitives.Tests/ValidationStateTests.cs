@@ -10,7 +10,7 @@ public sealed class ValidationStateTests : TestBase
     public void Constructor_WhenErrorsIsEmpty_ShouldReturnNoErrors()
     {
         // Act
-        var validationState = new ValidationState();
+        ValidationState validationState = new();
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -30,7 +30,7 @@ public sealed class ValidationStateTests : TestBase
 
         const string error2 = "Test Error 2";
 
-        var validationState = new ValidationState();
+        ValidationState validationState = new();
 
         // Act
         validationState.AddError(property, error1);
@@ -55,7 +55,7 @@ public sealed class ValidationStateTests : TestBase
         const string property2 = "Test Property 2";
         const string error2 = "Test Error 2";
 
-        var validationState = new ValidationState();
+        ValidationState validationState = new();
 
         // Act
         validationState.AddError(property1, error1);
@@ -76,10 +76,10 @@ public sealed class ValidationStateTests : TestBase
     public void ToString_WhenErrorsIsEmpty_ShouldReturnEmptyString()
     {
         // Arrange
-        var validationState = new ValidationState();
+        ValidationState validationState = new();
 
         // Act
-        var error = validationState.ToString();
+        string error = validationState.ToString();
 
         // Assert
         Assert.That(error, Is.EqualTo(string.Empty));
@@ -95,15 +95,15 @@ public sealed class ValidationStateTests : TestBase
         const string property2 = "Test Property 2";
         const string error2 = "Test Error 2";
 
-        var expectedError = $"{property1}:{Environment.NewLine}  - {error1}{Environment.NewLine}{property2}:{Environment.NewLine}  - {error2}";
+        string expectedError = $"{property1}:{Environment.NewLine}  - {error1}{Environment.NewLine}{property2}:{Environment.NewLine}  - {error2}";
 
-        var validationState = new ValidationState();
+        ValidationState validationState = new();
 
         validationState.AddError(property1, error1);
         validationState.AddError(property2, error2);
 
         // Act
-        var error = validationState.ToString();
+        string error = validationState.ToString();
 
         // Assert
         Assert.That(error, Is.EqualTo(expectedError));

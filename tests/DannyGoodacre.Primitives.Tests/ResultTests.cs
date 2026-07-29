@@ -257,27 +257,27 @@ public sealed class ResultTests : TestBase
     public void MapFailure_WhenNotSuccess_ShouldReturnResult()
     {
         // Arrange
-        const string message = "Test Error Message";
+        const string testErrorMessage = "Test Error Message";
 
-        Result testResult = Result.InternalError(message);
+        Result testResult = Result.InternalError(testErrorMessage);
 
         // Act
         Result<int> result = testResult.MapFailure<int>();
 
-        AssertInternalError(result, message);
+        AssertInternalError(result, testErrorMessage);
     }
 
     [Test]
     public void MapFailure_WhenNotSuccessWithValue_ShouldReturnResult()
     {
         // Arrange
-        const string message = "Test Error Message";
+        const string testErrorMessage = "Test Error Message";
 
-        Result<int> testResult = Result<int>.InternalError(message);
+        Result<int> testResult = Result<int>.InternalError(testErrorMessage);
 
         // Act
         Result<string> result = testResult.MapFailure<string>();
 
-        AssertInternalError(result, message);
+        AssertInternalError(result, testErrorMessage);
     }
 }

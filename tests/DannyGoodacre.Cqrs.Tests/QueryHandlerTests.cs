@@ -22,6 +22,27 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         public Task<Result<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => ExecuteAsync(query, cancellationToken);
+
+        public Result TestInvalid(ValidationState validationState)
+            => Invalid(validationState);
+
+        public Result TestDomainError(string error)
+            => DomainError(error);
+
+        public Result TestConflict(string error)
+            => Conflict(error);
+
+        public Result TestCanceled()
+            => Canceled();
+
+        public Result TestNotFound()
+            => NotFound();
+
+        public Result TestInternalError(string error)
+            => InternalError(error);
+
+        public Result TestInternalError(Exception exception)
+            => InternalError(exception);
     }
 
     private const string TestName = "Test Query Handler";
@@ -65,7 +86,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertInvalid(result);
@@ -75,7 +96,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
-        var cancellationTokenSource = new CancellationTokenSource();
+        CancellationTokenSource cancellationTokenSource = new();
 
         CancellationToken = cancellationTokenSource.Token;
 
@@ -87,7 +108,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         // Act
 
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -97,7 +118,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertSuccess(result, TestResultValue);
@@ -114,7 +135,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         SetupLogger_CanceledDuringExecution();
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -126,7 +147,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        var exception = new Exception(testExceptionMessage);
+        Exception exception = new(testExceptionMessage);
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
@@ -135,9 +156,94 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         SetupLogger_Failed(exception);
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        Result result = QueryHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result);
+    }
+
+    [Test]
+    public void DomainError()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = QueryHandler.TestDomainError(testErrorMessage);
+
+        // Assert
+        AssertDomainError(result, testErrorMessage);
+    }
+
+    [Test]
+    public void Conflict()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = QueryHandler.TestConflict(testErrorMessage);
+
+        // Assert
+        AssertConflict(result, testErrorMessage);
+    }
+
+    [Test]
+    public void Canceled()
+    {
+        // Act
+        Result result = QueryHandler.TestCanceled();
+
+        // Assert
+        AssertCanceled(result);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        Result result = QueryHandler.TestNotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void InternalError()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = QueryHandler.TestInternalError(testErrorMessage);
+
+        // Assert
+        AssertInternalError(result, testErrorMessage);
+    }
+
+    [Test]
+    public void InternalErrorWithException()
+    {
+        // Arrange
+        Exception testException = new("Test Exception Message");
+
+        // Act
+        Result result = QueryHandler.TestInternalError(testException);
+
+        // Assert
+        AssertInternalError(result, testException);
     }
 }

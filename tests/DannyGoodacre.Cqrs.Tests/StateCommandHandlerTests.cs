@@ -56,7 +56,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         SetupStateUnit_SaveChangesAsync();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -77,7 +77,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         SetupLogger_CanceledWhilePersistingChanges();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -89,7 +89,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        var exception = new Exception(testExceptionMessage);
+        Exception exception = new(testExceptionMessage);
 
         StateUnitMock
             .Setup(x => x.SaveChangesAsync(
@@ -102,7 +102,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         SetupLogger_FailedWhilePersistingChanges(exception);
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
