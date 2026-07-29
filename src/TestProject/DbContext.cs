@@ -1,6 +1,7 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Primitives;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace TestProject;
@@ -43,5 +44,16 @@ public class IdentityContext(DbContextOptions options) : DbContext(options), ISt
             return result;
 
         });
+    }
+}
+
+public class IdentityContextFactory : IDesignTimeDbContextFactory<IdentityContext>
+{
+    public IdentityContext CreateDbContext(string[] args)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<IdentityContext>();
+        optionsBuilder.UseSqlite("Data Source=identity.db");
+
+        return new IdentityContext(optionsBuilder.Options);
     }
 }
