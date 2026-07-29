@@ -113,7 +113,7 @@ public abstract class TestBase
 
     private void VerifyAllAndNoOtherCalls()
     {
-        var mocks = GetAllMocksInHierarchy(this);
+        List<dynamic> mocks = GetAllMocks(this);
 
         foreach (Mock mock in mocks)
         {
@@ -129,7 +129,7 @@ public abstract class TestBase
         }
     }
 
-    private static List<dynamic> GetAllMocksInHierarchy(object instance)
+    private static List<dynamic> GetAllMocks(object instance)
     {
         List<dynamic> mocks = [];
 
