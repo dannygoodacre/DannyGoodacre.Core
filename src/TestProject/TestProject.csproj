@@ -8,13 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Reference Include="Microsoft.EntityFrameworkCore">
-        <HintPath>..\..\..\..\.nuget\packages\microsoft.entityframeworkcore\10.0.10\lib\net10.0\Microsoft.EntityFrameworkCore.dll</HintPath>
-      </Reference>
+      <ProjectReference Include="..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     </ItemGroup>
 
 </Project>
