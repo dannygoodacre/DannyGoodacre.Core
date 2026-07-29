@@ -34,7 +34,7 @@ internal sealed class AddClaimHandler(ILogger<AddClaimHandler> logger, IStateUni
 
         throw new Exception("Test");
 
-        return Task.FromResult(Success());
+        // return Task.FromResult(Success());
     }
 
     public Task<Result> ExecuteAsync(string name, CancellationToken cancellationToken = default)

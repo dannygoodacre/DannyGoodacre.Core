@@ -25,14 +25,14 @@ internal class CommandOrchestrationTestHandler(ILogger<CommandOrchestrationTestH
     protected async override Task<Result<string>> InternalExecuteAsync(CommandOrchestrationTestCommand command, CancellationToken cancellationToken = default)
     {
 
-        Result addUserResult = await addUser.ExecuteAsync("Test User", cancellationToken);
+        Result addUserResult = await addUser.ExecuteAsync("Test User New2", cancellationToken);
 
         if (!addUserResult.IsSuccess)
         {
             return addUserResult.MapFailure<string>();
         }
 
-        Result<int> getUserIdResult = await getUserId.ExecuteAsync("Test User", cancellationToken);
+        Result<int> getUserIdResult = await getUserId.ExecuteAsync("Test User New2", cancellationToken);
 
         if (!getUserIdResult.IsSuccess)
         {

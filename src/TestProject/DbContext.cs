@@ -15,7 +15,6 @@ public class IdentityContext(DbContextOptions options) : DbContext(options), ISt
     public new Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);
 
-
     public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
         where TResult : Result
     {
@@ -34,10 +33,14 @@ public class IdentityContext(DbContextOptions options) : DbContext(options), ISt
 
             if (!result.IsSuccess)
             {
+                Console.WriteLine("Rolling back");
+
                 await transaction.RollbackAsync(cancellationToken);
 
                 return result;
             }
+
+            Console.WriteLine("Committing");
 
             await transaction.CommitAsync(cancellationToken);
 
