@@ -82,9 +82,9 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
     protected void SetupTransactionUnit_ExecuteInTransactionAsync()
         => TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<Result>>>(),
-                It.IsAny<CancellationToken>()))
-            .Returns<Func<CancellationToken, Task<Result>>, CancellationToken>(
+                It.IsAny<Func<CancellationToken, Task<TResult>>>(),
+                It.Is<CancellationToken>(y => y == TestCancellationToken)))
+            .Returns<Func<CancellationToken, Task<TResult>>, CancellationToken>(
                 (operation, ct) => operation(ct))
             .Verifiable(Times.Once);
 }

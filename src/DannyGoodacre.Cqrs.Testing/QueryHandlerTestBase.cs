@@ -25,12 +25,13 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
         CancellationToken = CancellationToken.None;
 
         LoggerMock = new Mock<ILogger<TQueryHandler>>(MockBehavior.Strict);
+    }
 
-        LoggerMock
+    protected void SetupLogger_IsEnabled()
+        => LoggerMock
             .Setup(x => x.IsEnabled(
                 It.IsAny<LogLevel>()))
             .Returns(true);
-    }
 
     protected void SetupLogger_FailedValidation(string message)
         => LoggerMock.Setup(LogLevel.Error, $"Query '{QueryName}' failed validation: {message}");

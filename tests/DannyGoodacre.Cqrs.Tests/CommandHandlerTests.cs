@@ -58,6 +58,8 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
@@ -74,6 +76,8 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         var cancellationTokenSource = new CancellationTokenSource();
 
         TestCancellationToken = cancellationTokenSource.Token;
+
+        SetupLogger_IsEnabled();
 
         SetupLogger_CanceledBeforeExecution();
 
@@ -103,6 +107,8 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_CanceledDuringExecution();
 
         // Act
@@ -121,6 +127,8 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         var exception = new Exception(testExceptionMessage);
 
         _testInternalExecuteAsync = (_, _) => throw exception;
+
+        SetupLogger_IsEnabled();
 
         SetupLogger_Failed(exception);
 

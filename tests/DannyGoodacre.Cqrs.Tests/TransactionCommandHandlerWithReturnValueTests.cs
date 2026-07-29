@@ -54,38 +54,40 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenNotSuccessful_ShouldRollbackAndReturnResult()
+    public async Task ExecuteAsync_WhenNotSuccessful_ShouldReturnResult()
     {
         // Arrange
         const string testError = "Test Internal Error";
 
         _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.InternalError(testError));
 
-        SetupTransaction_RollbackAsync();
+        SetupTransactionUnit_ExecuteInTransactionAsync();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertInternalError(result, testError);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessfulAndInvalidNumberOfChanges_ShouldRollbackAndReturnInternalError()
+    public async Task ExecuteAsync_WhenSuccessfulAndInvalidNumberOfChanges_ShouldReturnInternalError()
     {
         // Arrange
         _testExpectedChanges = 123;
 
         _testActualChanges = 456;
 
-        SetupTransactionUnit_SaveChangesAsync();
+        SetupLogger_IsEnabled();
 
-        SetupTransaction_RollbackAsync();
+        SetupTransactionUnit_ExecuteInTransactionAsync();
+
+        SetupTransactionUnit_SaveChangesAsync();
 
         SetupLogger_UnexpectedNumberOfChanges(_testExpectedChanges, _testActualChanges);
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertInternalError(result, "Attempted to persist an unexpected number of changes.");
@@ -99,10 +101,12 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
         _testActualChanges = 123;
 
-        Setup_SaveChangesAndCommitAsync();
+        SetupTransactionUnit_ExecuteInTransactionAsync();
+
+        SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -112,58 +116,41 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
     public async Task ExecuteAsync_WhenSuccessfulAndNotValidatingChanges_ShouldCommitAndReturnSuccess()
     {
         // Arrange
-        Setup_SaveChangesAndCommitAsync();
+        SetupTransactionUnit_ExecuteInTransactionAsync();
+
+        SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertSuccess(result);
     }
-    //
-    // [Test]
-    // public async Task ExecuteAsync_WhenSuccessfulAndCanceled_ShouldRollbackAndReturnCanceled()
-    // {
-    //     // Arrange
-    //     TransactionUnitMock
-    //         .Setup(x => x.SaveChangesAsync(
-    //             It.Is<CancellationToken>(y => y == TestCancellationToken)))
-    //         .ThrowsAsync(new OperationCanceledException())
-    //         .Verifiable(Times.Once);
-    //
-    //     SetupTransaction_RollbackAsync();
-    //
-    //     SetupLogger_CanceledDuringRollback();
-    //
-    //     // Act
-    //     var result = await Act();
-    //
-    //     // Assert
-    //     AssertCanceled(result);
-    // }
-    //
-    // [Test]
-    // public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccurs_ShouldRollbackAndReturnInternalError()
-    // {
-    //     // Arrange
-    //     const string testError = "Test Internal Error";
-    //
-    //     var exception = new Exception(testError);
-    //
-    //     TransactionUnitMock
-    //         .Setup(x => x.SaveChangesAsync(
-    //             It.Is<CancellationToken>(y => y == TestCancellationToken)))
-    //         .ThrowsAsync(exception)
-    //         .Verifiable(Times.Once);
-    //
-    //     SetupTransaction_RollbackAsync();
-    //
-    //     SetupLogger_TransactionFailure(exception);
-    //
-    //     // Act
-    //     var result = await Act();
-    //
-    //     // Assert
-    //     AssertInternalError(result, testError);
-    // }
+
+    [Test]
+    public async Task ExecuteAsync_WhenSuccessfulAndExceptionOccurs_ShouldReturnInternalError()
+    {
+        // Arrange
+        const string testError = "Test Internal Error";
+
+        Exception exception = new(testError);
+
+        SetupLogger_IsEnabled();
+
+        SetupTransactionUnit_ExecuteInTransactionAsync();
+
+        TransactionUnitMock
+            .Setup(x => x.SaveChangesAsync(
+                It.Is<CancellationToken>(y => y == TestCancellationToken)))
+            .ThrowsAsync(exception)
+            .Verifiable(Times.Once);
+
+        SetupLogger_Failed(exception);
+
+        // Act
+        Result result = await Act();
+
+        // Assert
+        AssertInternalError(result, testError);
+    }
 }

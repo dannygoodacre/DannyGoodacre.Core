@@ -44,7 +44,6 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
     [SetUp]
     public void SetUp()
     {
-
         _testExpectedChanges = -1;
 
         _internalExecuteAsync = (_, _) => Task.FromResult(Result.Success());

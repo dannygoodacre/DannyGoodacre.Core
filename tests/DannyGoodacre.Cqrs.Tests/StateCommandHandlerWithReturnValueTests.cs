@@ -74,6 +74,8 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
             .ThrowsAsync(new OperationCanceledException())
             .Verifiable(Times.Once);
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_CanceledWhilePersistingChanges();
 
         // Act
@@ -96,6 +98,8 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
             .ThrowsAsync(exception)
             .Verifiable(Times.Once);
+
+        SetupLogger_IsEnabled();
 
         SetupLogger_FailedWhilePersistingChanges(exception);
 
