@@ -131,7 +131,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
         // Arrange
         const string testError = "Test Internal Error";
 
-        Exception exception = new(testError);
+        var exception = new Exception(testError);
 
         SetupLogger_IsEnabled();
 

@@ -89,7 +89,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        Exception exception = new(testExceptionMessage);
+        var exception = new Exception(testExceptionMessage);
 
         StateUnitMock
             .Setup(x => x.SaveChangesAsync(

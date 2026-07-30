@@ -147,7 +147,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        Exception exception = new(testExceptionMessage);
+        var exception = new Exception(testExceptionMessage);
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
