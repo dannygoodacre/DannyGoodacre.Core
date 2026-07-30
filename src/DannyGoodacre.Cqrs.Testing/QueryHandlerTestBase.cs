@@ -11,7 +11,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
 {
     protected abstract string QueryName { get; }
 
-    protected CancellationToken CancellationToken;
+    protected CancellationToken TestCancellationToken;
 
     protected Mock<ILogger<TQueryHandler>> LoggerMock { get; private set; } = null!;
 
@@ -22,7 +22,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
     [SetUp]
     public void BaseSetUp()
     {
-        CancellationToken = CancellationToken.None;
+        TestCancellationToken = CancellationToken.None;
 
         LoggerMock = new Mock<ILogger<TQueryHandler>>(MockBehavior.Strict);
     }

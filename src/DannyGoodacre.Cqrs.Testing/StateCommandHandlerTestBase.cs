@@ -21,19 +21,23 @@ public abstract class StateCommandHandlerTestCore<TCommandHandler, TResult>
 {
     internal StateCommandHandlerTestCore() { }
 
-    [SetUp]
-    public void StateSetUp()
-    {
-        StateUnitMock =  new Mock<IStateUnit>(MockBehavior.Strict);
-    }
-
     protected Mock<IStateUnit> StateUnitMock { get; private set; } = null!;
 
+    [SetUp]
+    public override void BaseSetUp()
+    {
+        base.BaseSetUp();
+
+        StateUnitMock = new Mock<IStateUnit>(MockBehavior.Strict);
+    }
+
     protected void SetupLogger_CanceledWhilePersistingChanges()
-        => LoggerMock.Setup(LogLevel.Information, $"Command '{CommandName}' was canceled while persisting changes.");
+        => LoggerMock
+            .Setup(LogLevel.Information, $"Command '{CommandName}' was canceled while persisting changes.");
 
     protected void SetupLogger_FailedWhilePersistingChanges(Exception exception)
-        => LoggerMock.Setup(LogLevel.Critical, $"Command '{CommandName}' failed while persisting changes.", exception: exception);
+        => LoggerMock
+            .Setup(LogLevel.Critical, $"Command '{CommandName}' failed while persisting changes.", exception: exception);
 
     protected void SetupStateUnit_SaveChangesAsync(int times = 1)
         => StateUnitMock

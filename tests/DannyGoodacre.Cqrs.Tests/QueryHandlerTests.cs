@@ -57,7 +57,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
     protected override string QueryName => TestName;
 
-    protected override Task<Result<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, CancellationToken);
+    protected override Task<Result<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
@@ -98,7 +98,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
-        CancellationToken = cancellationTokenSource.Token;
+        TestCancellationToken = cancellationTokenSource.Token;
 
         SetupLogger_IsEnabled();
 
