@@ -96,7 +96,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
-        CancellationTokenSource cancellationTokenSource = new();
+        var cancellationTokenSource = new CancellationTokenSource();
 
         CancellationToken = cancellationTokenSource.Token;
 
@@ -107,7 +107,6 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         await cancellationTokenSource.CancelAsync();
 
         // Act
-
         Result<int> result = await Act();
 
         // Assert
@@ -147,7 +146,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
 
-        Exception exception = new(testExceptionMessage);
+        var exception = new Exception(testExceptionMessage);
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
@@ -238,7 +237,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public void InternalErrorWithException()
     {
         // Arrange
-        Exception testException = new("Test Exception Message");
+        var testException = new Exception("Test Exception Message");
 
         // Act
         Result result = QueryHandler.TestInternalError(testException);

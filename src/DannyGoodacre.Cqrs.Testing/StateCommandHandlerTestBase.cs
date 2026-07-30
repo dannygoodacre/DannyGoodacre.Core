@@ -35,10 +35,10 @@ public abstract class StateCommandHandlerTestCore<TCommandHandler, TResult>
     protected void SetupLogger_FailedWhilePersistingChanges(Exception exception)
         => LoggerMock.Setup(LogLevel.Critical, $"Command '{CommandName}' failed while persisting changes.", exception: exception);
 
-    protected void SetupStateUnit_SaveChangesAsync()
+    protected void SetupStateUnit_SaveChangesAsync(int times = 1)
         => StateUnitMock
             .Setup(x => x.SaveChangesAsync(
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
             .ReturnsAsync(0)
-            .Verifiable(Times.Once);
+            .Verifiable(Times.Exactly(times));
 }

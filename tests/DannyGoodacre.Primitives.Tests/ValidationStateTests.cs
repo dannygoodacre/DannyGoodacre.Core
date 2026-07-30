@@ -10,7 +10,7 @@ public sealed class ValidationStateTests : TestBase
     public void Constructor_WhenErrorsIsEmpty_ShouldReturnNoErrors()
     {
         // Act
-        ValidationState validationState = new();
+        var validationState = new ValidationState();
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -30,7 +30,7 @@ public sealed class ValidationStateTests : TestBase
 
         const string error2 = "Test Error 2";
 
-        ValidationState validationState = new();
+        var validationState = new ValidationState();
 
         // Act
         validationState.AddError(property, error1);
@@ -55,7 +55,7 @@ public sealed class ValidationStateTests : TestBase
         const string property2 = "Test Property 2";
         const string error2 = "Test Error 2";
 
-        ValidationState validationState = new();
+        var validationState = new ValidationState();
 
         // Act
         validationState.AddError(property1, error1);
@@ -76,7 +76,7 @@ public sealed class ValidationStateTests : TestBase
     public void ToString_WhenErrorsIsEmpty_ShouldReturnEmptyString()
     {
         // Arrange
-        ValidationState validationState = new();
+        var validationState = new ValidationState();
 
         // Act
         string error = validationState.ToString();
@@ -97,7 +97,7 @@ public sealed class ValidationStateTests : TestBase
 
         string expectedError = $"{property1}:{Environment.NewLine}  - {error1}{Environment.NewLine}{property2}:{Environment.NewLine}  - {error2}";
 
-        ValidationState validationState = new();
+        var validationState = new ValidationState();
 
         validationState.AddError(property1, error1);
         validationState.AddError(property2, error2);

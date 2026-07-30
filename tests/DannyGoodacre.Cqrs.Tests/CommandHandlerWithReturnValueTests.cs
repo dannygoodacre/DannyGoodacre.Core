@@ -96,7 +96,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
-        CancellationTokenSource cancellationTokenSource = new();
+        var cancellationTokenSource = new CancellationTokenSource();
 
         TestCancellationToken = cancellationTokenSource.Token;
 
