@@ -58,7 +58,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         SetupStateUnit_SaveChangesAsync();
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertSuccess(result, TestResultValue);
@@ -74,10 +74,12 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
             .ThrowsAsync(new OperationCanceledException())
             .Verifiable(Times.Once);
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_CanceledWhilePersistingChanges();
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -97,10 +99,12 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
             .ThrowsAsync(exception)
             .Verifiable(Times.Once);
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_FailedWhilePersistingChanges(exception);
 
         // Act
-        var result = await Act();
+        Result<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);

@@ -1,3 +1,5 @@
+using DannyGoodacre.Primitives;
+
 namespace DannyGoodacre.Cqrs;
 
 /// <summary>
@@ -6,9 +8,14 @@ namespace DannyGoodacre.Cqrs;
 public interface ITransactionUnit : IStateUnit
 {
     /// <summary>
-    /// Start a new transaction boundary to ensure multiple operations succeed or fail atomically.
+    /// Executes the specified asynchronous operation within an atomic transaction boundary.
     /// </summary>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="ITransaction"/> instance.</returns>
-    Task<ITransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+    /// <typeparam name="TResult">The type of <see cref="Result"/> returned by the operation.</typeparam>
+    /// <param name="operation">The asynchronous operation delegate to execute inside the transaction.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while executing the operation and controlling the transaction.</param>
+    /// <returns>The <typeparamref name="TResult"/> produced by the operation.</returns>
+    /// <remarks>
+    /// Implementations are responsible for committing the transaction if the operation succeeds, or rolling back if the operation fails or throws an exception.
+    /// </remarks>
+    Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default) where TResult : Result;
 }

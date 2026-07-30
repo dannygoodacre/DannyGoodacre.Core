@@ -36,47 +36,33 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
 
     protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        await using ITransaction transaction = await TransactionUnit.BeginTransactionAsync(cancellationToken);
-
         try
         {
-            TResult result = await base.ExecuteAsync(command, cancellationToken);
-
-            if (!result.IsSuccess)
+            return await TransactionUnit.ExecuteInTransactionAsync(async ct =>
             {
-                await transaction.RollbackAsync(cancellationToken);
+                TResult result = await base.ExecuteAsync(command, ct);
 
-                return result;
-            }
+                if (!result.IsSuccess)
+                {
+                    return result;
+                }
 
-            int actualChanges = await TransactionUnit.SaveChangesAsync(cancellationToken);
+                int actualChanges = await TransactionUnit.SaveChangesAsync(ct);
 
-            if (ExpectedChanges != -1 && actualChanges != ExpectedChanges)
-            {
-                await transaction.RollbackAsync(cancellationToken);
+                if (ExpectedChanges == -1 || actualChanges == ExpectedChanges)
+                {
+                    return result;
+                }
 
                 LogUnexpectedNumberOfChanges(Logger, CommandName, ExpectedChanges, actualChanges);
 
                 return MapResult(Result.InternalError("Attempted to persist an unexpected number of changes."));
-            }
 
-            await transaction.CommitAsync(cancellationToken);
-
-            return result;
-        }
-        catch (OperationCanceledException)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-
-            LogCanceledDuringRollback(Logger, CommandName);
-
-            return MapResult(Result.Canceled());
+            }, cancellationToken);
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
-
-            LogTransactionFailure(Logger, ex, CommandName);
+            LogFailed(Logger, ex, CommandName);
 
             return MapResult(Result.InternalError(ex.Message));
         }
@@ -84,10 +70,4 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
 
     [LoggerMessage(LogLevel.Error, "Command '{Command}' attempted to persist an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.")]
     private static partial void LogUnexpectedNumberOfChanges(ILogger logger, string command, int expected, int actual);
-
-    [LoggerMessage(LogLevel.Information, "Command '{Command}' was canceled while rolling back changes.")]
-    private static partial void LogCanceledDuringRollback(ILogger logger, string command);
-
-    [LoggerMessage(LogLevel.Critical, "Command '{Command}' experienced a transaction failure.")]
-    private static partial void LogTransactionFailure(ILogger logger, Exception exception, string command);
 }

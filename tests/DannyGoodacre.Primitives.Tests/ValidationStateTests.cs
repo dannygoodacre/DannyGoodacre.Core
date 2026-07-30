@@ -79,7 +79,7 @@ public sealed class ValidationStateTests : TestBase
         var validationState = new ValidationState();
 
         // Act
-        var error = validationState.ToString();
+        string error = validationState.ToString();
 
         // Assert
         Assert.That(error, Is.EqualTo(string.Empty));
@@ -95,7 +95,7 @@ public sealed class ValidationStateTests : TestBase
         const string property2 = "Test Property 2";
         const string error2 = "Test Error 2";
 
-        var expectedError = $"{property1}:{Environment.NewLine}  - {error1}{Environment.NewLine}{property2}:{Environment.NewLine}  - {error2}";
+        string expectedError = $"{property1}:{Environment.NewLine}  - {error1}{Environment.NewLine}{property2}:{Environment.NewLine}  - {error2}";
 
         var validationState = new ValidationState();
 
@@ -103,7 +103,7 @@ public sealed class ValidationStateTests : TestBase
         validationState.AddError(property2, error2);
 
         // Act
-        var error = validationState.ToString();
+        string error = validationState.ToString();
 
         // Assert
         Assert.That(error, Is.EqualTo(expectedError));

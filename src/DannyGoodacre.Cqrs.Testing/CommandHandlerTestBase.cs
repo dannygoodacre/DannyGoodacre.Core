@@ -37,22 +37,13 @@ public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
         TestCancellationToken = CancellationToken.None;
 
         LoggerMock = new Mock<ILogger<TCommandHandler>>(MockBehavior.Strict);
-
-        LoggerMock
-            .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Information)))
-            .Returns(true);
-
-        LoggerMock
-            .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Error)))
-            .Returns(true);
-
-        LoggerMock
-            .Setup(x => x.IsEnabled(
-                It.Is<LogLevel>(y => y == LogLevel.Critical)))
-            .Returns(true);
     }
+
+    protected void SetupLogger_IsEnabled()
+        => LoggerMock
+            .Setup(x => x.IsEnabled(
+                It.IsAny<LogLevel>()))
+            .Returns(true);
 
     protected void SetupLogger_FailedValidation(string message)
         => LoggerMock.Setup(LogLevel.Error, $"Command '{CommandName}' failed validation: {message}");

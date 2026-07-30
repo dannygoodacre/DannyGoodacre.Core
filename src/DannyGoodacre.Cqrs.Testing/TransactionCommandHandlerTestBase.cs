@@ -25,72 +25,31 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
 
     protected Mock<ITransactionUnit> TransactionUnitMock { get; private set; } = null!;
 
-    private Mock<ITransaction> TransactionMock { get; set; } = null!;
-
     [SetUp]
     public override void BaseSetUp()
     {
         base.BaseSetUp();
 
         TransactionUnitMock = new Mock<ITransactionUnit>(MockBehavior.Strict);
-
-        TransactionMock = new Mock<ITransaction>(MockBehavior.Strict);
-
-        SetupTransactionUnit_BeginTransactionAsync();
-
-        SetupTransaction_DisposeAsync();
     }
 
     protected void SetupLogger_UnexpectedNumberOfChanges(int expected, int actual)
         => LoggerMock
             .Setup(LogLevel.Error, $"Command '{CommandName}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
 
-    protected void SetupLogger_CanceledDuringRollback()
-        => LoggerMock
-            .Setup(LogLevel.Information, $"Command '{CommandName}' was canceled while rolling back changes.");
-
-    protected void SetupLogger_TransactionFailure(Exception exception)
-        => LoggerMock
-            .Setup(LogLevel.Critical, $"Command '{CommandName}' experienced a transaction failure.", exception: exception);
-
-    protected void Setup_SaveChangesAndCommitAsync()
-    {
-        SetupTransactionUnit_SaveChangesAsync();
-
-        SetupTransaction_CommitAsync();
-    }
-
-    protected void SetupTransaction_CommitAsync()
-        => TransactionMock
-            .Setup(x => x.CommitAsync(
-                It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .Returns(Task.CompletedTask)
-            .Verifiable(Times.Once);
-
-    protected void SetupTransaction_RollbackAsync()
-        => TransactionMock
-            .Setup(x => x.RollbackAsync(
-                It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .Returns(Task.CompletedTask)
-            .Verifiable(Times.Once);
-
-    protected void SetupTransactionUnit_SaveChangesAsync()
+    protected void SetupTransactionUnit_SaveChangesAsync(int times = 1)
         => TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
             .ReturnsAsync(TestActualChanges)
-            .Verifiable(Times.Once);
+            .Verifiable(Times.Exactly(times));
 
-    private void SetupTransaction_DisposeAsync()
-        => TransactionMock
-            .Setup(x => x.DisposeAsync())
-            .Returns(ValueTask.CompletedTask)
-            .Verifiable(Times.Once);
-
-    private void SetupTransactionUnit_BeginTransactionAsync()
+    protected void SetupTransactionUnit_ExecuteInTransactionAsync()
         => TransactionUnitMock
-            .Setup(x => x.BeginTransactionAsync(
+            .Setup(x => x.ExecuteInTransactionAsync(
+                It.IsAny<Func<CancellationToken, Task<TResult>>>(),
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .ReturnsAsync(TransactionMock.Object)
+            .Returns<Func<CancellationToken, Task<TResult>>, CancellationToken>(
+                (operation, ct) => operation(ct))
             .Verifiable(Times.Once);
 }

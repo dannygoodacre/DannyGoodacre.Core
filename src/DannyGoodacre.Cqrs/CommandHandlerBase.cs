@@ -109,5 +109,5 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     private static partial void LogCanceledDuringExecution(ILogger logger, string command);
 
     [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed.")]
-    private static partial void LogFailed(ILogger logger, Exception exception, string command);
+    protected private static partial void LogFailed(ILogger logger, Exception exception, string command);
 }

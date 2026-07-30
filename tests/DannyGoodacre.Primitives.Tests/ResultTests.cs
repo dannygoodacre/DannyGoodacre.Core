@@ -230,4 +230,54 @@ public sealed class ResultTests : TestBase
             Assert.That(result.ValidationState, Is.Null);
         }
     }
+
+    [Test]
+    public void MapFailure_WhenSuccess_ShouldThrowException()
+    {
+        // Arrange
+        Result testResult = Result.Success();
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<int>());
+    }
+
+    [Test]
+    public void MapFailure_WhenSuccessWithValue_ShouldThrowException()
+    {
+        // Arrange
+        const int testValue = 123;
+
+        Result<int> testResult = Result<int>.Success(testValue);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<string>());
+    }
+
+    [Test]
+    public void MapFailure_WhenNotSuccess_ShouldReturnResult()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        Result testResult = Result.InternalError(testErrorMessage);
+
+        // Act
+        Result<int> result = testResult.MapFailure<int>();
+
+        AssertInternalError(result, testErrorMessage);
+    }
+
+    [Test]
+    public void MapFailure_WhenNotSuccessWithValue_ShouldReturnResult()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        Result<int> testResult = Result<int>.InternalError(testErrorMessage);
+
+        // Act
+        Result<string> result = testResult.MapFailure<string>();
+
+        AssertInternalError(result, testErrorMessage);
+    }
 }

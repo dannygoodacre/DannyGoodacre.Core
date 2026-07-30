@@ -22,6 +22,27 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
+
+        public Result TestInvalid(ValidationState validationState)
+            => Invalid(validationState);
+
+        public Result TestDomainError(string error)
+            => DomainError(error);
+
+        public Result TestConflict(string error)
+            => Conflict(error);
+
+        public Result TestCanceled()
+            => Canceled();
+
+        public Result TestNotFound()
+            => NotFound();
+
+        public Result TestInternalError(string error)
+            => InternalError(error);
+
+        public Result TestInternalError(Exception exception)
+            => InternalError(exception);
     }
 
     private const string TestName = "Test Command Handler";
@@ -58,10 +79,12 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertInvalid(result);
@@ -75,13 +98,15 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         TestCancellationToken = cancellationTokenSource.Token;
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_CanceledBeforeExecution();
 
         await cancellationTokenSource.CancelAsync();
 
         // Act
 
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -91,7 +116,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -103,10 +128,12 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_CanceledDuringExecution();
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -122,12 +149,99 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
+        SetupLogger_IsEnabled();
+
         SetupLogger_Failed(exception);
 
         // Act
-        var result = await Act();
+        Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        Result result = CommandHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result);
+    }
+
+    [Test]
+    public void DomainError()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = CommandHandler.TestDomainError(testErrorMessage);
+
+        // Assert
+        AssertDomainError(result, testErrorMessage);
+    }
+
+    [Test]
+    public void Conflict()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = CommandHandler.TestConflict(testErrorMessage);
+
+        // Assert
+        AssertConflict(result, testErrorMessage);
+    }
+
+    [Test]
+    public void Canceled()
+    {
+        // Act
+        Result result = CommandHandler.TestCanceled();
+
+        // Assert
+        AssertCanceled(result);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        Result result = CommandHandler.TestNotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void InternalError()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        // Act
+        Result result = CommandHandler.TestInternalError(testErrorMessage);
+
+        // Assert
+        AssertInternalError(result, testErrorMessage);
+    }
+
+    [Test]
+    public void InternalErrorWithException()
+    {
+        // Arrange
+        Exception testException = new("Test Exception Message");
+
+        // Act
+        Result result = CommandHandler.TestInternalError(testException);
+
+        // Assert
+        AssertInternalError(result, testException);
     }
 }
