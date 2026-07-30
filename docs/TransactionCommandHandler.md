@@ -6,8 +6,6 @@ Like the command handler, this handler supports both void and valued responses.
 
 It also provides an optional mechanism for ensuring data integrity, rolling back changes when the number of changes deviates from what is expected.
 
-The interface `ITransactionUnit` provides an implementation of `ITransaction` to be used by the handler.
-
 ## Signature
 
 ```csharp
