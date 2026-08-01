@@ -47,10 +47,10 @@ public sealed class DbContextTransactionUnitTests : TestBase
         await context.Database.EnsureCreatedAsync();
 
         _expectedEntities.Add(context.TestEntities.Add(new TestEntity { Name = "Test Entity Name 1" }).Entity);
-
         _expectedEntities.Add(context.TestEntities.Add(new TestEntity { Name = "Test Entity Name 2" }).Entity);
+        _expectedEntities.Add(context.TestEntities.Add(new TestEntity { Name = "Test Entity Name 3" }).Entity);
 
-         await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 
     [TearDown]
@@ -65,12 +65,18 @@ public sealed class DbContextTransactionUnitTests : TestBase
     public async Task ExuteInTransactionAsync_WhenAlreadyInTransaction_ShouldNotStartNestedTransaction()
     {
         // Arrange
-        var testEntity = new TestEntity
+        var testEntity1 = new TestEntity
         {
-            Name = "Test Entity Name"
+            Name = "Test New Entity Name 1"
         };
 
-        _expectedEntities.Add(testEntity);
+        var testEntity2 = new TestEntity
+        {
+            Name = "Test New Entity Name 2"
+        };
+
+        _expectedEntities.Add(testEntity1);
+        _expectedEntities.Add(testEntity2);
 
         Result result;
 
@@ -83,7 +89,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
             // Act
             result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
             {
-                testContext.TestEntities.Add(testEntity);
+                testContext.TestEntities.Add(testEntity1);
+                testContext.TestEntities.Add(testEntity2);
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
@@ -108,9 +115,14 @@ public sealed class DbContextTransactionUnitTests : TestBase
     public async Task ExecuteInTransactionAsync_WhenUnsuccessful_ShouldRollbackTransactionAndNotPersistChanges()
     {
         // Arrange
-        var testEntity = new TestEntity
+        var testEntity1 = new TestEntity
         {
-            Name = "Test Entity Name"
+            Name = "Test New Entity Name 1"
+        };
+
+        var testEntity2 = new TestEntity
+        {
+            Name = "Test New Entity Name 2"
         };
 
         const string testErrorMessage = "Test Domain Error";
@@ -124,7 +136,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
             // Act
             result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
             {
-                testContext.TestEntities.Add(testEntity);
+                testContext.TestEntities.Add(testEntity1);
+                testContext.TestEntities.Add(testEntity2);
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
@@ -147,15 +160,20 @@ public sealed class DbContextTransactionUnitTests : TestBase
     public async Task ExecuteInTransactionAsync_WhenSuccessful_ShouldCommitTransactionAndPersistChanges()
     {
         // Arrange
-        var testEntity = new TestEntity
+        var testEntity1 = new TestEntity
         {
-            Name = "Test Entity Name"
+            Name = "Test New Entity Name 1"
         };
 
+        var testEntity2 = new TestEntity
+        {
+            Name = "Test New Entity Name 2"
+        };
+
+        _expectedEntities.Add(testEntity1);
+        _expectedEntities.Add(testEntity2);
+
         const string testResponse = "Test Response";
-
-        _expectedEntities.Add(testEntity);
-
         Result<string> result;
 
         await using (TestDbContext testContext = CreateDbContext())
@@ -165,7 +183,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
             // Act
             result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
             {
-                testContext.TestEntities.Add(testEntity);
+                testContext.TestEntities.Add(testEntity1);
+                testContext.TestEntities.Add(testEntity2);
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
@@ -188,9 +207,14 @@ public sealed class DbContextTransactionUnitTests : TestBase
     public async Task ExecuteInTransactionAsync_WhenExceptionOccurs_ShouldRollbackTransactionAndNotPersistChangesAndThrowException()
     {
         // Arrange
-        var testEntity = new TestEntity
+        var testEntity1 = new TestEntity
         {
-            Name = "Test Entity Name"
+            Name = "Test New Entity Name 1"
+        };
+
+        var testEntity2 = new TestEntity
+        {
+            Name = "Test New Entity Name 2"
         };
 
         const string testExceptionMessage = "Test Exception Message";
@@ -206,7 +230,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
             result = await transactionUnit.ExecuteInTransactionAsync<Result>(async cancellationToken =>
             {
-                testContext.TestEntities.Add(testEntity);
+                testContext.TestEntities.Add(testEntity1);
+                testContext.TestEntities.Add(testEntity2);
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
