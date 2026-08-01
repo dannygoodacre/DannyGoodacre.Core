@@ -8,7 +8,7 @@ namespace DannyGoodacre.Cqrs;
 public interface ITransactionUnit : IStateUnit
 {
     /// <summary>
-    /// Executes the specified asynchronous operation within an atomic transaction boundary.
+    /// Execute the specified asynchronous operation within an atomic transaction boundary.
     /// </summary>
     /// <typeparam name="TResult">The type of <see cref="Result"/> returned by the operation.</typeparam>
     /// <param name="operation">The asynchronous operation delegate to execute inside the transaction.</param>
