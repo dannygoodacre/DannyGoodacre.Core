@@ -1,5 +1,4 @@
 using DannyGoodacre.Cqrs;
-using DannyGoodacre.Identity.Application.Abstractions.Data;
 using DannyGoodacre.Identity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

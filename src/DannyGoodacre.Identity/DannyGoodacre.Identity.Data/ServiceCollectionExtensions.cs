@@ -1,4 +1,3 @@
-using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Data.Repositories;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,11 +8,12 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddData<TContext>() where TContext : IdentityContext
+        public IServiceCollection AddData<TContext>()
+            where TContext : IdentityContext
         {
             services.AddScoped<IdentityContext, TContext>();
 
-            services.AddScoped<IStateUnit>(x => x.GetRequiredService<IdentityContext>());
+            services.AddEntityFrameworkUnits<IdentityContext>();
 
             services.AddScoped<IUserRepository, UserRepository>();
 
