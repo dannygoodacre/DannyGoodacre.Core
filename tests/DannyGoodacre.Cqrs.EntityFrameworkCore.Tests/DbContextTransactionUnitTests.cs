@@ -176,6 +176,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
             Assert.That(exception.Message, Is.EqualTo(testExceptionMessage));
 
             Assert.That(result, Is.Null);
+
+            Assert.That(assertionContext.TestEntities.ToList(), Is.EqualTo(_expectedEntities).UsingPropertiesComparer());
         }
     }
 }

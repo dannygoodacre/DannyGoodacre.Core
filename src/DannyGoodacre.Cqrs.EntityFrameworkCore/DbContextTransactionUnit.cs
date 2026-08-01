@@ -43,8 +43,6 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : IStateUn
                 }
                 catch
                 {
-                    await transaction.RollbackAsync(ct);
-
                     state.context.ChangeTracker.Clear();
 
                     throw;
