@@ -2,13 +2,13 @@
 
 public sealed class PasswordValidatorOptions
 {
-    public bool RequiresLowercase { get; set; }
+    public bool RequireLowercase { get; set; }
 
-    public bool RequiresUppercase { get; set; }
+    public bool RequireUppercase { get; set; }
 
     public bool RequireDigit { get; set; }
 
-    public bool RequiresNonAlphanumeric { get; set; }
+    public bool RequireNonAlphanumeric { get; set; }
 
     public int MinimumLength { get; set; }
 }

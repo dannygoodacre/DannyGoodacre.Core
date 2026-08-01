@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace DannyGoodacre.Identity.Hashing;
 
-internal sealed class PasswordHashingService : IHashingService
+internal sealed class PasswordHashingService : IPasswordHashingService
 {
     private const KeyDerivationPrf Prf = KeyDerivationPrf.HMACSHA512;
 

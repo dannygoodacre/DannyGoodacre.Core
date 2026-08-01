@@ -1,6 +1,5 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
-using DannyGoodacre.Identity.Application.Extensions;
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Primitives;

@@ -9,14 +9,18 @@
     <ItemGroup>
       <ProjectReference Include="..\..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
       <ProjectReference Include="..\..\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
-      <ProjectReference Include="..\DannyGoodacre.Identity.Application.Abstractions\DannyGoodacre.Identity.Application.Abstractions.csproj" />
       <ProjectReference Include="..\DannyGoodacre.Identity.Configuration\DannyGoodacre.Identity.Configuration.csproj" />
+      <ProjectReference Include="..\DannyGoodacre.Identity.Domain\DannyGoodacre.Identity.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <Reference Include="Microsoft.Extensions.Options">
         <HintPath>..\..\..\..\..\.nuget\packages\microsoft.extensions.options\10.0.9\lib\net10.0\Microsoft.Extensions.Options.dll</HintPath>
       </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Abstractions\" />
     </ItemGroup>
     
 </Project>

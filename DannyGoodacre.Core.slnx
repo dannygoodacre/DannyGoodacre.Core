@@ -10,7 +10,6 @@
     <Folder Name="/src/DannyGoodacre.Identity/">
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Application/DannyGoodacre.Identity.Application.csproj" />
-        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Application.Abstractions/DannyGoodacre.Identity.Application.Abstractions.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Configuration/DannyGoodacre.Identity.Configuration.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Data/DannyGoodacre.Identity.Data.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Hashing/DannyGoodacre.Identity.Hashing.csproj" />

@@ -14,7 +14,7 @@ public interface IAddSuperUser
 
 internal sealed class AddSuperUserHandler(ILogger<AddSuperUserHandler> logger,
                                           IStateUnit stateUnit,
-                                          IHashingService hashingService,
+                                          IPasswordHashingService hashingService,
                                           IUserRepository userRepository,
                                           IClaimRepository claimRepository,
                                           IUserClaimRepository userClaimRepository)

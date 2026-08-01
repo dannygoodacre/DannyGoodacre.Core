@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
 
             services.AddData<TContext>();
 
-            services.AddHashing();
+            services.AddHashingService();
 
             services.AddApplication();
 

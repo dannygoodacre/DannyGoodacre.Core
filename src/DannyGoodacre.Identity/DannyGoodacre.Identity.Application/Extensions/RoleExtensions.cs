@@ -1,7 +1,7 @@
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Domain.Entities;
 
-namespace DannyGoodacre.Identity.Application.Extensions;
+namespace DannyGoodacre.Identity.Application;
 
 internal static class RoleExtensions
 {

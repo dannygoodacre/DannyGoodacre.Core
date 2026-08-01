@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Identity.Application.Abstractions.Services;
 
-public interface IHashingService
+public interface IPasswordHashingService
 {
     string Hash(string value);
 

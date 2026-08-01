@@ -7,7 +7,7 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddHashing()
-            => services.AddScoped<IHashingService, PasswordHashingService>();
+        public IServiceCollection AddHashingService()
+            => services.AddScoped<IPasswordHashingService, PasswordHashingService>();
     }
 }

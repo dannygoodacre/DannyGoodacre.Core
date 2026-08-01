@@ -1,4 +1,3 @@
-using DannyGoodacre.Identity.Application.Extensions;
 using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Options;
@@ -19,17 +18,30 @@ internal sealed class PasswordValidatorService(IOptions<PasswordValidatorOptions
 
     public Result IsPasswordValid(ValidationState state, string password)
     {
-        state
-            .If(_options.RequiresLowercase,
-                x => x.DoesContainLowercase(password, Name))
-            .If(_options.RequiresUppercase,
-                x => x.DoesContainUppercase(password, Name))
-            .If(_options.RequireDigit,
-                x => x.DoesContainDigit(password, Name))
-            .If(_options.RequiresNonAlphanumeric,
-                x => x.DoesContainNonAlphanumeric(password, Name))
-            .If(_options.MinimumLength > 0,
-                x => x.IsAtLeastMinimumLength(password, Name, _options.MinimumLength));
+        if (_options.RequireLowercase)
+        {
+            state.ContainsLowercase(password, Name);
+        }
+
+        if (_options.RequireUppercase)
+        {
+            state.ContainsUppercase(password, Name);
+        }
+
+        if (_options.RequireDigit)
+        {
+            state.ContainsDigit(password, Name);
+        }
+
+        if (_options.RequireNonAlphanumeric)
+        {
+            state.ContainsNonAlphanumeric(password, Name);
+        }
+
+        if (_options.MinimumLength > 0)
+        {
+            state.IsAtLeastLength(password, Name, _options.MinimumLength);
+        }
 
         return state.HasErrors
             ? Result.Invalid(state)

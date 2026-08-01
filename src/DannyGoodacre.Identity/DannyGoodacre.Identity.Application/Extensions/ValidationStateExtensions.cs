@@ -1,39 +1,35 @@
 using DannyGoodacre.Primitives;
 
-namespace DannyGoodacre.Identity.Application.Extensions;
+namespace DannyGoodacre.Identity.Application;
 
 internal static class ValidationStateExtensions
 {
     extension(ValidationState state)
     {
-        public ValidationState If(bool condition, Action<ValidationState> action)
+        public bool IsNotNullEmptyOrWhitespace(string value, string name)
         {
-            if (condition)
+            if (!string.IsNullOrWhiteSpace(value))
             {
-                action(state);
+                return true;
             }
 
-            return state;
+            state.AddError(name, "Must not be null, empty, or whitespace.");
+
+            return false;
+
         }
 
-        public ValidationState IsNotNullEmptyOrWhitespace(string value, string name)
+        public bool IsAtLeastLength(string value, string name, int minLength)
         {
-            if (string.IsNullOrWhiteSpace(value))
+            if (value.Length >= minLength)
             {
-                state.AddError(name, "Must not be null, empty, or whitespace.");
+                return true;
             }
 
-            return state;
-        }
+            state.AddError(name, $"Must be at least {minLength} characters long.");
 
-        public ValidationState IsAtLeastMinimumLength(string value, string name, int minLength)
-        {
-            if (value.Length < minLength)
-            {
-                state.AddError(name, $"Must be at least {minLength} characters long.");
-            }
+            return false;
 
-            return state;
         }
 
         public bool IsNonEmptyGuid(Guid value, string name)
@@ -48,44 +44,56 @@ internal static class ValidationStateExtensions
             return false;
         }
 
-        public ValidationState DoesContainNonAlphanumeric(string value, string name)
+        public bool ContainsNonAlphanumeric(string value, string name)
         {
-            if (value.All(x => char.IsUpper(x) || char.IsLower(x) || char.IsDigit(x)))
+            if (!value.All(x => char.IsUpper(x) || char.IsLower(x) || char.IsDigit(x)))
             {
-                state.AddError(name, "Must contain at least one non-alphanumeric character.");
+                return true;
             }
 
-            return state;
+            state.AddError(name, "Must contain at least one non-alphanumeric character.");
+
+            return false;
+
         }
 
-        public ValidationState DoesContainLowercase(string value, string name)
+        public bool ContainsLowercase(string value, string name)
         {
-            if (!value.Any(char.IsLower))
+            if (value.Any(char.IsLower))
             {
-                state.AddError(name, "Must contain at least one lowercase character.");
+                return true;
             }
 
-            return state;
+            state.AddError(name, "Must contain at least one lowercase character.");
+
+            return false;
+
         }
 
-        public ValidationState DoesContainUppercase(string value, string name)
+        public bool ContainsUppercase(string value, string name)
         {
-            if (!value.Any(char.IsUpper))
+            if (value.Any(char.IsUpper))
             {
-                state.AddError(name, "Must contain at least one uppercase character.");
+                return true;
             }
 
-            return state;
+            state.AddError(name, "Must contain at least one uppercase character.");
+
+            return false;
+
         }
 
-        public ValidationState DoesContainDigit(string value, string name)
+        public bool ContainsDigit(string value, string name)
         {
-            if (!value.Any(char.IsDigit))
+            if (value.Any(char.IsDigit))
             {
-                state.AddError(name, "Must contain at least one digit.");
+                return true;
             }
 
-            return state;
+            state.AddError(name, "Must contain at least one digit.");
+
+            return false;
+
         }
     }
 }

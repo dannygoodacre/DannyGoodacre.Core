@@ -25,7 +25,7 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
                                      IStateUnit stateUnit,
                                      IPasswordValidatorService passwordValidatorService,
                                      IUserRepository repository,
-                                     IHashingService hashingService)
+                                     IPasswordHashingService hashingService)
     : StateCommandHandler<AddUserCommand, UserInfo>(logger, stateUnit), IAddUser
 {
     protected override string CommandName => "Add User";

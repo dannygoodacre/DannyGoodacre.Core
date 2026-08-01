@@ -21,7 +21,7 @@ public sealed record LoginUserCommand : ICommand
 internal sealed class LoginUserHandler(ILogger<LoginUserHandler> logger,
                                        IStateUnit stateUnit,
                                        IUserRepository repository,
-                                       IHashingService hashingService)
+                                       IPasswordHashingService hashingService)
     : StateCommandHandler<LoginUserCommand, Guid>(logger, stateUnit), ILoginUser
 {
 

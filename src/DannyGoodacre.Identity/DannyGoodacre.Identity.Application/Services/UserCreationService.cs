@@ -10,7 +10,7 @@ internal interface IUserCreationService
     Task<Result<User>> CreateUserAsync(string username, string password, CancellationToken cancellationToken = default);
 }
 
-internal sealed class UserCreationService(IHashingService hashingService, IUserRepository repository) : IUserCreationService
+internal sealed class UserCreationService(IPasswordHashingService hashingService, IUserRepository repository) : IUserCreationService
 {
     public async Task<Result<User>> CreateUserAsync(string username, string password, CancellationToken cancellationToken = default)
     {
