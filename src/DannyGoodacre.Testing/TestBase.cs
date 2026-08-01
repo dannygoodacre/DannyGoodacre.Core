@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 

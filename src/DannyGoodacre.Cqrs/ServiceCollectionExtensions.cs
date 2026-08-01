@@ -1,6 +1,5 @@
 using System.Reflection;
 using DannyGoodacre.Cqrs;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
