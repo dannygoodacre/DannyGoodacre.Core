@@ -1,6 +1,10 @@
 namespace DannyGoodacre.Identity.Configuration;
 
-public sealed class IdentityOptions
+public class IdentityOptions
 {
-    public int SecurityStampValidationIntervalInMinutes { get; set; } = 5;
+   public CookieOptions Cookie { get; set; } = new();
+
+   public PasswordValidatorOptions PasswordValidator { get; set; } = new();
+
+   public SecurityStampOptions SecurityStamp { get; set; } = new();
 }

@@ -8,10 +8,10 @@ using Microsoft.Extensions.Options;
 namespace DannyGoodacre.Identity.Services;
 
 internal sealed class SecurityStampValidatorService(IValidateSecurityStamp validateSecurityStamp,
-                                                    IOptions<Configuration.IdentityOptions> options)
+                                                    IOptions<Configuration.SecurityStampOptions> options)
     : CookieAuthenticationEvents
 {
-    private readonly Configuration.IdentityOptions _options = options.Value;
+    private readonly Configuration.SecurityStampOptions _options = options.Value;
 
     public async override Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
@@ -26,7 +26,7 @@ internal sealed class SecurityStampValidatorService(IValidateSecurityStamp valid
 
         DateTimeOffset? issuedAt = context.Properties.IssuedUtc;
 
-        if (issuedAt.HasValue && now < issuedAt.Value.AddMinutes(_options.SecurityStampValidationIntervalInMinutes))
+        if (issuedAt.HasValue && now < issuedAt.Value.AddMinutes(_options.ValidationIntervalInMinutes))
         {
             return;
         }
