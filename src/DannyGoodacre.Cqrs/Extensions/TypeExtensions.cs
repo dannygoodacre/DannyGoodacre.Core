@@ -52,5 +52,4 @@ internal static class TypeExtensions
             => type.GetInterfaces()
                 .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));
     }
-
 }
