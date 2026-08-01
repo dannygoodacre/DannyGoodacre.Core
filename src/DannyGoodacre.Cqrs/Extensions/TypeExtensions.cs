@@ -2,52 +2,55 @@ namespace DannyGoodacre.Cqrs;
 
 internal static class TypeExtensions
 {
-    public static bool IsCommandHandler(this Type type)
+    extension(Type type)
     {
-        Type? baseType = type.BaseType;
-
-        while (baseType is not null)
+        public bool IsCommandHandler()
         {
-            if (baseType.IsGenericType)
-            {
-                Type definition = baseType.GetGenericTypeDefinition();
+            Type? baseType = type.BaseType;
 
-                if (definition == typeof(CommandHandlerBase<,>))
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType)
                 {
-                    return true;
+                    Type definition = baseType.GetGenericTypeDefinition();
+
+                    if (definition == typeof(CommandHandlerBase<,>))
+                    {
+                        return true;
+                    }
                 }
+
+                baseType = baseType.BaseType;
             }
 
-            baseType = baseType.BaseType;
+            return false;
         }
 
-        return false;
-    }
-
-    public static bool IsQueryHandler(this Type type)
-    {
-        Type? baseType = type.BaseType;
-
-        while (baseType is not null)
+        public bool IsQueryHandler()
         {
-            if (baseType.IsGenericType)
-            {
-                Type definition = baseType.GetGenericTypeDefinition();
+            Type? baseType = type.BaseType;
 
-                if (definition == typeof(QueryHandler<,>))
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType)
                 {
-                    return true;
+                    Type definition = baseType.GetGenericTypeDefinition();
+
+                    if (definition == typeof(QueryHandler<,>))
+                    {
+                        return true;
+                    }
                 }
+
+                baseType = baseType.BaseType;
             }
 
-            baseType = baseType.BaseType;
+            return false;
         }
 
-        return false;
+        internal IEnumerable<Type> GetHandlerInterfaces()
+            => type.GetInterfaces()
+                .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));
     }
-
-    internal static IEnumerable<Type> GetHandlerInterfaces(this Type type)
-        => type.GetInterfaces()
-            .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));
 
 }
