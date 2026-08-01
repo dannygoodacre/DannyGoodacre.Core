@@ -2,16 +2,27 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <PackageId>DannyGoodacre.Cqrs.EntityFrameworkCore</PackageId>
+    <Version>0.9.0</Version>
+    <Authors>Danny Goodacre</Authors>
+    <Description>Entity Framework Core integration for DannyGoodacre.Cqrs, providing transactional command handling and unit-of-work support.</Description>
+    <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
+    <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
-  </ItemGroup>
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
   </ItemGroup>
 
 </Project>
