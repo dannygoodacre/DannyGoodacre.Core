@@ -29,6 +29,10 @@ jobs:
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
                 
+                dotnet pack src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj \
+                --configuration Release \
+                --output ${{ github.workspace }}/nupkg
+                
                 dotnet pack src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj \
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg

@@ -8,9 +8,13 @@ A lightweight framework implementing the [Command Query Separation](https://mart
 
 See the [docs](./docs/) for a detailed guide to the various classes provided.
 
+## DannyGoodacre.Cqrs.EntityFrameworkCore
+
+An [Entity Framework Core](https://learn.microsoft.com/en-us/ef/core/) integration for the `IStateUnit` and `ITransactionUnit` interfaces from `DannyGoodacre.Cqrs`.
+
 ## DannyGoodacre.Primitives
 
-Result and Result\<T\> classes for robust result handling and a validation state for standardized error responses. 
+Result and Result\<T\> classes for robust result handling and a validation state for standardized error responses.
 
 ## DannyGoodacre.Testing
 

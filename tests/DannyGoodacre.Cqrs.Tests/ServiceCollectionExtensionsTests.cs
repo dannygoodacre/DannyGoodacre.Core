@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
-namespace DannyGoodacre.Cqrs.Extensions.Tests;
+namespace DannyGoodacre.Cqrs.Tests;
 
 [TestFixture]
 public sealed class ServiceCollectionExtensionsTests
@@ -62,17 +62,17 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.FromResult(Result.Success(123));
     }
 
-private sealed class TestTransactionUnit : ITransactionUnit
-{
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult(1);
-
-    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
-        where TResult : Result
+    private sealed class TestTransactionUnit : ITransactionUnit
     {
-        return await operation(cancellationToken);
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(1);
+
+        public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+            where TResult : Result
+        {
+            return await operation(cancellationToken);
+        }
     }
-}
 
     private interface ITestTransactionCommand;
 
@@ -110,7 +110,7 @@ private sealed class TestTransactionUnit : ITransactionUnit
     public void AddCommandHandlers()
     {
         // Arrange
-        ServiceCollection services = new();
+        var services = new ServiceCollection();
 
         services.AddSingleton(Mock.Of<ILogger>());
 
@@ -175,7 +175,7 @@ private sealed class TestTransactionUnit : ITransactionUnit
     public void AddQueryHandlers()
     {
         // Arrange
-        ServiceCollection services = new();
+        var services = new ServiceCollection();
 
         services.AddSingleton(Mock.Of<ILogger>());
 

@@ -1,7 +1,7 @@
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+using DannyGoodacre.Cqrs;
 
-namespace DannyGoodacre.Cqrs;
+namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
