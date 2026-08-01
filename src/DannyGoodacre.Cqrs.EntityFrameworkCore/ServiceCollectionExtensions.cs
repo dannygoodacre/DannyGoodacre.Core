@@ -8,6 +8,12 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
+        /// <summary>
+        /// Register <see cref="DbContextTransactionUnit{TDbContext}"/> and its corresponding
+        /// <see cref="IStateUnit"/> and <see cref="ITransactionUnit"/> interfaces as scoped services.
+        /// </summary>
+        /// <typeparam name="TDbContext">The type of <see cref="DbContext"/>.</typeparam>
+        /// <returns>The <see cref="IServiceCollection"/> instance.</returns>
         public IServiceCollection AddEntityFrameworkUnits<TDbContext>()
             where TDbContext : DbContext
         {
