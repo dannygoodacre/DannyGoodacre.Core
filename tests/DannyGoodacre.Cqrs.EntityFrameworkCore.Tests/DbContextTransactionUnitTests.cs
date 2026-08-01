@@ -3,6 +3,7 @@ using DannyGoodacre.Primitives;
 using DannyGoodacre.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace DannyGoodacre.Cqrs.EntityFrameworkCore.Tests;
 
@@ -61,6 +62,49 @@ public sealed class DbContextTransactionUnitTests : TestBase
     }
 
     [Test]
+    public async Task ExuteInTransactionAsync_WhenAlreadyInTransaction_ShouldNotStartNestedTransaction()
+    {
+        // Arrange
+        var testEntity = new TestEntity
+        {
+            Name = "Test Entity Name"
+        };
+
+        _expectedEntities.Add(testEntity);
+
+        Result result;
+
+        await using (TestDbContext testContext = CreateDbContext())
+        {
+            await using IDbContextTransaction transaction = await testContext.Database.BeginTransactionAsync();
+
+            var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
+
+            // Act
+            result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
+            {
+                testContext.TestEntities.Add(testEntity);
+
+                await transactionUnit.SaveChangesAsync(cancellationToken);
+
+                return Result.Success();
+            });
+
+            await transaction.CommitAsync();
+        }
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            await using TestDbContext assertionContext = CreateDbContext();
+
+            AssertSuccess(result);
+
+            Assert.That(assertionContext.TestEntities.ToList(), Is.EqualTo(_expectedEntities).UsingPropertiesComparer());
+        }
+    }
+
+    [Test]
     public async Task ExecuteInTransactionAsync_WhenUnsuccessful_ShouldRollbackTransactionAndNotPersistChanges()
     {
         // Arrange
@@ -78,11 +122,11 @@ public sealed class DbContextTransactionUnitTests : TestBase
             var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
 
             // Act
-            result = await transactionUnit.ExecuteInTransactionAsync(async ct =>
+            result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
             {
                 testContext.TestEntities.Add(testEntity);
 
-                await transactionUnit.SaveChangesAsync(ct);
+                await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 return Result.DomainError(testErrorMessage);
             });
@@ -108,22 +152,24 @@ public sealed class DbContextTransactionUnitTests : TestBase
             Name = "Test Entity Name"
         };
 
+        const string testResponse = "Test Response";
+
         _expectedEntities.Add(testEntity);
 
-        Result result;
+        Result<string> result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
             var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
 
             // Act
-            result = await transactionUnit.ExecuteInTransactionAsync(async ct =>
+            result = await transactionUnit.ExecuteInTransactionAsync(async cancellationToken =>
             {
                 testContext.TestEntities.Add(testEntity);
 
-                await transactionUnit.SaveChangesAsync(ct);
+                await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.Success();
+                return Result.Success(testResponse);
             });
         }
 
@@ -132,7 +178,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
         {
             await using TestDbContext assertionContext = CreateDbContext();
 
-            AssertSuccess(result);
+            AssertSuccess(result, testResponse);
 
             Assert.That(assertionContext.TestEntities.ToList(), Is.EqualTo(_expectedEntities).UsingPropertiesComparer());
         }
@@ -158,11 +204,11 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
             var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
 
-            result = await transactionUnit.ExecuteInTransactionAsync<Result>(async ct =>
+            result = await transactionUnit.ExecuteInTransactionAsync<Result>(async cancellationToken =>
             {
                 testContext.TestEntities.Add(testEntity);
 
-                await transactionUnit.SaveChangesAsync(ct);
+                await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 throw new Exception(testExceptionMessage);
             });
