@@ -6,6 +6,7 @@ using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Identity.Application.Queries;
+
 internal sealed record GetUserQuery : IQuery
 {
     public required Guid Id { get; init; }
@@ -13,14 +14,19 @@ internal sealed record GetUserQuery : IQuery
 
 public interface IGetUser
 {
-    Task<Result<UserInfo>> ExecuteAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Result<UserInfoResponse>> ExecuteAsync(Guid id, CancellationToken cancellationToken = default);
 }
 
-internal sealed class GetUserHandler(ILogger<GetUserHandler> logger, IUserRepository repository) : QueryHandler<GetUserQuery, UserInfo>(logger), IGetUser
+internal sealed class GetUserHandler(ILogger<GetUserHandler> logger, IUserRepository repository) : QueryHandler<GetUserQuery, UserInfoResponse>(logger), IGetUser
 {
     protected override string QueryName => "Get User";
 
-    protected async override Task<Result<UserInfo>> InternalExecuteAsync(GetUserQuery query, CancellationToken cancellationToken = default)
+    protected override void Validate(ValidationState state, GetUserQuery query)
+    {
+        state.IsNonEmptyGuid(query.Id, nameof(query.Id));
+    }
+
+    protected async override Task<Result<UserInfoResponse>> InternalExecuteAsync(GetUserQuery query, CancellationToken cancellationToken = default)
     {
         User? user = await repository.GetAsync(query.Id, cancellationToken);
 
@@ -29,7 +35,7 @@ internal sealed class GetUserHandler(ILogger<GetUserHandler> logger, IUserReposi
             : Success(user.ToUserInfoResponse());
     }
 
-    public Task<Result<UserInfo>> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<Result<UserInfoResponse>> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
         => ExecuteAsync(new GetUserQuery
         {
             Id = id

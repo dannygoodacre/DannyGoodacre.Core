@@ -2,7 +2,7 @@ using DannyGoodacre.Identity.Domain;
 
 namespace DannyGoodacre.Identity.Application.Models;
 
-public sealed record UserSecurityProfile
+public sealed record UserSecurityProfileResponse
 {
     public required Guid Id { get; init; }
 

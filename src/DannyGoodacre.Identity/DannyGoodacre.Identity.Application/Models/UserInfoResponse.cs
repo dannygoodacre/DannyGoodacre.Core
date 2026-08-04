@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Identity.Application.Models;
 
-public sealed record UserInfo
+public sealed record UserInfoResponse
 {
     public required Guid Id { get; init; }
 

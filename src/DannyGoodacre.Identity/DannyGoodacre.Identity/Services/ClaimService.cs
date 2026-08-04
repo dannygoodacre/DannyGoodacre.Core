@@ -7,25 +7,25 @@ namespace DannyGoodacre.Identity.Services;
 
 internal interface IClaimService
 {
-    ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile);
+    ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfileResponse profileResponse);
 }
 
 internal sealed class ClaimService : IClaimService
 {
-    public ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfile profile)
+    public ClaimsPrincipal CreateClaimsPrincipal(UserSecurityProfileResponse profileResponse)
     {
         var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, profile.Id.ToString()));
+        identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, profileResponse.Id.ToString()));
 
-        identity.AddClaim(new Claim(ClaimTypes.Name, profile.Username));
+        identity.AddClaim(new Claim(ClaimTypes.Name, profileResponse.Username));
 
-        foreach (string role in profile.Roles)
+        foreach (string role in profileResponse.Roles)
         {
             identity.AddClaim(new Claim(ClaimTypes.Role, role));
         }
 
-        foreach (ClaimDefinition claim in profile.Claims)
+        foreach (ClaimDefinition claim in profileResponse.Claims)
         {
             identity.AddClaim(new Claim(claim.Type, claim.Value));
         }

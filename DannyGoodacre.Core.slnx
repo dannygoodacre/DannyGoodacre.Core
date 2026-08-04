@@ -17,9 +17,11 @@
         <Project Path="tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests.csproj" />
-        <Project Path="tests/DannyGoodacre.Identity.Application.Tests/DannyGoodacre.Identity.Application.Tests.csproj" />
-        <Project Path="tests/DannyGoodacre.Identity.Tests.Harness/DannyGoodacre.Identity.Tests.Harness.csproj" />
-        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Testing.Tests/DannyGoodacre.Testing.Tests.csproj" />
+    </Folder>
+    <Folder Name="/tests/DannyGoodacre.Identity.Tests/">
+        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Application.Tests/DannyGoodacre.Identity.Application.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.Harness/DannyGoodacre.Identity.Tests.Harness.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.csproj" />
     </Folder>
 </Solution>

@@ -24,16 +24,16 @@ internal static class UserEndpoints
                                      [FromBody] RegistrationRequest request,
                                      CancellationToken cancellationToken) =>
             {
-                Result<UserInfo> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
+                Result<UserInfoResponse> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
 
                 if (!result.IsSuccess)
                 {
                     return result.ToHttpResponse();
                 }
 
-                UserInfo userInfo = result.Value;
+                UserInfoResponse userInfoResponse = result.Value;
 
-                return Results.CreatedAtRoute("GetUser", new { id = userInfo.Id }, userInfo);
+                return Results.CreatedAtRoute("GetUser", new { id = userInfoResponse.Id }, userInfoResponse);
             });
 
             group.MapPut("{id:guid}/approval", async ([FromServices] IApproveUser approveUser,
@@ -56,7 +56,7 @@ internal static class UserEndpoints
                     return Results.Forbid();
                 }
 
-                Result<UserInfo> result = await getUser.ExecuteAsync(id, cancellationToken);
+                Result<UserInfoResponse> result = await getUser.ExecuteAsync(id, cancellationToken);
 
                 return result.ToHttpResponse();
             })
@@ -74,7 +74,7 @@ internal static class UserEndpoints
                     return Results.Forbid();
                 }
 
-                Result<UserInfo> result = await getUser.ExecuteAsync(id.Value, cancellationToken);
+                Result<UserInfoResponse> result = await getUser.ExecuteAsync(id.Value, cancellationToken);
 
                 return result.ToHttpResponse();
             })

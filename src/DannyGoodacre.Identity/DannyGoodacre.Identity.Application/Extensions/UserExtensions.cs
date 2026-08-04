@@ -21,7 +21,7 @@ internal static class UserExtensions
 
     extension(User user)
     {
-        public UserInfo ToUserInfoResponse()
+        public UserInfoResponse ToUserInfoResponse()
             => new()
             {
                 Id = user.PublicId,

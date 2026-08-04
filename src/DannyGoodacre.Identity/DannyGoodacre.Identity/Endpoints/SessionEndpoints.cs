@@ -42,16 +42,16 @@ internal static class SessionEndpoints
                     return loginResult.ToHttpResponse();
                 }
 
-                Result<UserSecurityProfile> result = await getUserSecurityProfile.ExecuteAsync(request.Username, cancellationToken);
+                Result<UserSecurityProfileResponse> result = await getUserSecurityProfile.ExecuteAsync(request.Username, cancellationToken);
 
                 if (!result.IsSuccess)
                 {
                     return result.ToHttpResponse();
                 }
 
-                UserSecurityProfile profile = result.Value;
+                UserSecurityProfileResponse profileResponse = result.Value;
 
-                ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profile);
+                ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profileResponse);
 
                 await cookieService.IssueCookieAsync(httpContext, claimsPrincipal.Claims.ToList());
 

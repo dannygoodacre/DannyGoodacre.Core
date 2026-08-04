@@ -21,4 +21,14 @@
       <Using Include="Moq" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\DannyGoodacre.Cqrs.Testing\DannyGoodacre.Cqrs.Testing.csproj" />
+      <ProjectReference Include="..\..\..\src\DannyGoodacre.Identity\DannyGoodacre.Identity.Application\DannyGoodacre.Identity.Application.csproj" />
+      <ProjectReference Include="..\..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+    </ItemGroup>
+
 </Project>

@@ -10,7 +10,7 @@ namespace DannyGoodacre.Identity.Application.Queries;
 
 public interface IGetUserSecurityProfile
 {
-    Task<Result<UserSecurityProfile>> ExecuteAsync(string username, CancellationToken cancellationToken = default);
+    Task<Result<UserSecurityProfileResponse>> ExecuteAsync(string username, CancellationToken cancellationToken = default);
 }
 
 internal sealed record GetUserSecurityProfileQuery : IQuery
@@ -21,12 +21,12 @@ internal sealed record GetUserSecurityProfileQuery : IQuery
 internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfileHandler> logger,
                                                     IUserRepository userRepository,
                                                     IUserClaimRepository userClaimRepository)
-    : QueryHandler<GetUserSecurityProfileQuery, UserSecurityProfile>(logger), IGetUserSecurityProfile
+    : QueryHandler<GetUserSecurityProfileQuery, UserSecurityProfileResponse>(logger), IGetUserSecurityProfile
 {
 
     protected override string QueryName => "Get User Security Profile";
 
-    protected async override Task<Result<UserSecurityProfile>> InternalExecuteAsync(GetUserSecurityProfileQuery query, CancellationToken cancellationToken = default)
+    protected async override Task<Result<UserSecurityProfileResponse>> InternalExecuteAsync(GetUserSecurityProfileQuery query, CancellationToken cancellationToken = default)
     {
         User? user = await userRepository.GetAsync(query.Username, cancellationToken);
 
@@ -45,7 +45,7 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
 
         List<string> roles = user.Roles.Select(x => x.Role.Name).ToList();
 
-        return Success(new UserSecurityProfile
+        return Success(new UserSecurityProfileResponse
         {
             Id = user.PublicId,
             Username = user.Username,
@@ -55,7 +55,7 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
         });
     }
 
-    public Task<Result<UserSecurityProfile>> ExecuteAsync(string username, CancellationToken cancellationToken = default)
+    public Task<Result<UserSecurityProfileResponse>> ExecuteAsync(string username, CancellationToken cancellationToken = default)
         => ExecuteAsync(new GetUserSecurityProfileQuery
         {
             Username = username

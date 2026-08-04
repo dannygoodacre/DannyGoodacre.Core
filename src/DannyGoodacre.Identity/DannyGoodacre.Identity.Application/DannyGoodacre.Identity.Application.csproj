@@ -19,11 +19,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Abstractions\" />
+      <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.10" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.10" />
+        <InternalsVisibleTo Include="DannyGoodacre.Identity.Application.Tests" />
+        <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
-    
+
 </Project>
