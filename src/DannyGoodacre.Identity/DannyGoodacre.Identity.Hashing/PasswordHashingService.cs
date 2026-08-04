@@ -1,4 +1,11 @@
-﻿using System.Security.Cryptography;
+﻿// Substantial portions of this file were derived and adapted from Microsoft's ASP.NET Core Identity:
+// File: src/Identity/Extensions.Core/src/PasswordHasher.cs
+// Source: https://github.com/dotnet/aspnetcore/blob/main/src/Identity/Extensions.Core/src/PasswordHasher.cs
+//
+// Copyright (c) .NET Foundation and Contributors
+// Licensed under the MIT License (https://opensource.org/licenses/MIT)
+
+using System.Security.Cryptography;
 using DannyGoodacre.Identity.Application.Abstractions.Services;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
@@ -16,13 +23,14 @@ internal sealed class PasswordHashingService : IPasswordHashingService
 
     public string Hash(string password)
     {
-        byte[] salt = new byte[SaltSize];
+        var salt = new byte[SaltSize];
 
         RandomNumberGenerator.Fill(salt);
 
         byte[] subkey = KeyDerivation.Pbkdf2(password, salt, Prf, IterationCount, BytesRequested);
 
         byte[] outputBytes = new byte[13 + salt.Length + subkey.Length];
+
         outputBytes[0] = 0x01;
 
         WriteNetworkByteOrder(outputBytes, 1, (uint)Prf);
@@ -51,7 +59,9 @@ internal sealed class PasswordHashingService : IPasswordHashingService
         }
 
         KeyDerivationPrf prf = (KeyDerivationPrf)ReadNetworkByteOrder(decodedHash, 1);
+
         int iterationCount = (int)ReadNetworkByteOrder(decodedHash, 5);
+
         int saltLength = (int)ReadNetworkByteOrder(decodedHash, 9);
 
         if (saltLength < 16)
@@ -68,7 +78,7 @@ internal sealed class PasswordHashingService : IPasswordHashingService
             return false;
         }
 
-        byte[] expectedSubkey = new byte[subkeyLength];
+        var expectedSubkey = new byte[subkeyLength];
 
         Buffer.BlockCopy(decodedHash, 13 + salt.Length, expectedSubkey, 0, expectedSubkey.Length);
 

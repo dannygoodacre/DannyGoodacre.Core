@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using DannyGoodacre.Identity.Application.Queries;
+using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Primitives;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,10 +9,10 @@ using Microsoft.Extensions.Options;
 namespace DannyGoodacre.Identity.Services;
 
 internal sealed class SecurityStampValidatorService(IValidateSecurityStamp validateSecurityStamp,
-                                                    IOptions<Configuration.SecurityStampOptions> options)
+                                                    IOptions<IdentityOptions> options)
     : CookieAuthenticationEvents
 {
-    private readonly Configuration.SecurityStampOptions _options = options.Value;
+    private readonly SecurityStampOptions _options = options.Value.SecurityStamp;
 
     public async override Task ValidatePrincipal(CookieValidatePrincipalContext context)
     {
@@ -26,7 +27,7 @@ internal sealed class SecurityStampValidatorService(IValidateSecurityStamp valid
 
         DateTimeOffset? issuedAt = context.Properties.IssuedUtc;
 
-        if (issuedAt.HasValue && now < issuedAt.Value.AddMinutes(_options.ValidationIntervalInMinutes))
+        if (issuedAt.HasValue && now < issuedAt.Value.Add(_options.ValidationInterval))
         {
             return;
         }

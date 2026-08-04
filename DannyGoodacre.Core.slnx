@@ -13,7 +13,6 @@
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Configuration/DannyGoodacre.Identity.Configuration.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Data/DannyGoodacre.Identity.Data.csproj" />
         <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Hashing/DannyGoodacre.Identity.Hashing.csproj" />
-        <Project Path="src\DannyGoodacre.Identity\DannyGoodacre.Identity.Domain\DannyGoodacre.Identity.Domain.csproj" />
     </Folder>
     <Folder Name="/tests/">
         <Project Path="tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />

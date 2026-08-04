@@ -26,7 +26,7 @@ internal sealed class CookieService(IOptions<Configuration.CookieOptions> option
         var authProperties = new AuthenticationProperties
         {
             IsPersistent = _options.IsPersistent,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(_options.ExpireTimeSpanInMinutes),
+            ExpiresUtc = DateTimeOffset.UtcNow.Add(_options.ExpireTimeSpan),
             AllowRefresh = _options.SlidingExpiration,
             IssuedUtc = DateTimeOffset.UtcNow
         };

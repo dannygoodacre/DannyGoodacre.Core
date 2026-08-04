@@ -12,9 +12,9 @@ public class CookieOptions
 
     public SameSiteMode SameSite { get; set; } = SameSiteMode.Strict;
 
-    public PathString LoginPath { get; set; } = "/session";
+    public PathString LoginPath { get; set; } = "/sessions";
 
-    public int ExpireTimeSpanInMinutes { get; set; } = 1440;
+    public TimeSpan ExpireTimeSpan { get; set; } = TimeSpan.Parse("01:00:00");
 
     public bool SlidingExpiration { get; set; } = true;
 

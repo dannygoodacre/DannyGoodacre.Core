@@ -12,9 +12,9 @@ internal sealed class DynamicPermissionPolicyProvider(IOptions<AuthorizationOpti
             return await base.GetPolicyAsync(policyName);
         }
 
-        string permissionValue = policyName["Permission:".Length..];
-
         var policy = new AuthorizationPolicyBuilder();
+
+        string permissionValue = policyName["Permission:".Length..];
 
         policy.AddRequirements(new PermissionRequirement(permissionValue));
 

@@ -58,28 +58,28 @@ public static class ServiceProviderExtensions
 
             var config = services.GetRequiredService<IConfiguration>();
 
-            SeedAdminCredentials? adminSettings = config.GetSection("IdentitySetup:InitialAdminUser").Get<SeedAdminCredentials>();
+            SeedAdminCredentials? adminSettings = config.GetSection("Identity:InitialSuperUser").Get<SeedAdminCredentials>();
 
             if (adminSettings is null)
             {
-                throw new Exception();
+                throw new InvalidOperationException("Required configuration section 'Identity:InitialSuperUser' is missing or could not be bound.");
             }
 
-            IAddSuperUser addSuperUser = services.GetRequiredService<IAddSuperUser>();
+            var addSuperUser = services.GetRequiredService<IAddSuperUser>();
 
             Result addSuperUserResult = await addSuperUser.ExecuteAsync(adminSettings.Username, adminSettings.Password);
 
             if (!addSuperUserResult.IsSuccess)
             {
-                throw new Exception(addSuperUserResult.Error);
+                throw new InvalidOperationException($"Failed to seed initial super user '{adminSettings.Username}'. Error: {addSuperUserResult.Error}");
             }
         }
     }
-}
 
-public class SeedAdminCredentials
-{
-    public required string Username  { get; init; }
+    private sealed class SeedAdminCredentials
+    {
+        public required string Username  { get; init; }
 
-    public required string Password { get; init; }
+        public required string Password { get; init; }
+    }
 }

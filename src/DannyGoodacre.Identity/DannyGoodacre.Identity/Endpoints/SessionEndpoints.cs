@@ -2,6 +2,7 @@ using System.Security.Claims;
 using DannyGoodacre.Identity.Application.Commands;
 using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Application.Queries;
+using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Identity.Models;
 using DannyGoodacre.Identity.Services;
 using DannyGoodacre.Primitives;
@@ -9,59 +10,68 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using CookieOptions = Microsoft.AspNetCore.Http.CookieOptions;
 
 namespace DannyGoodacre.Identity.Endpoints;
 
 internal static class SessionEndpoints
 {
-    public static IEndpointRouteBuilder MapSessionEndpoints(this IEndpointRouteBuilder endpoints)
+    extension(IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints.MapGroup("sessions").WithTags("Identity: Session");
-
-        group.MapPost("", async Task<IResult> ([FromServices] ILoginUser loginUser,
-                                               [FromServices] IGetUserSecurityProfile getUserSecurityProfile,
-                                               [FromServices] IClaimService claimService,
-                                               [FromServices] ICookieService cookieService,
-                                               [FromBody] LoginRequest request,
-                                               HttpContext httpContext,
-                                               CancellationToken cancellationToken) =>
+        public IEndpointRouteBuilder MapSessionEndpoints()
         {
-            Result<Guid> loginResult = await loginUser.ExecuteAsync(request.ToCommand(), cancellationToken);
+            Configuration.CookieOptions options = endpoints.ServiceProvider
+                .GetRequiredService<IOptions<IdentityOptions>>()
+                .Value.Cookie;
 
-            if (!loginResult.IsSuccess)
+            RouteGroupBuilder group = endpoints.MapGroup("").WithTags("Identity: Session");
+
+            group.MapPost(options.LoginPath, async Task<IResult> ([FromServices] ILoginUser loginUser,
+                                                                  [FromServices] IGetUserSecurityProfile getUserSecurityProfile,
+                                                                  [FromServices] IClaimService claimService,
+                                                                  [FromServices] ICookieService cookieService,
+                                                                  [FromBody] LoginRequest request,
+                                                                  HttpContext httpContext,
+                                                                  CancellationToken cancellationToken) =>
             {
-                return loginResult.ToHttpResponse();
-            }
+                Result<Guid> loginResult = await loginUser.ExecuteAsync(request.ToCommand(), cancellationToken);
 
-            Result<UserSecurityProfile> result = await getUserSecurityProfile.ExecuteAsync(request.Username, cancellationToken);
+                if (!loginResult.IsSuccess)
+                {
+                    return loginResult.ToHttpResponse();
+                }
 
-            if (!result.IsSuccess)
+                Result<UserSecurityProfile> result = await getUserSecurityProfile.ExecuteAsync(request.Username, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return result.ToHttpResponse();
+                }
+
+                UserSecurityProfile profile = result.Value;
+
+                ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profile);
+
+                await cookieService.IssueCookieAsync(httpContext, claimsPrincipal.Claims.ToList());
+
+                return Results.NoContent();
+            });
+
+            group.MapGet($"{options.LoginPath}/me", (HttpContext httpContext) => Results.Ok(httpContext.SessionInfo))
+                .RequireAuthorization();
+
+            group.MapDelete(options.LoginPath, async Task<IResult> ([FromServices] ICookieService cookieService,
+                                                                    HttpContext httpContext) =>
             {
-                return result.ToHttpResponse();
-            }
+                await cookieService.RevokeCookieAsync(httpContext);
 
-            UserSecurityProfile profile = result.Value;
+                return Results.NoContent();
+            })
+            .RequireAuthorization("Permission:Users.Logout");
 
-            ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profile);
-
-            await cookieService.IssueCookieAsync(httpContext, claimsPrincipal.Claims.ToList());
-
-            return Results.NoContent();
-        });
-
-        group.MapGet("me", (HttpContext httpContext) => Results.Ok(httpContext.SessionInfo))
-            .RequireAuthorization();
-
-        group.MapDelete("me", async Task<IResult> ([FromServices] ICookieService cookieService,
-                                                   HttpContext httpContext) =>
-        {
-            await cookieService.RevokeCookieAsync(httpContext);
-
-            return Results.NoContent();
-        })
-        .RequireAuthorization("Permission:Users.Logout");
-        // .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
-
-        return endpoints;
+            return endpoints;
+        }
     }
 }

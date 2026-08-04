@@ -1,4 +1,5 @@
 using DannyGoodacre.Identity.Application;
+using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Identity.Data;
 using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Security;
@@ -6,7 +7,11 @@ using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using CookieOptions = DannyGoodacre.Identity.Configuration.CookieOptions;
 
 namespace DannyGoodacre.Identity;
 
@@ -14,9 +19,17 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddIdentity<TContext>(Action<CookieAuthenticationOptions>? configureOptions = null)
+        public IServiceCollection AddIdentity<TContext>(IConfiguration? configuration = null,
+                                                        Action<IdentityOptions>? configureOptions = null)
             where TContext : IdentityContext
         {
+            services.Configure<IdentityOptions>(options =>
+            {
+                configuration?.GetSection("Identity").Bind(options);
+
+                configureOptions?.Invoke(options);
+            });
+
             services.AddSingleton<IIdentityPermissionRegistry, IdentityPermissionRegistry>();
 
             services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
@@ -30,20 +43,23 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ICookieService, CookieService>();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
+                .AddCookie();
+
+            services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+                .Configure<IOptions<IdentityOptions>>((cookieAuthOptions, identityOptions) =>
                 {
-                    options.Cookie.Name = "DannyGoodacre.Identity";
-                    options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                    options.Cookie.SameSite = SameSiteMode.Strict;
-                    options.LoginPath = "/session";
+                    CookieOptions cookieSettings = identityOptions.Value.Cookie;
 
-                    options.EventsType = typeof(SecurityStampValidatorService);
+                    cookieAuthOptions.Cookie.Name = cookieSettings.Name;
+                    cookieAuthOptions.Cookie.HttpOnly = cookieSettings.HttpOnly;
+                    cookieAuthOptions.Cookie.SecurePolicy = cookieSettings.SecurePolicy;
+                    cookieAuthOptions.Cookie.SameSite = cookieSettings.SameSite;
+                    cookieAuthOptions.LoginPath = cookieSettings.LoginPath;
+                    cookieAuthOptions.ExpireTimeSpan = cookieSettings.ExpireTimeSpan;
+                    cookieAuthOptions.SlidingExpiration = cookieSettings.SlidingExpiration;
 
-                    configureOptions?.Invoke(options);
+                    cookieAuthOptions.EventsType = typeof(SecurityStampValidatorService);
                 });
-
-            services.AddScoped<ICookieService, CookieService>();
 
             services.AddData<TContext>();
 

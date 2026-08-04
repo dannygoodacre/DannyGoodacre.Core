@@ -2,5 +2,5 @@ namespace DannyGoodacre.Identity.Configuration;
 
 public sealed class SecurityStampOptions
 {
-    public int ValidationIntervalInMinutes { get; set; } = 5;
+    public TimeSpan ValidationInterval { get; set; } = TimeSpan.Parse("00:30:00");
 }

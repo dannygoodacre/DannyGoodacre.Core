@@ -10,7 +10,6 @@
       <ProjectReference Include="..\..\DannyGoodacre.Cqrs.EntityFrameworkCore\DannyGoodacre.Cqrs.EntityFrameworkCore.csproj" />
       <ProjectReference Include="..\..\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
       <ProjectReference Include="..\DannyGoodacre.Identity.Application\DannyGoodacre.Identity.Application.csproj" />
-      <ProjectReference Include="..\DannyGoodacre.Identity.Domain\DannyGoodacre.Identity.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>

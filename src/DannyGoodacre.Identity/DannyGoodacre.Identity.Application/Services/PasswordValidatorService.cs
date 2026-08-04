@@ -9,10 +9,10 @@ internal interface IPasswordValidatorService
     public Result IsPasswordValid(ValidationState state, string password);
 }
 
-internal sealed class PasswordValidatorService(IOptions<PasswordValidatorOptions> options)
+internal sealed class PasswordValidatorService(IOptions<IdentityOptions> options)
     : IPasswordValidatorService
 {
-    private readonly PasswordValidatorOptions _options = options.Value;
+    private readonly PasswordValidatorOptions _options = options.Value.PasswordValidator;
 
     private const string Name = "Password";
 

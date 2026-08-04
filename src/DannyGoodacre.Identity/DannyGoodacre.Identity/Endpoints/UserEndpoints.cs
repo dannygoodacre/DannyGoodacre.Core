@@ -12,89 +12,91 @@ namespace DannyGoodacre.Identity.Endpoints;
 
 internal static class UserEndpoints
 {
-    public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
+    extension(IEndpointRouteBuilder endpoints)
     {
-        var group = endpoints
-            .MapGroup("users")
-            .WithTags("Identity: Users");
-
-        group.MapPost("", async ([FromServices] IAddUser addUser,
-                                 [FromBody] RegistrationRequest request,
-                                 CancellationToken cancellationToken) =>
+        public IEndpointRouteBuilder MapUserEndpoints()
         {
-            Result<UserInfo> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
+            var group = endpoints
+                .MapGroup("users")
+                .WithTags("Identity: Users");
 
-            if (!result.IsSuccess)
+            group.MapPost("", async ([FromServices] IAddUser addUser,
+                                     [FromBody] RegistrationRequest request,
+                                     CancellationToken cancellationToken) =>
             {
+                Result<UserInfo> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return result.ToHttpResponse();
+                }
+
+                UserInfo userInfo = result.Value;
+
+                return Results.CreatedAtRoute("GetUser", new { id = userInfo.Id }, userInfo);
+            });
+
+            group.MapPut("{id:guid}/approval", async ([FromServices] IApproveUser approveUser,
+                                                      Guid id,
+                                                      CancellationToken cancellationToken) =>
+            {
+                Result result = await approveUser.ExecuteAsync(id, cancellationToken);
+
                 return result.ToHttpResponse();
-            }
+            })
+            .RequireAuthorization();
 
-            UserInfo userInfo = result.Value;
-
-            return Results.CreatedAtRoute("GetUser", new { id = userInfo.Id }, userInfo);
-        });
-
-        group.MapPut("{id:guid}/approval", async ([FromServices] IApproveUser approveUser,
-                                                  Guid id,
-                                                  HttpContext httpContext,
-                                                  CancellationToken cancellationToken) =>
-        {
-            Result result = await approveUser.ExecuteAsync(id, cancellationToken);
-
-            return result.ToHttpResponse();
-        })
-        .RequireAuthorization();
-
-        group.MapGet("{id:guid}", async ([FromServices] IGetUser getUser,
-                                         [FromRoute] Guid id,
-                                         HttpContext httpContext,
-                                         CancellationToken cancellationToken) =>
-        {
-            if (!httpContext.IsSelfOrAdmin(id))
+            group.MapGet("{id:guid}", async ([FromServices] IGetUser getUser,
+                                             [FromRoute] Guid id,
+                                             HttpContext httpContext,
+                                             CancellationToken cancellationToken) =>
             {
-                return Results.Forbid();
-            }
+                if (!httpContext.IsSelfOrAdmin(id))
+                {
+                    return Results.Forbid();
+                }
 
-            Result<UserInfo> result = await getUser.ExecuteAsync(id, cancellationToken);
+                Result<UserInfo> result = await getUser.ExecuteAsync(id, cancellationToken);
 
-            return result.ToHttpResponse();
-        })
-        .WithName("GetUser")
-        .RequireAuthorization();
+                return result.ToHttpResponse();
+            })
+            .WithName("GetUser")
+            .RequireAuthorization();
 
-        group.MapGet("me", async ([FromServices] IGetUser getUser,
-                                  HttpContext httpContext,
-                                  CancellationToken cancellationToken) =>
-        {
-            Guid? id = httpContext.UserId;
-
-            if (id is null)
+            group.MapGet("me", async ([FromServices] IGetUser getUser,
+                                      HttpContext httpContext,
+                                      CancellationToken cancellationToken) =>
             {
-                return Results.Forbid();
-            }
+                Guid? id = httpContext.UserId;
 
-            Result<UserInfo> result = await getUser.ExecuteAsync(id.Value, cancellationToken);
+                if (id is null)
+                {
+                    return Results.Forbid();
+                }
 
-            return result.ToHttpResponse();
-        })
-        .RequireAuthorization();
+                Result<UserInfo> result = await getUser.ExecuteAsync(id.Value, cancellationToken);
 
-        group.MapDelete("{id:guid}", async ([FromServices] IDeleteUser deleteUser,
-                                            [FromRoute] Guid id,
-                                            HttpContext httpContext,
-                                            CancellationToken cancellationToken) =>
-        {
-            if (!httpContext.IsSelfOrAdmin(id))
+                return result.ToHttpResponse();
+            })
+            .RequireAuthorization();
+
+            group.MapDelete("{id:guid}", async ([FromServices] IDeleteUser deleteUser,
+                                                [FromRoute] Guid id,
+                                                HttpContext httpContext,
+                                                CancellationToken cancellationToken) =>
             {
-                return Results.Forbid();
-            }
+                if (!httpContext.IsSelfOrAdmin(id))
+                {
+                    return Results.Forbid();
+                }
 
-            Result result = await deleteUser.ExecuteAsync(id, cancellationToken);
+                Result result = await deleteUser.ExecuteAsync(id, cancellationToken);
 
-            return result.ToHttpResponse();
-        })
-        .RequireAuthorization();
+                return result.ToHttpResponse();
+            })
+            .RequireAuthorization();
 
-        return endpoints;
+            return endpoints;
+        }
     }
 }

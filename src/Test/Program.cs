@@ -15,7 +15,7 @@ public class Program
         builder.Services.AddDbContext<ApplicationContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        builder.Services.AddIdentity<ApplicationContext>();
+        builder.Services.AddIdentity<ApplicationContext>(builder.Configuration);
 
         builder.Services.AddEndpointsApiExplorer();
 
@@ -48,13 +48,6 @@ public class Program
         }
 
         await services.SynchronizeIdentityPermissionsAsync();
-
-        // var seedResult = await app.SeedIdentityAsync("admin", "Password123$");
-        //
-        // if (!seedResult.IsSuccess)
-        // {
-        //     throw new InvalidOperationException($"Identity seeding failed: {seedResult.Error}");
-        // }
 
         app.MapIdentityEndpoints();
 
