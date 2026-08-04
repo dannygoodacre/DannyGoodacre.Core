@@ -1,5 +1,5 @@
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
-using DannyGoodacre.Identity.Domain.Entities;
+using DannyGoodacre.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DannyGoodacre.Identity.Data.Repositories;

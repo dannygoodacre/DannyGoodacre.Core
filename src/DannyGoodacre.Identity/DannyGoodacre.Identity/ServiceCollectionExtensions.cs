@@ -1,13 +1,12 @@
 using DannyGoodacre.Identity.Application;
 using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Identity.Data;
-using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Security;
 using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -43,7 +42,22 @@ public static class ServiceCollectionExtensions
             services.AddScoped<ICookieService, CookieService>();
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie();
+                .AddCookie(options =>
+                {
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                        return Task.CompletedTask;
+                    };
+
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                        return Task.CompletedTask;
+                    };
+                });
 
             services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
                 .Configure<IOptions<IdentityOptions>>((cookieAuthOptions, identityOptions) =>
@@ -62,8 +76,6 @@ public static class ServiceCollectionExtensions
                 });
 
             services.AddData<TContext>();
-
-            services.AddHashingService();
 
             services.AddApplication();
 

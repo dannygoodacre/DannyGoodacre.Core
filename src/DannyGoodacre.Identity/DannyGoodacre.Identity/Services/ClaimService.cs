@@ -20,8 +20,6 @@ internal sealed class ClaimService : IClaimService
 
         identity.AddClaim(new Claim(ClaimTypes.Name, profile.Username));
 
-        identity.AddClaim(new Claim("SecurityStamp", profile.SecurityStamp));
-
         foreach (string role in profile.Roles)
         {
             identity.AddClaim(new Claim(ClaimTypes.Role, role));

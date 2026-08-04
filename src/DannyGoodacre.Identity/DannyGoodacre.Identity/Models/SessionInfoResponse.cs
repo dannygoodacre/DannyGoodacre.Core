@@ -2,7 +2,7 @@ using DannyGoodacre.Identity.Domain;
 
 namespace DannyGoodacre.Identity.Models;
 
-public sealed record SessionInfo
+public sealed record SessionInfoResponse
 {
     public required Guid? UserId { get; init; }
 

@@ -1,4 +1,4 @@
-using DannyGoodacre.Identity.Domain.Entities;
+using DannyGoodacre.Identity.Entities;
 
 namespace DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 

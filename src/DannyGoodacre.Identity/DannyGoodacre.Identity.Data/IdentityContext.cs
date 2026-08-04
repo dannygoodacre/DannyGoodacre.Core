@@ -1,10 +1,10 @@
 using DannyGoodacre.Cqrs;
-using DannyGoodacre.Identity.Domain.Entities;
+using DannyGoodacre.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DannyGoodacre.Identity.Data;
 
-public class IdentityContext(DbContextOptions options) : DbContext(options), IStateUnit
+public class IdentityContext(DbContextOptions options) : DbContext(options)
 {
     public DbSet<User> Users { get; set; }
 
@@ -15,7 +15,4 @@ public class IdentityContext(DbContextOptions options) : DbContext(options), ISt
     public DbSet<UserClaim> UserClaims { get; set; }
 
     public DbSet<RoleClaim> RoleClaims { get; set; }
-
-    public Task<int> SaveChangesAsync()
-        => base.SaveChangesAsync();
 }

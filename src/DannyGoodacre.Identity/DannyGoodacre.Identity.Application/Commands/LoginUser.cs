@@ -1,6 +1,6 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
-using DannyGoodacre.Identity.Application.Abstractions.Services;
+using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 

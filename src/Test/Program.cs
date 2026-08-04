@@ -15,6 +15,8 @@ public class Program
         builder.Services.AddDbContext<ApplicationContext>(options =>
             options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+        builder.Services.AddEntityFrameworkUnits<ApplicationContext>();
+
         builder.Services.AddIdentity<ApplicationContext>(builder.Configuration);
 
         builder.Services.AddEndpointsApiExplorer();

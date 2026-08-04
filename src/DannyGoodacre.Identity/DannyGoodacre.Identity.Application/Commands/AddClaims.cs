@@ -1,7 +1,7 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
 using DannyGoodacre.Identity.Domain;
-using DannyGoodacre.Identity.Domain.Entities;
+using DannyGoodacre.Identity.Entities;
 using DannyGoodacre.Primitives;
 using Microsoft.Extensions.Logging;
 

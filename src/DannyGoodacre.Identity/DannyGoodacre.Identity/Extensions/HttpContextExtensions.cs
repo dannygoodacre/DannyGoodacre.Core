@@ -18,7 +18,7 @@ internal static class HttpContextExtensions
             return requestUserId == id || isAdmin;
         }
 
-        public SessionInfo SessionInfo
+        public SessionInfoResponse SessionInfoResponse
             => new()
             {
                 UserId = httpContext.UserId,

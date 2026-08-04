@@ -6,10 +6,16 @@
 // Licensed under the MIT License (https://opensource.org/licenses/MIT)
 
 using System.Security.Cryptography;
-using DannyGoodacre.Identity.Application.Abstractions.Services;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace DannyGoodacre.Identity.Hashing;
+
+internal interface IPasswordHashingService
+{
+    string Hash(string value);
+
+    bool Verify(string value, string hashedValue);
+}
 
 internal sealed class PasswordHashingService : IPasswordHashingService
 {

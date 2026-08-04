@@ -54,11 +54,9 @@ public static class ServiceProviderExtensions
                 throw new Exception(addClaimsResult.Error);
             }
 
-            // Seed admin user
-
             var config = services.GetRequiredService<IConfiguration>();
 
-            SeedAdminCredentials? adminSettings = config.GetSection("Identity:InitialSuperUser").Get<SeedAdminCredentials>();
+            SeedSuperUserCredentials? adminSettings = config.GetSection("Identity:InitialSuperUser").Get<SeedSuperUserCredentials>();
 
             if (adminSettings is null)
             {
@@ -76,7 +74,7 @@ public static class ServiceProviderExtensions
         }
     }
 
-    private sealed class SeedAdminCredentials
+    private sealed class SeedSuperUserCredentials
     {
         public required string Username  { get; init; }
 

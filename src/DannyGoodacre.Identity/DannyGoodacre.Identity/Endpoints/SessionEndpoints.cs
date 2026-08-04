@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using CookieOptions = Microsoft.AspNetCore.Http.CookieOptions;
 
 namespace DannyGoodacre.Identity.Endpoints;
 
@@ -59,7 +58,7 @@ internal static class SessionEndpoints
                 return Results.NoContent();
             });
 
-            group.MapGet($"{options.LoginPath}/me", (HttpContext httpContext) => Results.Ok(httpContext.SessionInfo))
+            group.MapGet($"{options.LoginPath}/me", (HttpContext httpContext) => Results.Ok(httpContext.SessionInfoResponse))
                 .RequireAuthorization();
 
             group.MapDelete(options.LoginPath, async Task<IResult> ([FromServices] ICookieService cookieService,
@@ -69,7 +68,7 @@ internal static class SessionEndpoints
 
                 return Results.NoContent();
             })
-            .RequireAuthorization("Permission:Users.Logout");
+            .RequireAuthorization();
 
             return endpoints;
         }

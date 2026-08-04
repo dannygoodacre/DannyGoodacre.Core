@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace DannyGoodacre.Identity.Domain.Entities;
+namespace DannyGoodacre.Identity.Entities;
 
 public sealed class Role
 {
