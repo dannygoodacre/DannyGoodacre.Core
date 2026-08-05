@@ -21,7 +21,7 @@ internal sealed record ValidateSecurityStampQuery : IQuery
 internal sealed class ValidateSecurityStampHandler(ILogger<ValidateSecurityStampHandler> logger, IUserRepository repository)
     : QueryHandler<ValidateSecurityStampQuery, bool>(logger), IValidateSecurityStamp
 {
-    protected override string QueryName => "Validate Principal";
+    protected override string QueryName => "Validate Security Stamp";
 
     protected override void Validate(ValidationState state, ValidateSecurityStampQuery query)
     {
@@ -34,7 +34,7 @@ internal sealed class ValidateSecurityStampHandler(ILogger<ValidateSecurityStamp
     {
         User? user = await repository.GetAsync(query.Username, cancellationToken);
 
-        return Success(user is not null && user.SecurityStamp != query.SecurityStamp);
+        return Success(user is not null && user.SecurityStamp == query.SecurityStamp);
     }
 
     public Task<Result<bool>> ExecuteAsync(string username, string securityStamp, CancellationToken cancellationToken = default)

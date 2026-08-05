@@ -26,6 +26,11 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
 
     protected override string QueryName => "Get User Security Profile";
 
+    protected override void Validate(ValidationState validationState, GetUserSecurityProfileQuery query)
+    {
+        validationState.IsNotNullEmptyOrWhitespace(query.Username, nameof(query.Username));
+    }
+
     protected async override Task<Result<UserSecurityProfileResponse>> InternalExecuteAsync(GetUserSecurityProfileQuery query, CancellationToken cancellationToken = default)
     {
         User? user = await userRepository.GetAsync(query.Username, cancellationToken);
@@ -49,7 +54,6 @@ internal sealed class GetUserSecurityProfileHandler(ILogger<GetUserSecurityProfi
         {
             Id = user.PublicId,
             Username = user.Username,
-            SecurityStamp = user.SecurityStamp,
             Claims = claims,
             Roles = roles
         });
