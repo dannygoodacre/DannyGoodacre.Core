@@ -18,6 +18,11 @@ internal sealed class PasswordValidatorService(IOptions<IdentityOptions> options
 
     public Result IsPasswordValid(ValidationState state, string password)
     {
+        if (!state.IsNotNullEmptyOrWhitespace(password, nameof(password)))
+        {
+            return Result.Invalid(state);
+        }
+
         if (_options.RequireLowercase)
         {
             state.ContainsLowercase(password, Name);
