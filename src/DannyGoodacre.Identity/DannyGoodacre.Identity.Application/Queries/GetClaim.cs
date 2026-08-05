@@ -22,9 +22,9 @@ internal sealed class GetClaimHandler(ILogger<GetClaimHandler> logger, IClaimRep
 {
     protected override string QueryName => "Get Claim";
 
-    protected override void Validate(ValidationState validationState, GetClaimQuery query)
+    protected override void Validate(ValidationState state, GetClaimQuery query)
     {
-        validationState.IsNonEmptyGuid(query.Id, nameof(query.Id));
+        state.IsNonEmptyGuid(query.Id, nameof(query.Id));
     }
 
     protected async override Task<Result<ClaimResponse>> InternalExecuteAsync(GetClaimQuery query, CancellationToken cancellationToken = default)

@@ -14,8 +14,8 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     {
         protected override string QueryName => TestName;
 
-        protected override void Validate(ValidationState validationState, TestQuery query)
-            => _testValidate(validationState, query);
+        protected override void Validate(ValidationState state, TestQuery query)
+            => _testValidate(state, query);
 
         protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(query, cancellationToken);

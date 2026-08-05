@@ -22,6 +22,11 @@ internal sealed class GetRoleHandler(ILogger<GetRoleHandler> logger, IRoleReposi
 {
     protected override string QueryName => "Get Role";
 
+    protected override void Validate(ValidationState state, GetRoleQuery query)
+    {
+        state.IsNonEmptyGuid(query.Id, nameof(query.Id));
+    }
+
     protected async override Task<Result<RoleResponse>> InternalExecuteAsync(GetRoleQuery query, CancellationToken cancellationToken = default)
     {
         Role? role = await repository.GetAsync(query.Id, cancellationToken);
