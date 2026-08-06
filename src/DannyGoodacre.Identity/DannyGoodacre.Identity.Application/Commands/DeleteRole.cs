@@ -16,7 +16,7 @@ internal sealed record DeleteRoleCommand : ICommand
     public required Guid Id { get; init; }
 }
 
-internal sealed class DeleteRoleHandler(ILogger<DeleteRoleHandler> logger,
+internal sealed partial class DeleteRoleHandler(ILogger<DeleteRoleHandler> logger,
                                         IStateUnit stateUnit,
                                         IRoleRepository repository)
     : StateCommandHandler<DeleteRoleCommand>(logger, stateUnit), IDeleteRole
@@ -24,16 +24,27 @@ internal sealed class DeleteRoleHandler(ILogger<DeleteRoleHandler> logger,
 
     protected override string CommandName => "Delete Role";
 
+    protected override void Validate(ValidationState validationState, DeleteRoleCommand command)
+    {
+        validationState.IsNonEmptyGuid(command.Id, nameof(command.Id));
+    }
+
     protected async override Task<Result> InternalExecuteAsync(DeleteRoleCommand command, CancellationToken cancellationToken = default)
     {
+        LogStarted(Logger, CommandName, command.Id);
+
         Role? role = await repository.GetAsync(command.Id, cancellationToken);
 
         if (role is null)
         {
+            LogNotFound(Logger, CommandName, command.Id);
+
             return NotFound();
         }
 
         repository.Remove(role);
+
+        LogCompleted(Logger, CommandName, command.Id);
 
         return Success();
     }
@@ -43,4 +54,13 @@ internal sealed class DeleteRoleHandler(ILogger<DeleteRoleHandler> logger,
         {
             Id = id
         }, cancellationToken);
+
+    [LoggerMessage(LogLevel.Information, "Command '{Command}' started for Role ID '{RoleId}'.")]
+    private static partial void LogStarted(ILogger logger, string command, Guid roleId);
+
+    [LoggerMessage(LogLevel.Warning, "Command '{Command}' failed: Role ID '{RoleId}' not found.")]
+    private static partial void LogNotFound(ILogger logger, string command, Guid roleId);
+
+    [LoggerMessage(LogLevel.Information, "Command '{Command}' completed for Role ID '{RoleId}'.")]
+    private static partial void LogCompleted(ILogger logger, string command, Guid roleId);
 }
