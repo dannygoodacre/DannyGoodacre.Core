@@ -59,9 +59,9 @@ protected async override Task<Result> InternalExecuteAsync(AddRoleCommand comman
     {
         PublicId = Guid.NewGuid(),
         Name = command.Name,
-        Claims = command.ClaimIds.Select(x => new RoleClaim
+        Claims = command.ClaimIds.Select(claimId => new RoleClaim
         {
-            ClaimId = claimIdMap[x]
+            ClaimId = claimIdMap[claimId]
         }).ToList()
     });
 

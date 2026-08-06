@@ -26,19 +26,11 @@ internal sealed class AddClaimsHandler(ILogger<AddClaimsHandler> logger,
 
     protected async override Task<Result> InternalExecuteAsync(AddClaimsCommand command, CancellationToken cancellationToken = default)
     {
-        List<ClaimDefinition> alreadyExistingClaims = [];
+        List<Claim> existingClaims = await repository.GetExistingAsync(command.Claims, cancellationToken);
 
-        foreach (ClaimDefinition claim in command.Claims)
+        if (existingClaims.Count > 0)
         {
-            if (await repository.ExistsAsync(claim.Type, claim.Value, cancellationToken))
-            {
-                alreadyExistingClaims.Add(claim);
-            }
-        }
-
-        if (alreadyExistingClaims.Count > 0)
-        {
-            string claims = string.Join(", ", alreadyExistingClaims.Select(c => $"'{c.Type}: {c.Value}'"));
+            string claims = string.Join(", ", existingClaims.Select(claim => $"'{claim.Type}: {claim.Value}'"));
 
             return Conflict($"The following claims already exist: {claims}.");
         }

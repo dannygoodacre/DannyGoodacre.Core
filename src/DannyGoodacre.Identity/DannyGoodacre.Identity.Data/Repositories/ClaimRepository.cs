@@ -1,4 +1,5 @@
 using DannyGoodacre.Identity.Application.Abstractions.Data.Repositories;
+using DannyGoodacre.Identity.Domain;
 using DannyGoodacre.Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,14 +11,6 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
         => context.Claims
             .Add(claim).Entity;
 
-    public Task<bool> ExistsAsync(Guid publicId, CancellationToken cancellationToken = default)
-        => context.Claims
-            .AnyAsync(x => x.PublicId == publicId, cancellationToken);
-
-    public Task<bool> ExistsAsync(string type, string value, CancellationToken cancellationToken = default)
-        => context.Claims
-            .AnyAsync(x => x.Type == type && x.Value == value, cancellationToken);
-
     public Task<List<Claim>> GetAllAsync(CancellationToken cancellationToken = default)
         => context.Claims
             .ToListAsync(cancellationToken);
@@ -25,6 +18,18 @@ internal sealed class ClaimRepository(IdentityContext context) : IClaimRepositor
     public Task<Claim?> GetAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Claims
             .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
+
+    public Task<List<Claim>> GetExistingAsync(List<ClaimDefinition> claims, CancellationToken cancellationToken = default)
+    {
+        if (claims.Count == 0)
+        {
+            return Task.FromResult(new List<Claim>());
+        }
+
+        return context.Claims
+            .Where(x => claims.Any(claim => claim.Type == x.Type && claim.Value == x.Value))
+            .ToListAsync(cancellationToken);
+    }
 
     public Task<Dictionary<Guid, int>> GetIdMapAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
         => context.Claims
