@@ -24,7 +24,7 @@ internal static class UserEndpoints
                                      [FromBody] RegistrationRequest request,
                                      CancellationToken cancellationToken) =>
             {
-                Result<UserInfoResponse> result = await addUser.ExecuteAsync(request.Username, request.Password, cancellationToken);
+                Result<UserInfoResponse> result = await addUser.ExecuteAsync(request.ToCommand(), cancellationToken);
 
                 if (!result.IsSuccess)
                 {

@@ -11,4 +11,11 @@ internal static class RequestExtensions
             Username = request.Username,
             Password = request.Password
         };
+
+    public static AddUserCommand ToCommand(this RegistrationRequest request)
+        => new()
+        {
+            Username = request.Username,
+            Password = request.Password
+        };
 }

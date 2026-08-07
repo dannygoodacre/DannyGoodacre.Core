@@ -11,10 +11,10 @@ namespace DannyGoodacre.Identity.Application.Commands;
 
 public interface IAddUser
 {
-    Task<Result<UserInfoResponse>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default);
+    Task<Result<UserInfoResponse>> ExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default);
 }
 
-internal sealed record AddUserCommand : ICommand
+public sealed record AddUserCommand : ICommand
 {
     public required string Username { get; init; }
 
@@ -30,8 +30,15 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 {
     protected override string CommandName => "Add User";
 
-    protected override void Validate(ValidationState state, AddUserCommand command)
-        => passwordValidatorService.IsPasswordValid(state, command.Password);
+    public new Task<Result<UserInfoResponse>> ExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default)
+        => base.ExecuteAsync(command, cancellationToken);
+
+    protected override void Validate(ValidationState validationState, AddUserCommand command)
+    {
+        validationState.IsNotNullEmptyOrWhitespace(command.Username, nameof(command.Username));
+
+        passwordValidatorService.IsPasswordValid(validationState, command.Password);
+    }
 
     protected async override Task<Result<UserInfoResponse>> InternalExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default)
     {
@@ -46,11 +53,4 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
         return Success(user.ToUserInfoResponse());
     }
-
-    public Task<Result<UserInfoResponse>> ExecuteAsync(string username, string password, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new AddUserCommand
-        {
-            Username = username,
-            Password = password
-        }, cancellationToken);
 }

@@ -9,22 +9,22 @@ using Microsoft.Extensions.Logging;
 namespace DannyGoodacre.Identity.Application.Tests.Commands;
 
 [TestFixture]
-internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHandler>
+internal sealed class DeleteUserTests : StateCommandHandlerTestBase<DeleteUserHandler>
 {
-    protected override string CommandName => "Delete Role";
+    protected override string CommandName => "Delete User";
 
     private Guid _requestId;
 
-    private Role _testRole = null!;
+    private User _testUser = null!;
 
-    private Mock<IRoleRepository> _roleRepositoryMock = null!;
+    private Mock<IUserRepository> _userRepositoryMock = null!;
 
     [SetUp]
     public void SetUp()
     {
-        _roleRepositoryMock = new Mock<IRoleRepository>(MockBehavior.Strict);
+        _userRepositoryMock = new Mock<IUserRepository>(MockBehavior.Strict);
 
-        CommandHandler = new DeleteRoleHandler(LoggerMock.Object, StateUnitMock.Object, _roleRepositoryMock.Object);
+        CommandHandler = new DeleteUserHandler(LoggerMock.Object, StateUnitMock.Object, _userRepositoryMock.Object);
     }
 
     protected override Task<Result> Act()
@@ -48,7 +48,7 @@ internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHa
     }
 
     [Test]
-    public async Task WhenRoleIsNull_ShouldReturnNotFound()
+    public async Task WhenUserIsNull_ShouldReturnNotFound()
     {
         // Arrange
         _requestId = Guid.NewGuid();
@@ -57,9 +57,9 @@ internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHa
 
         SetupLogger_LogStarted();
 
-        _testRole = null!;
+        _testUser = null!;
 
-        SetupRoleRepository_GetAsync();
+        SetupUserRepository_GetAsync();
 
         SetupLogger_LogNotFound();
 
@@ -71,7 +71,7 @@ internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHa
     }
 
     [Test]
-    public async Task WhenRoleIsFound_ShouldReturnSuccess()
+    public async Task WhenUserIsFound_ShouldReturnSuccess()
     {
         // Arrange
         _requestId = Guid.NewGuid();
@@ -80,14 +80,19 @@ internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHa
 
         SetupLogger_LogStarted();
 
-        _testRole = new Role
+        _testUser = new User
         {
-            Name = "Test Role Name"
+            PublicId = Guid.NewGuid(),
+            Username = "Test Username",
+            IsApproved = true,
+            PasswordHash = "Test Password Hash",
+            SecurityStamp = "Test Security Stamp",
+            ConcurrencyStamp = "Test Concurrency Stamp"
         };
 
-        SetupRoleRepository_GetAsync();
+        SetupUserRepository_GetAsync();
 
-        SetupRoleRepository_Remove();
+        SetupUserRepository_Remove();
 
         SetupLogger_LogCompleted();
 
@@ -101,25 +106,25 @@ internal sealed class DeleteRoleTests : StateCommandHandlerTestBase<DeleteRoleHa
     }
 
     private void SetupLogger_LogStarted()
-        => LoggerMock.Setup(LogLevel.Information, $"Command '{CommandName}' started for Role ID '{_requestId}'.");
+        => LoggerMock.Setup(LogLevel.Information, $"Command '{CommandName}' started for User ID '{_requestId}'.");
 
     private void SetupLogger_LogNotFound()
-        => LoggerMock.Setup(LogLevel.Warning, $"Command '{CommandName}' failed: Role ID '{_requestId}' not found.");
+        => LoggerMock.Setup(LogLevel.Warning, $"Command '{CommandName}' failed: User ID '{_requestId}' not found.");
 
     private void SetupLogger_LogCompleted()
-        => LoggerMock.Setup(LogLevel.Information, $"Command '{CommandName}' completed for Role ID '{_requestId}'.");
+        => LoggerMock.Setup(LogLevel.Information, $"Command '{CommandName}' completed for User ID '{_requestId}'.");
 
-    private void SetupRoleRepository_GetAsync()
-        => _roleRepositoryMock
+    private void SetupUserRepository_GetAsync()
+        => _userRepositoryMock
             .Setup(x => x.GetAsync(
                 It.Is<Guid>(y => y == _requestId),
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .ReturnsAsync(_testRole)
+            .ReturnsAsync(_testUser)
             .Verifiable(Times.Once);
 
-    private void SetupRoleRepository_Remove()
-        => _roleRepositoryMock
+    private void SetupUserRepository_Remove()
+        => _userRepositoryMock
             .Setup(x => x.Remove(
-                It.Is<Role>(y => y == _testRole)))
+                It.Is<User>(y => y == _testUser)))
             .Verifiable(Times.Once);
 }

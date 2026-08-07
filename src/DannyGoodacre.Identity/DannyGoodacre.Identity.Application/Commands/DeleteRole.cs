@@ -50,7 +50,7 @@ internal sealed partial class DeleteRoleHandler(ILogger<DeleteRoleHandler> logge
     }
 
     public Task<Result> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new DeleteRoleCommand()
+        => ExecuteAsync(new DeleteRoleCommand
         {
             Id = id
         }, cancellationToken);
