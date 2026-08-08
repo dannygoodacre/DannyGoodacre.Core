@@ -21,11 +21,11 @@ public sealed record AddUserCommand : ICommand
     public required string Password { get; init; }
 }
 
-internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
-                                     IStateUnit stateUnit,
-                                     IPasswordValidatorService passwordValidatorService,
-                                     IUserRepository repository,
-                                     IPasswordHashingService hashingService)
+internal sealed partial class AddUserHandler(ILogger<AddUserHandler> logger,
+                                             IStateUnit stateUnit,
+                                             IPasswordValidatorService passwordValidatorService,
+                                             IUserRepository repository,
+                                             IPasswordHashingService hashingService)
     : StateCommandHandler<AddUserCommand, UserInfoResponse>(logger, stateUnit), IAddUser
 {
     protected override string CommandName => "Add User";
@@ -42,6 +42,8 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
     protected async override Task<Result<UserInfoResponse>> InternalExecuteAsync(AddUserCommand command, CancellationToken cancellationToken = default)
     {
+        LogStarted(Logger, CommandName, command.Username);
+
         if (await repository.ExistsAsync(command.Username, cancellationToken))
         {
             return Conflict("Username already taken");
@@ -51,6 +53,14 @@ internal sealed class AddUserHandler(ILogger<AddUserHandler> logger,
 
         User user = repository.Add(User.CreateNew(command.Username, passwordHash));
 
+        LogCompleted(Logger, CommandName, command.Username);
+
         return Success(user.ToUserInfoResponse());
     }
+
+    [LoggerMessage(LogLevel.Information, "Command '{Command}' started for Username '{Username}'.")]
+    private static partial void LogStarted(ILogger logger, string command, string username);
+
+    [LoggerMessage(LogLevel.Information, "Command '{Command}' completed for Username '{Username}'.")]
+    private static partial void LogCompleted(ILogger logger, string command, string username);
 }

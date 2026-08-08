@@ -24,18 +24,31 @@ internal sealed class AddClaimsHandler(ILogger<AddClaimsHandler> logger,
 {
     protected override string CommandName => "Add Claims";
 
+    public Task<Result> ExecuteAsync(List<ClaimDefinition> claims, CancellationToken cancellationToken = default)
+        => ExecuteAsync(new AddClaimsCommand
+        {
+            Claims = claims
+        }, cancellationToken);
+
+    protected override void Validate(ValidationState validationState, AddClaimsCommand command)
+    {
+        validationState.IsNotNullOrEmpty(command.Claims, nameof(command.Claims));
+    }
+
     protected async override Task<Result> InternalExecuteAsync(AddClaimsCommand command, CancellationToken cancellationToken = default)
     {
         List<Claim> existingClaims = await repository.GetExistingAsync(command.Claims, cancellationToken);
 
-        if (existingClaims.Count > 0)
-        {
-            string claims = string.Join(", ", existingClaims.Select(claim => $"'{claim.Type}: {claim.Value}'"));
+        var missingClaims = command.Claims
+            .Where(x => !existingClaims.Any(y => x.Type == y.Type && x.Value == y.Value))
+            .ToList();
 
-            return Conflict($"The following claims already exist: {claims}.");
+        if (missingClaims.Count == 0)
+        {
+            return Success();
         }
 
-        foreach (ClaimDefinition claim in command.Claims)
+        foreach (ClaimDefinition claim in missingClaims)
         {
             _ = repository.Add(new Claim
             {
@@ -47,10 +60,4 @@ internal sealed class AddClaimsHandler(ILogger<AddClaimsHandler> logger,
 
         return Success();
     }
-
-    public Task<Result> ExecuteAsync(List<ClaimDefinition> claims, CancellationToken cancellationToken = default)
-        => ExecuteAsync(new AddClaimsCommand
-        {
-            Claims = claims
-        }, cancellationToken);
 }

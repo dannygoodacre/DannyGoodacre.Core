@@ -95,5 +95,17 @@ internal static class ValidationStateExtensions
             return false;
 
         }
+
+        public bool IsNotNullOrEmpty<T>(ICollection<T>? value, string name)
+        {
+            if (value is not null && value.Count > 0)
+            {
+                return true;
+            }
+
+            state.AddError(name, "Must not be null or empty.");
+
+            return false;
+        }
     }
 }
