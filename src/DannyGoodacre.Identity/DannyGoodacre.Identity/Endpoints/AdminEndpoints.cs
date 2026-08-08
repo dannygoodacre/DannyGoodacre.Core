@@ -46,7 +46,7 @@ internal static class AdminEndpoints
                                                         [FromBody] AddRoleRequest request,
                                                         CancellationToken cancellationToken) =>
             {
-                Result result = await addRole.ExecuteAsync(request.Name, request.ClaimIds, cancellationToken);
+                Result result = await addRole.ExecuteAsync(request.ToCommand(), cancellationToken);
 
                 return result.ToHttpResponse();
             })
