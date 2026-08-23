@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract partial class CommandHandlerBase<TCommand, TResult>
+public abstract class CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
 {
@@ -47,39 +47,40 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     /// <returns>A <see cref="Result"/> indicating the outcome of the operation.</returns>
     protected async virtual Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        var validationState = new ValidationState();
-
-        Validate(validationState, command);
-
-        if (validationState.HasErrors)
-        {
-            LogFailedValidation(Logger, CommandName, validationState);
-
-            return MapResult(Result.Invalid(validationState));
-        }
-
-        if (cancellationToken.IsCancellationRequested)
-        {
-            LogCanceledBeforeExecution(Logger, CommandName);
-
-            return MapResult(Result.Canceled());
-        }
-
         try
         {
-            return await InternalExecuteAsync(command, cancellationToken);
+            var validationState = new ValidationState();
+
+            Validate(validationState, command);
+
+            if (validationState.HasErrors)
+            {
+                Logger.LogFailedValidation(CommandName, validationState);
+
+                return Invalid(validationState);
+            }
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                return await InternalExecuteAsync(command, cancellationToken);
+            }
+
+            Logger.LogCanceledBeforeExecution(CommandName);
+
+            return Canceled();
+
         }
         catch (OperationCanceledException)
         {
-            LogCanceledDuringExecution(Logger, CommandName);
+            Logger.LogCanceledDuringExecution(CommandName);
 
-            return MapResult(Result.Canceled());
+            return Canceled();
         }
         catch (Exception ex)
         {
-            LogFailed(Logger, ex, CommandName);
+            Logger.LogFailed(ex, CommandName);
 
-            return MapResult(Result.InternalError(ex.Message));
+            return InternalError(ex.Message);
         }
     }
 
@@ -98,16 +99,4 @@ public abstract partial class CommandHandlerBase<TCommand, TResult>
     protected TResult InternalError(Exception exception) => MapResult(Result.InternalError(exception));
 
     protected private abstract TResult MapResult(Result result);
-
-    [LoggerMessage(LogLevel.Error, "Command '{Command}' failed validation: {ValidationState}")]
-    private static partial void LogFailedValidation(ILogger logger, string command, ValidationState validationState);
-
-    [LoggerMessage(LogLevel.Information, "Command '{Command}' was canceled before execution.")]
-    private static partial void LogCanceledBeforeExecution(ILogger logger, string command);
-
-    [LoggerMessage(LogLevel.Information, "Command '{Command}' was canceled during execution.")]
-    private static partial void LogCanceledDuringExecution(ILogger logger, string command);
-
-    [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed.")]
-    protected private static partial void LogFailed(ILogger logger, Exception exception, string command);
 }

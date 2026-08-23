@@ -30,14 +30,16 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : IStateUn
                 {
                     TResult result = await state.operation(ct);
 
-                    if (!result.IsSuccess)
+                    if (result.IsSuccess)
+                    {
+                        await transaction.CommitAsync(ct);
+                    }
+                    else
                     {
                         await transaction.RollbackAsync(ct);
 
-                        return result;
+                        state.context.ChangeTracker.Clear();
                     }
-
-                    await transaction.CommitAsync(ct);
 
                     return result;
                 }

@@ -15,36 +15,54 @@ public abstract partial class StateCommandHandlerBase<TCommand, TResult>
 
     private IStateUnit StateUnit { get; }
 
+    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
     protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
+        TResult result = await base.ExecuteAsync(command, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return result;
+        }
+
         try
         {
-            TResult result = await base.ExecuteAsync(command, cancellationToken);
-
-            if (result.IsSuccess)
-            {
-                _ = await StateUnit.SaveChangesAsync(cancellationToken);
-            }
-
-            return result;
+            _ = await StateUnit.SaveChangesAsync(cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            LogCanceledWhilePersistingChanges(Logger, CommandName);
+            Logger.LogCanceledWhilePersistingChanges(CommandName);
 
-            return MapResult(Result.Canceled());
+            return Canceled();
         }
         catch (Exception ex)
         {
-            LogFailedWhilePersistingChanges(Logger, ex, CommandName);
+            Logger.LogFailedWhilePersistingChanges(ex, CommandName);
 
-            return MapResult(Result.InternalError(ex.Message));
+            return InternalError(ex.Message);
         }
+
+        try
+        {
+            await AfterSaveAsync(command, result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogCanceledDuringAfterSave(CommandName);
+
+            return Canceled();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogFailedDuringAfterSave(ex, CommandName);
+
+            return InternalError(ex.Message);
+        }
+
+        return result;
     }
-
-    [LoggerMessage(LogLevel.Information, "Command '{Command}' was canceled while persisting changes.")]
-    private static partial void LogCanceledWhilePersistingChanges(ILogger logger, string command);
-
-    [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed while persisting changes.")]
-    private static partial void LogFailedWhilePersistingChanges(ILogger logger, Exception exception, string command);
 }
