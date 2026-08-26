@@ -72,7 +72,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenValidationFails_ShouldReturnInvalid()
+    public async Task WhenValidationFails_ShouldReturnInvalid()
     {
         // Arrange
         const string testProperty = "Test Property";
@@ -93,7 +93,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
+    public async Task WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
@@ -115,7 +115,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
+    public async Task WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
         Result<int> result = await Act();
@@ -125,7 +125,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledDuring_ShouldReturnCanceled()
+    public async Task WhenCanceledDuring_ShouldReturnCanceled()
     {
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
@@ -142,7 +142,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenExceptionOccurs_ShouldReturnInternalError()
+    public async Task WhenExceptionOccurs_ShouldReturnInternalError()
     {
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
