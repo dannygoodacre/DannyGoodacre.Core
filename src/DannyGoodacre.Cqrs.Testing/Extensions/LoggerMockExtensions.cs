@@ -41,9 +41,6 @@ public static class LoggerMockExtensions
         public void LogCommandUnexpectedNumberOfChanges(string command, int expected, int actual)
             => loggerMock.Setup(LogLevel.Error, $"Command '{command}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
 
-        public void LogQueryFailedValidation(string query, string message)
-            => loggerMock.Setup(LogLevel.Error, $"Query '{query}' failed validation: {message}");
-
         public void LogQueryCanceledBeforeExecution(string query)
             => loggerMock.Setup(LogLevel.Information, $"Query '{query}' was canceled before execution.");
 
@@ -52,5 +49,8 @@ public static class LoggerMockExtensions
 
         public void LogQueryFailed(string query, Exception exception)
             => loggerMock.Setup(LogLevel.Critical, $"Query '{query}' failed.", exception: exception);
+
+        public void LogQueryFailedValidation(string query, string message)
+            => loggerMock.Setup(LogLevel.Error, $"Query '{query}' failed validation: {message}");
     }
 }
