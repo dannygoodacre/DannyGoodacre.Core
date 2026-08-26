@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract partial class StateCommandHandlerBase<TCommand, TResult>
+public abstract class StateCommandHandlerBase<TCommand, TResult>
     : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
