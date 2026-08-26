@@ -35,13 +35,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
         }
         catch (OperationCanceledException)
         {
-            Logger.LogCanceledWhilePersistingChanges(CommandName);
+            Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
             return Canceled();
         }
         catch (Exception ex)
         {
-            Logger.LogFailedWhilePersistingChanges(ex, CommandName);
+            Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
             return InternalError(ex.Message);
         }
@@ -52,13 +52,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
         }
         catch (OperationCanceledException)
         {
-            Logger.LogCanceledDuringAfterSave(CommandName);
+            Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
             return Canceled();
         }
         catch (Exception ex)
         {
-            Logger.LogFailedDuringAfterSave(ex, CommandName);
+            Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
             return InternalError(ex.Message);
         }

@@ -61,7 +61,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
                     return innerResult;
                 }
 
-                Logger.LogUnexpectedNumberOfChanges(CommandName, ExpectedChanges, actualChanges);
+                Logger.LogCommandUnexpectedNumberOfChanges(CommandName, ExpectedChanges, actualChanges);
 
                 return InternalError("Attempted to persist an unexpected number of changes.");
 
@@ -69,13 +69,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
         }
         catch (OperationCanceledException)
         {
-            Logger.LogCanceledWhilePersistingChanges(CommandName);
+            Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
             return Canceled();
         }
         catch (Exception ex)
         {
-            Logger.LogFailedWhilePersistingChanges(ex, CommandName);
+            Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
             return InternalError(ex.Message);
         }
@@ -86,13 +86,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
         }
         catch (OperationCanceledException)
         {
-            Logger.LogCanceledDuringAfterSave(CommandName);
+            Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
             return Canceled();
         }
         catch (Exception ex)
         {
-            Logger.LogFailedDuringAfterSave(ex, CommandName);
+            Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
             return InternalError(ex.Message);
         }

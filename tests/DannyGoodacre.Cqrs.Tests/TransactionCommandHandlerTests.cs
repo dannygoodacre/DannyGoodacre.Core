@@ -89,7 +89,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogUnexpectedNumberOfChanges(CommandName, _testExpectedChanges, _testActualChanges);
+        LoggerMock.LogCommandUnexpectedNumberOfChanges(CommandName, _testExpectedChanges, _testActualChanges);
 
         // Act
         Result result = await Act();
@@ -145,7 +145,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledWhilePersistingChanges(CommandName);
+        LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
         Result result = await Act();
@@ -173,7 +173,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailedWhilePersistingChanges(CommandName, exception);
+        LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
         Result result = await Act();
@@ -194,7 +194,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledDuringAfterSave(CommandName);
+        LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
         Result result = await Act();
@@ -219,7 +219,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailedDuringAfterSave(CommandName, exception);
+        LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
         Result result = await Act();

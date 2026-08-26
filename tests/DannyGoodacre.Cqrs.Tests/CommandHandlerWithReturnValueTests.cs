@@ -83,7 +83,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailedValidation(CommandName, $"{testProperty}:{Environment.NewLine}  - {testError}");
+        LoggerMock.LogCommandFailedValidation(CommandName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         Result<int> result = await Act();
@@ -102,7 +102,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledBeforeExecution(CommandName);
+        LoggerMock.LogCommandCanceledBeforeExecution(CommandName);
 
         await cancellationTokenSource.CancelAsync();
 
@@ -132,7 +132,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledDuringExecution(CommandName);
+        LoggerMock.LogCommandCanceledDuringExecution(CommandName);
 
         // Act
         Result<int> result = await Act();
@@ -153,7 +153,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailed(CommandName, exception);
+        LoggerMock.LogCommandFailed(CommandName, exception);
 
         // Act
         Result<int> result = await Act();

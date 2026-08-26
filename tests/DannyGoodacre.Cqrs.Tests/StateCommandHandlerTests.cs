@@ -83,7 +83,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledWhilePersistingChanges(CommandName);
+        LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
         Result result = await Act();
@@ -108,7 +108,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailedWhilePersistingChanges(CommandName, exception);
+        LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
         Result result = await Act();
@@ -127,7 +127,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogCanceledDuringAfterSave(CommandName);
+        LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
         Result result = await Act();
@@ -150,7 +150,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         LoggerMock.IsEnabled();
 
-        LoggerMock.LogFailedDuringAfterSave(CommandName, exception);
+        LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
         Result result = await Act();

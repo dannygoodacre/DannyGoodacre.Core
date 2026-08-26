@@ -46,14 +46,14 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
 
         if (validationState.HasErrors)
         {
-            LogFailedValidation(Logger, QueryName, validationState);
+            Logger.LogQueryFailedValidation(QueryName, validationState);
 
             return Result<TResult>.Invalid(validationState);
         }
 
         if (cancellationToken.IsCancellationRequested)
         {
-            LogCanceledBeforeExecution(Logger, QueryName);
+            Logger.LogQueryCanceledBeforeExecution(QueryName);
 
             return Result<TResult>.Canceled();
         }
@@ -64,13 +64,13 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
         }
         catch (OperationCanceledException)
         {
-            LogCanceledDuringExecution(Logger, QueryName);
+            Logger.LogQueryCanceledDuringExecution(QueryName);
 
             return Result<TResult>.Canceled();
         }
         catch (Exception ex)
         {
-            LogCriticalFailure(Logger, ex, QueryName);
+            Logger.LogQueryFailed(QueryName, ex);
 
             return Result<TResult>.InternalError(ex.Message);
         }
@@ -91,16 +91,4 @@ public abstract partial class QueryHandler<TQuery, TResult>(ILogger logger)
     protected Result<TResult> InternalError(string error) => Result<TResult>.InternalError(error);
 
     protected Result<TResult> InternalError(Exception exception) => Result<TResult>.InternalError(exception);
-
-    [LoggerMessage(LogLevel.Error, "Query '{Query}' failed validation: {ValidationState}")]
-    private static partial void LogFailedValidation(ILogger logger, string query, ValidationState validationState);
-
-    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled before execution.")]
-    private static partial void LogCanceledBeforeExecution(ILogger logger, string query);
-
-    [LoggerMessage(LogLevel.Information, "Query '{Query}' was canceled during execution.")]
-    private static partial void LogCanceledDuringExecution(ILogger logger, string query);
-
-    [LoggerMessage(LogLevel.Critical, "Query '{Query}' failed.")]
-    private static partial void LogCriticalFailure(ILogger logger, Exception exception, string query);
 }

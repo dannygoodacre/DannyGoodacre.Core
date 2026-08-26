@@ -55,7 +55,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
 
             if (validationState.HasErrors)
             {
-                Logger.LogFailedValidation(CommandName, validationState);
+                Logger.LogCommandFailedValidation(CommandName, validationState);
 
                 return Invalid(validationState);
             }
@@ -65,20 +65,20 @@ public abstract class CommandHandlerBase<TCommand, TResult>
                 return await InternalExecuteAsync(command, cancellationToken);
             }
 
-            Logger.LogCanceledBeforeExecution(CommandName);
+            Logger.LogCommandCanceledBeforeExecution(CommandName);
 
             return Canceled();
 
         }
         catch (OperationCanceledException)
         {
-            Logger.LogCanceledDuringExecution(CommandName);
+            Logger.LogCommandCanceledDuringExecution(CommandName);
 
             return Canceled();
         }
         catch (Exception ex)
         {
-            Logger.LogFailed(ex, CommandName);
+            Logger.LogCommandFailed(CommandName, ex);
 
             return InternalError(ex.Message);
         }

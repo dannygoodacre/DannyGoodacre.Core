@@ -81,9 +81,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
+        LoggerMock.LogQueryFailedValidation(QueryName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         Result<int> result = await Act();
@@ -100,9 +100,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         TestCancellationToken = cancellationTokenSource.Token;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledBeforeExecution();
+        LoggerMock.LogQueryCanceledBeforeExecution(QueryName);
 
         await cancellationTokenSource.CancelAsync();
 
@@ -129,9 +129,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledDuringExecution();
+        LoggerMock.LogQueryCanceledDuringExecution(QueryName);
 
         // Act
         Result<int> result = await Act();
@@ -150,9 +150,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_Failed(exception);
+        LoggerMock.LogQueryFailed(QueryName, exception);
 
         // Act
         Result<int> result = await Act();
