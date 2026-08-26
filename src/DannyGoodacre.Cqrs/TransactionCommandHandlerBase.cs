@@ -35,9 +35,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {

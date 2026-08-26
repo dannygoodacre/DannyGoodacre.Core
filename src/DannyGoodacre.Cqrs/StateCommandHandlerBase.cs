@@ -16,9 +16,7 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
     private IStateUnit StateUnit { get; }
 
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+        => Task.CompletedTask;
 
     protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
