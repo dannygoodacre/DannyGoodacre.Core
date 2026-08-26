@@ -47,7 +47,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
         {
             result = await TransactionUnit.ExecuteInTransactionAsync(async innerCancellationToken =>
             {
-                TResult innerResult = await ExecuteAsync(command, innerCancellationToken);
+                TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
 
                 if (!innerResult.IsSuccess)
                 {

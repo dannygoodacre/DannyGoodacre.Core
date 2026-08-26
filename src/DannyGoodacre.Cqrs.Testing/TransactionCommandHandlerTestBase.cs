@@ -33,10 +33,6 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
         TransactionUnitMock = new Mock<ITransactionUnit>(MockBehavior.Strict);
     }
 
-    protected void SetupLogger_UnexpectedNumberOfChanges(int expected, int actual)
-        => LoggerMock
-            .Setup(LogLevel.Error, $"Command '{CommandName}' attempted to persist an unexpected number of changes: Expected '{expected}', Actual '{actual}'.");
-
     protected void SetupTransactionUnit_SaveChangesAsync(int times = 1)
         => TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(

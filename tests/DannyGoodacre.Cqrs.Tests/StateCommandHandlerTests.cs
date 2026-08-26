@@ -21,6 +21,9 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
+        protected override Task AfterSaveAsync(TestCommand command, Result result, CancellationToken cancellationToken = default)
+            => _testAfterSaveAsync(command, result, cancellationToken);
+
         public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
     }
@@ -32,6 +35,8 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
     private static Action<ValidationState, TestCommand> _testValidate = null!;
 
     private static Func<TestCommand, CancellationToken, Task<Result>> _testInternalExecuteAsync = null!;
+
+    private static Func<TestCommand, Result, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     protected override string CommandName => TestName;
 
@@ -46,24 +51,28 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success());
 
+        _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
+
         CommandHandler = new TestStateCommandHandler(LoggerMock.Object, StateUnitMock.Object);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldSaveChangesAndReturnSuccess()
+    public async Task WhenNotSuccessful_ShouldReturnResult()
     {
         // Arrange
-        SetupStateUnit_SaveChangesAsync();
+        const string testError = "Test Internal Error";
+
+        _testInternalExecuteAsync =  (_, _) => Task.FromResult(Result.InternalError(testError));
 
         // Act
         Result result = await Act();
 
         // Assert
-        AssertSuccess(result);
+        AssertInternalError(result, testError);
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledWhilePersistingChanges_ShouldReturnCanceled()
+    public async Task WhenCanceledWhilePersistingChanges_ShouldReturnCanceled()
     {
         // Arrange
         StateUnitMock
@@ -72,9 +81,9 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
             .ThrowsAsync(new OperationCanceledException())
             .Verifiable(Times.Once);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledWhilePersistingChanges();
+        LoggerMock.LogCanceledWhilePersistingChanges(CommandName);
 
         // Act
         Result result = await Act();
@@ -84,7 +93,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenExceptionOccursWhilePersistingChanges_ShouldReturnInternalError()
+    public async Task WhenExceptionOccursWhilePersistingChanges_ShouldReturnInternalError()
     {
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
@@ -97,14 +106,69 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
             .ThrowsAsync(exception)
             .Verifiable(Times.Once);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_FailedWhilePersistingChanges(exception);
+        LoggerMock.LogFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
         Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
+    }
+
+    [Test]
+    public async Task WhenCanceledDuringAfterSave_ShouldReturnCanceled()
+    {
+        // Arrange
+        _testAfterSaveAsync = (_, _, _) => Task.FromException(new OperationCanceledException());
+
+        SetupStateUnit_SaveChangesAsync();
+
+        LoggerMock.IsEnabled();
+
+        LoggerMock.LogCanceledDuringAfterSave(CommandName);
+
+        // Act
+        Result result = await Act();
+
+        // Assert
+        AssertCanceled(result);
+    }
+
+    [Test]
+    public async Task WhenExceptionOccursDuringAfterSave_ShouldReturnInternalError()
+    {
+        // Arrange
+        const string testExceptionMessage = "Test Exception Message";
+
+        var exception = new Exception(testExceptionMessage);
+
+        _testAfterSaveAsync = (_, _, _) => Task.FromException(exception);
+
+        SetupStateUnit_SaveChangesAsync();
+
+        LoggerMock.IsEnabled();
+
+        LoggerMock.LogFailedDuringAfterSave(CommandName, exception);
+
+        // Act
+        Result result = await Act();
+
+        // Assert
+        AssertInternalError(result, testExceptionMessage);
+    }
+
+    [Test]
+    public async Task WhenSuccess_ShouldReturnSuccessfulResult()
+    {
+        // Arrange
+        SetupStateUnit_SaveChangesAsync();
+
+        // Act
+        Result result = await Act();
+
+        // Assert
+        AssertSuccess(result);
     }
 }

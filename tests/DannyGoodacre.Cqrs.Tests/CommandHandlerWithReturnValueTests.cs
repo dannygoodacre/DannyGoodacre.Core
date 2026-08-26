@@ -81,9 +81,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
+        LoggerMock.LogFailedValidation(CommandName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         Result<int> result = await Act();
@@ -100,9 +100,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         TestCancellationToken = cancellationTokenSource.Token;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledBeforeExecution();
+        LoggerMock.LogCanceledBeforeExecution(CommandName);
 
         await cancellationTokenSource.CancelAsync();
 
@@ -130,9 +130,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledDuringExecution();
+        LoggerMock.LogCanceledDuringExecution(CommandName);
 
         // Act
         Result<int> result = await Act();
@@ -151,9 +151,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_Failed(exception);
+        LoggerMock.LogFailed(CommandName, exception);
 
         // Act
         Result<int> result = await Act();
