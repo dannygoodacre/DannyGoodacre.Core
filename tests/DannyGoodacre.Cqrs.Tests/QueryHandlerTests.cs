@@ -72,7 +72,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenValidationFails_ShouldReturnInvalid()
+    public async Task WhenValidationFails_ShouldReturnInvalid()
     {
         // Arrange
         const string testProperty = "Test Property";
@@ -81,9 +81,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
+        LoggerMock.LogQueryFailedValidation(QueryName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         Result<int> result = await Act();
@@ -93,16 +93,16 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
+    public async Task WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
         TestCancellationToken = cancellationTokenSource.Token;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledBeforeExecution();
+        LoggerMock.LogQueryCanceledBeforeExecution(QueryName);
 
         await cancellationTokenSource.CancelAsync();
 
@@ -114,7 +114,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
+    public async Task WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
         Result<int> result = await Act();
@@ -124,14 +124,14 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledDuring_ShouldReturnCanceled()
+    public async Task WhenCanceledDuring_ShouldReturnCanceled()
     {
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledDuringExecution();
+        LoggerMock.LogQueryCanceledDuringExecution(QueryName);
 
         // Act
         Result<int> result = await Act();
@@ -141,7 +141,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenExceptionOccurs_ShouldReturnInternalError()
+    public async Task WhenExceptionOccurs_ShouldReturnInternalError()
     {
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
@@ -150,9 +150,9 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_Failed(exception);
+        LoggerMock.LogQueryFailed(QueryName, exception);
 
         // Act
         Result<int> result = await Act();

@@ -72,7 +72,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenValidationFails_ShouldReturnInvalid()
+    public async Task WhenValidationFails_ShouldReturnInvalid()
     {
         // Arrange
         const string testProperty = "Test Property";
@@ -81,9 +81,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_FailedValidation($"{testProperty}:{Environment.NewLine}  - {testError}");
+        LoggerMock.LogCommandFailedValidation(CommandName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
         Result<int> result = await Act();
@@ -93,16 +93,16 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledBefore_ShouldReturnCanceled()
+    public async Task WhenCanceledBefore_ShouldReturnCanceled()
     {
         // Arrange
         var cancellationTokenSource = new CancellationTokenSource();
 
         TestCancellationToken = cancellationTokenSource.Token;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledBeforeExecution();
+        LoggerMock.LogCommandCanceledBeforeExecution(CommandName);
 
         await cancellationTokenSource.CancelAsync();
 
@@ -115,7 +115,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenSuccessful_ShouldReturnSuccess()
+    public async Task WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
         Result<int> result = await Act();
@@ -125,14 +125,14 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenCanceledDuring_ShouldReturnCanceled()
+    public async Task WhenCanceledDuring_ShouldReturnCanceled()
     {
         // Arrange
         _testInternalExecuteAsync = (_, _) => throw new OperationCanceledException();
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_CanceledDuringExecution();
+        LoggerMock.LogCommandCanceledDuringExecution(CommandName);
 
         // Act
         Result<int> result = await Act();
@@ -142,7 +142,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public async Task ExecuteAsync_WhenExceptionOccurs_ShouldReturnInternalError()
+    public async Task WhenExceptionOccurs_ShouldReturnInternalError()
     {
         // Arrange
         const string testExceptionMessage = "Test Exception Message";
@@ -151,9 +151,9 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         _testInternalExecuteAsync = (_, _) => throw exception;
 
-        SetupLogger_IsEnabled();
+        LoggerMock.IsEnabled();
 
-        SetupLogger_Failed(exception);
+        LoggerMock.LogCommandFailed(CommandName, exception);
 
         // Act
         Result<int> result = await Act();

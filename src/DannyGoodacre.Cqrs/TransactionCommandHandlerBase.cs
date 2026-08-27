@@ -3,13 +3,12 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
+public abstract class TransactionCommandHandlerBase<TCommand, TResult>
     : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
 {
-    internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit)
-        : base(logger)
+    internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit) : base(logger)
     {
         TransactionUnit = transactionUnit;
     }
@@ -34,40 +33,67 @@ public abstract partial class TransactionCommandHandlerBase<TCommand, TResult>
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
+    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
     protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
+        TResult result;
+
         try
         {
-            return await TransactionUnit.ExecuteInTransactionAsync(async ct =>
+            result = await TransactionUnit.ExecuteInTransactionAsync(async innerCancellationToken =>
             {
-                TResult result = await base.ExecuteAsync(command, ct);
+                TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
 
-                if (!result.IsSuccess)
+                if (!innerResult.IsSuccess)
                 {
-                    return result;
+                    return innerResult;
                 }
 
-                int actualChanges = await TransactionUnit.SaveChangesAsync(ct);
+                int actualChanges = await TransactionUnit.SaveChangesAsync(innerCancellationToken);
 
                 if (ExpectedChanges == -1 || actualChanges == ExpectedChanges)
                 {
-                    return result;
+                    return innerResult;
                 }
 
-                LogUnexpectedNumberOfChanges(Logger, CommandName, ExpectedChanges, actualChanges);
+                Logger.LogCommandUnexpectedNumberOfChanges(CommandName, ExpectedChanges, actualChanges);
 
-                return MapResult(Result.InternalError("Attempted to persist an unexpected number of changes."));
+                return InternalError("Attempted to persist an unexpected number of changes.");
 
             }, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
+
+            return Canceled();
+        }
         catch (Exception ex)
         {
-            LogFailed(Logger, ex, CommandName);
+            Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
-            return MapResult(Result.InternalError(ex.Message));
+            return InternalError(ex.Message);
         }
-    }
 
-    [LoggerMessage(LogLevel.Error, "Command '{Command}' attempted to persist an unexpected number of changes: Expected '{Expected}', Actual '{Actual}'.")]
-    private static partial void LogUnexpectedNumberOfChanges(ILogger logger, string command, int expected, int actual);
+        try
+        {
+            await AfterSaveAsync(command, result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.LogCommandCanceledDuringAfterSave(CommandName);
+
+            return Canceled();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
+
+            return InternalError(ex.Message);
+        }
+
+        return result;
+    }
 }
