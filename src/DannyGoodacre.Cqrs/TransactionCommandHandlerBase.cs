@@ -8,8 +8,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : Result
 {
-    internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit)
-        : base(logger)
+    internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit) : base(logger)
     {
         TransactionUnit = transactionUnit;
     }
