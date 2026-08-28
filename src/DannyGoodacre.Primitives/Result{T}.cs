@@ -1,18 +1,16 @@
 namespace DannyGoodacre.Primitives;
 
-// 1. Top-Level Success Record (Inherits directly from Result<T>)
 public sealed record Success<T>(T Value) : Result<T>;
 
-// 2. Closed Abstract Result Hierarchy
+public sealed record DomainError<T>(Error Error) : Result<T>;
+
 public abstract record Result<T>
 {
     private protected Result() { }
 
-    // Use full generic type check
     public bool IsSuccess => this is Success<T>;
     public bool IsFailure => !IsSuccess;
 
-    // Failure Variants
     public sealed record Canceled(Primitives.Canceled Result) : Result<T>;
     public sealed record NotFound(Primitives.NotFound Result) : Result<T>;
     public sealed record Conflict(Primitives.Conflict Result) : Result<T>;
@@ -20,10 +18,8 @@ public abstract record Result<T>
     public sealed record InternalError(Primitives.InternalError Result) : Result<T>;
     public sealed record Invalid(Primitives.Invalid Result) : Result<T>;
 
-    // Converts raw values (e.g. return 123;) to Success<T>
     public static implicit operator Result<T>(T value) => new Success<T>(value);
 
-    // Implicit conversions for failure variants
     public static implicit operator Result<T>(Primitives.Canceled result) => new Canceled(result);
     public static implicit operator Result<T>(Primitives.NotFound result) => new NotFound(result);
     public static implicit operator Result<T>(Primitives.Conflict result) => new Conflict(result);
