@@ -17,8 +17,8 @@ public sealed class ServiceCollectionExtensionsTests
     {
         protected override string CommandName => "Test Command";
 
-        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success());
+        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(NUnit.Framework.Result.Success());
     }
 
     private interface ITestCommandWithReturnValue;
@@ -29,7 +29,7 @@ public sealed class ServiceCollectionExtensionsTests
         protected override string CommandName => "Test Command With Return Value";
 
         protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success(123));
+            => Task.FromResult(NUnit.Framework.Result.Success(123));
     }
 
     private sealed class StateUnit : IStateUnit
@@ -46,8 +46,8 @@ public sealed class ServiceCollectionExtensionsTests
 
         protected override string CommandName => "Test State Command";
 
-        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success());
+        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(NUnit.Framework.Result.Success());
     }
 
     private interface IStateCommandWithReturnValue;
@@ -59,7 +59,7 @@ public sealed class ServiceCollectionExtensionsTests
         protected override string CommandName => "Test State Command With Return Value";
 
         protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success(123));
+            => Task.FromResult(NUnit.Framework.Result.Success(123));
     }
 
     private sealed class TestTransactionUnit : ITransactionUnit
@@ -68,7 +68,7 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.FromResult(1);
 
         public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
-            where TResult : Result
+            where TResult : NUnit.Framework.Result
         {
             return await operation(cancellationToken);
         }
@@ -81,8 +81,8 @@ public sealed class ServiceCollectionExtensionsTests
     {
         protected override string CommandName => "Test Transaction Command";
 
-        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success());
+        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(NUnit.Framework.Result.Success());
     }
 
     private interface ITestTransactionCommandWithReturnValue;
@@ -93,7 +93,7 @@ public sealed class ServiceCollectionExtensionsTests
         protected override string CommandName => "Test Transaction Command With Return Value";
 
         protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success(123));
+            => Task.FromResult(NUnit.Framework.Result.Success(123));
     }
 
     private interface ITestQuery;
@@ -103,7 +103,7 @@ public sealed class ServiceCollectionExtensionsTests
         protected override string QueryName => "Test Query";
 
         protected override Task<Result<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(Result.Success(123));
+            => Task.FromResult(NUnit.Framework.Result.Success(123));
     }
 
     [Test]

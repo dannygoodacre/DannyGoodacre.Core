@@ -10,7 +10,7 @@ public abstract class TestBase
     [TearDown]
     public void BaseTearDown() => VerifyAllAndNoOtherCalls();
 
-    protected static void AssertSuccess(Result result)
+    protected static void AssertSuccess(NUnit.Framework.Result result)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -32,7 +32,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertInvalid(Result result)
+    protected static void AssertInvalid(NUnit.Framework.Result result)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -42,7 +42,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertDomainError(Result result, string error)
+    protected static void AssertDomainError(NUnit.Framework.Result result, string error)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -54,7 +54,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertConflict(Result result, string error)
+    protected static void AssertConflict(NUnit.Framework.Result result, string error)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -66,7 +66,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertCanceled(Result result)
+    protected static void AssertCanceled(NUnit.Framework.Result result)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -76,7 +76,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertNotFound(Result result)
+    protected static void AssertNotFound(NUnit.Framework.Result result)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -86,7 +86,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertInternalError(Result result, string error)
+    protected static void AssertInternalError(NUnit.Framework.Result result, string error)
     {
         using (Assert.EnterMultipleScope())
         {
@@ -98,7 +98,7 @@ public abstract class TestBase
         }
     }
 
-    protected static void AssertInternalError(Result result, Exception exception)
+    protected static void AssertInternalError(NUnit.Framework.Result result, Exception exception)
     {
         using (Assert.EnterMultipleScope())
         {

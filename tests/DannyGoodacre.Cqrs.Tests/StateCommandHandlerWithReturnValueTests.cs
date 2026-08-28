@@ -51,7 +51,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
 
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
+        _testInternalExecuteAsync = (_, _) => Task.FromResult(NUnit.Framework.Result.Success(TestResultValue));
 
         _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
 
@@ -67,7 +67,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         _testInternalExecuteAsync =  (_, _) => Task.FromResult(Result<int>.InternalError(testErrorMessage));
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testErrorMessage);
@@ -88,7 +88,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -113,7 +113,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -132,7 +132,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -155,7 +155,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -168,7 +168,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         SetupStateUnit_SaveChangesAsync();
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertSuccess(result);

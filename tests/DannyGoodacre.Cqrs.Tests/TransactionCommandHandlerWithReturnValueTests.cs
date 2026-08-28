@@ -38,7 +38,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
     private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
 
-    private static Func<TestCommand, Result, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, NUnit.Framework.Result, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     private readonly TestCommand _testCommand = new();
 
@@ -53,7 +53,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
     {
         _testExpectedChanges = -1;
 
-        _internalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
+        _internalExecuteAsync = (_, _) => Task.FromResult(NUnit.Framework.Result.Success(TestResultValue));
 
         _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
 
@@ -71,7 +71,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         SetupTransactionUnit_ExecuteInTransactionAsync();
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testError);
@@ -94,7 +94,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandUnexpectedNumberOfChanges(CommandName, _testExpectedChanges, _testActualChanges);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, "Attempted to persist an unexpected number of changes.");
@@ -113,7 +113,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -128,7 +128,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -150,7 +150,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -178,7 +178,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -199,7 +199,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -224,7 +224,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
-        Result result = await Act();
+        NUnit.Framework.Result result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);

@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace DannyGoodacre.Cqrs.Testing;
 
 public abstract class CommandHandlerTestBase<TCommandHandler>
-    : CommandHandlerTestCore<TCommandHandler, Result>
+    : CommandHandlerTestCore<TCommandHandler, NUnit.Framework.Result>
     where TCommandHandler : class;
 
 public abstract class CommandHandlerTestBase<TCommandHandler, TResultType>
@@ -17,7 +17,7 @@ public abstract class CommandHandlerTestBase<TCommandHandler, TResultType>
 public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
     : TestBase
     where TCommandHandler : class
-    where TResult : Result
+    where TResult : NUnit.Framework.Result
 {
     internal CommandHandlerTestCore() { }
 

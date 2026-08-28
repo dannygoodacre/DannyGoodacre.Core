@@ -78,7 +78,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
         _expectedEntities.Add(testEntity1);
         _expectedEntities.Add(testEntity2);
 
-        Result result;
+        NUnit.Framework.Result result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
@@ -94,7 +94,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.Success();
+                return NUnit.Framework.Result.Success();
             });
 
             await transaction.CommitAsync();
@@ -127,7 +127,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
         const string testErrorMessage = "Test Domain Error";
 
-        Result result;
+        NUnit.Framework.Result result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
@@ -141,7 +141,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.DomainError(testErrorMessage);
+                return NUnit.Framework.Result.DomainError(testErrorMessage);
             });
         }
 
@@ -188,7 +188,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.Success(testResponse);
+                return NUnit.Framework.Result.Success(testResponse);
             });
         }
 
@@ -219,7 +219,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
         const string testExceptionMessage = "Test Exception Message";
 
-        Result? result = null;
+        NUnit.Framework.Result? result = null;
 
         // Act
         Exception exception = Assert.ThrowsAsync<Exception>(async () =>
@@ -228,7 +228,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
             var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
 
-            result = await transactionUnit.ExecuteInTransactionAsync<Result>(async cancellationToken =>
+            result = await transactionUnit.ExecuteInTransactionAsync<NUnit.Framework.Result>(async cancellationToken =>
             {
                 testContext.TestEntities.Add(testEntity1);
                 testContext.TestEntities.Add(testEntity2);

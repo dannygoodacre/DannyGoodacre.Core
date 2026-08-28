@@ -10,7 +10,7 @@ public sealed class ResultTests : TestBase
     public void IsSuccess_WhenSuccessful_ShouldReturnTrue()
     {
         // Arrange
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act
         bool isSuccess = result.IsSuccess;
@@ -23,7 +23,7 @@ public sealed class ResultTests : TestBase
     public void IsSuccess_WhenUnsuccessful_ShouldReturnFalse()
     {
         // Act
-        Result result = Result.InternalError("Test Error Message");
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError("Test Error Message");
 
         // Act
         bool isSuccess = result.IsSuccess;
@@ -36,7 +36,7 @@ public sealed class ResultTests : TestBase
     public void Success()
     {
         // Act
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -67,7 +67,7 @@ public sealed class ResultTests : TestBase
         validationState.AddError(property2, error2);
 
         // Act
-        Result result = Result.Invalid(validationState);
+        NUnit.Framework.Result result = NUnit.Framework.Result.Invalid(validationState);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -89,7 +89,7 @@ public sealed class ResultTests : TestBase
         const string message = "Test Error Message";
 
         // Act
-        Result result = Result.DomainError(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.DomainError(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -111,7 +111,7 @@ public sealed class ResultTests : TestBase
         const string message = "Test Conflict Message";
 
         // Act
-        Result result = Result.Conflict(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.Conflict(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -130,7 +130,7 @@ public sealed class ResultTests : TestBase
     public void Canceled()
     {
         // Act
-        Result result = Result.Canceled();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Canceled();
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -149,7 +149,7 @@ public sealed class ResultTests : TestBase
     public void NotFound()
     {
         // Act
-        Result result = Result.NotFound();
+        NUnit.Framework.Result result = NUnit.Framework.Result.NotFound();
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -170,7 +170,7 @@ public sealed class ResultTests : TestBase
         // Act
         const string message = "Test Error Message";
 
-        Result result = Result.InternalError(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(message);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -192,7 +192,7 @@ public sealed class ResultTests : TestBase
         Exception exception = new Exception("Test Exception");
 
         // Act
-        Result result = Result.InternalError(exception);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(exception);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -214,7 +214,7 @@ public sealed class ResultTests : TestBase
         const int value = 123;
 
         // Act
-        Result<int> result = Result.Success(value);
+        Result<int> result = NUnit.Framework.Result.Success(value);
 
         // Assert
         using (Assert.EnterMultipleScope())
@@ -235,7 +235,7 @@ public sealed class ResultTests : TestBase
     public void MapFailure_WhenSuccess_ShouldThrowException()
     {
         // Arrange
-        Result testResult = Result.Success();
+        NUnit.Framework.Result testResult = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<int>());
@@ -259,7 +259,7 @@ public sealed class ResultTests : TestBase
         // Arrange
         const string testErrorMessage = "Test Error Message";
 
-        Result testResult = Result.InternalError(testErrorMessage);
+        NUnit.Framework.Result testResult = NUnit.Framework.Result.InternalError(testErrorMessage);
 
         // Act
         Result<int> result = testResult.MapFailure<int>();

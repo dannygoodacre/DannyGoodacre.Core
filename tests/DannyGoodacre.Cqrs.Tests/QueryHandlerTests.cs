@@ -23,25 +23,25 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         public Task<Result<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => ExecuteAsync(query, cancellationToken);
 
-        public Result TestInvalid(ValidationState validationState)
+        public NUnit.Framework.Result TestInvalid(ValidationState validationState)
             => Invalid(validationState);
 
-        public Result TestDomainError(string error)
+        public NUnit.Framework.Result TestDomainError(string error)
             => DomainError(error);
 
-        public Result TestConflict(string error)
+        public NUnit.Framework.Result TestConflict(string error)
             => Conflict(error);
 
-        public Result TestCanceled()
+        public NUnit.Framework.Result TestCanceled()
             => Canceled();
 
-        public Result TestNotFound()
+        public NUnit.Framework.Result TestNotFound()
             => NotFound();
 
-        public Result TestInternalError(string error)
+        public NUnit.Framework.Result TestInternalError(string error)
             => InternalError(error);
 
-        public Result TestInternalError(Exception exception)
+        public NUnit.Framework.Result TestInternalError(Exception exception)
             => InternalError(exception);
     }
 
@@ -168,7 +168,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         ValidationState testValidationState = new();
 
         // Act
-        Result result = QueryHandler.TestInvalid(testValidationState);
+        NUnit.Framework.Result result = QueryHandler.TestInvalid(testValidationState);
 
         // Assert
         AssertInvalid(result);
@@ -181,7 +181,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        Result result = QueryHandler.TestDomainError(testErrorMessage);
+        NUnit.Framework.Result result = QueryHandler.TestDomainError(testErrorMessage);
 
         // Assert
         AssertDomainError(result, testErrorMessage);
@@ -194,7 +194,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        Result result = QueryHandler.TestConflict(testErrorMessage);
+        NUnit.Framework.Result result = QueryHandler.TestConflict(testErrorMessage);
 
         // Assert
         AssertConflict(result, testErrorMessage);
@@ -204,7 +204,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public void Canceled()
     {
         // Act
-        Result result = QueryHandler.TestCanceled();
+        NUnit.Framework.Result result = QueryHandler.TestCanceled();
 
         // Assert
         AssertCanceled(result);
@@ -214,7 +214,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public void NotFound()
     {
         // Act
-        Result result = QueryHandler.TestNotFound();
+        NUnit.Framework.Result result = QueryHandler.TestNotFound();
 
         // Assert
         AssertNotFound(result);
@@ -227,7 +227,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        Result result = QueryHandler.TestInternalError(testErrorMessage);
+        NUnit.Framework.Result result = QueryHandler.TestInternalError(testErrorMessage);
 
         // Assert
         AssertInternalError(result, testErrorMessage);
@@ -240,7 +240,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         var testException = new Exception("Test Exception Message");
 
         // Act
-        Result result = QueryHandler.TestInternalError(testException);
+        NUnit.Framework.Result result = QueryHandler.TestInternalError(testException);
 
         // Assert
         AssertInternalError(result, testException);

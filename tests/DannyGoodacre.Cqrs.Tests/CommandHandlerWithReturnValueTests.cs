@@ -66,7 +66,7 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success(TestResultValue));
+        _testInternalExecuteAsync = (_, _) => Task.FromResult(NUnit.Framework.Result.Success(TestResultValue));
 
         CommandHandler = new TestCommandHandler(LoggerMock.Object);
     }

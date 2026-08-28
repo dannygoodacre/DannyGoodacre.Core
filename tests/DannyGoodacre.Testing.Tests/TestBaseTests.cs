@@ -10,30 +10,30 @@ public sealed class TestBaseTests
 
     private sealed class TestBase : Testing.TestBase
     {
-        public static void TestAssertSuccess(Result result) => AssertSuccess(result);
+        public static void TestAssertSuccess(NUnit.Framework.Result result) => AssertSuccess(result);
 
         public static void TestAssertSuccess<T>(Result<T> result, T expectedValue) => AssertSuccess(result, expectedValue);
 
-        public static void TestAssertInvalid(Result result) => AssertInvalid(result);
+        public static void TestAssertInvalid(NUnit.Framework.Result result) => AssertInvalid(result);
 
-        public static void TestAssertDomainError(Result result, string error) => AssertDomainError(result, error);
+        public static void TestAssertDomainError(NUnit.Framework.Result result, string error) => AssertDomainError(result, error);
 
-        public static void TestAssertConflict(Result result, string error) => AssertConflict(result, error);
+        public static void TestAssertConflict(NUnit.Framework.Result result, string error) => AssertConflict(result, error);
 
-        public static void TestAssertCanceled(Result result) => AssertCanceled(result);
+        public static void TestAssertCanceled(NUnit.Framework.Result result) => AssertCanceled(result);
 
-        public static void TestAssertNotFound(Result result) => AssertNotFound(result);
+        public static void TestAssertNotFound(NUnit.Framework.Result result) => AssertNotFound(result);
 
-        public static void TestAssertInternalError(Result result, string error) => AssertInternalError(result, error);
+        public static void TestAssertInternalError(NUnit.Framework.Result result, string error) => AssertInternalError(result, error);
 
-        public static void TestAssertInternalError(Result result, Exception exception) => AssertInternalError(result, exception);
+        public static void TestAssertInternalError(NUnit.Framework.Result result, Exception exception) => AssertInternalError(result, exception);
     }
 
     [Test]
     public void AssertSuccess_WhenSuccess_DoesNotThrow()
     {
         // Arrange
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertSuccess(result));
@@ -43,7 +43,7 @@ public sealed class TestBaseTests
     public void AssertSuccess_WhenNotSuccess_DoesThrow()
     {
         // Arrange
-        Result result = Result.InternalError("Test Error Message");
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError("Test Error Message");
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertSuccess(result));
@@ -131,7 +131,7 @@ public sealed class TestBaseTests
 
         state.AddError("Test Property", "Test Error");
 
-        Result result = Result.Invalid(state);
+        NUnit.Framework.Result result = NUnit.Framework.Result.Invalid(state);
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertInvalid(result));
@@ -145,7 +145,7 @@ public sealed class TestBaseTests
 
         state.AddError("Test Property", "Test Error");
 
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInvalid(result));
@@ -157,7 +157,7 @@ public sealed class TestBaseTests
         // Arrange
         const string message = "Test Error Message";
 
-        Result result = Result.DomainError(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.DomainError(message);
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertDomainError(result, message));
@@ -171,7 +171,7 @@ public sealed class TestBaseTests
 
         const string actualMessage = "Test Actual Message";
 
-        Result result = Result.DomainError(actualMessage);
+        NUnit.Framework.Result result = NUnit.Framework.Result.DomainError(actualMessage);
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertDomainError(result, expectedMessage));
@@ -183,7 +183,7 @@ public sealed class TestBaseTests
         // Arrange
         const string message = "Test Error Message";
 
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertDomainError(result, message));
@@ -195,7 +195,7 @@ public sealed class TestBaseTests
         // Arrange
         const string message = "Test Conflict Message";
 
-        Result result = Result.Conflict(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.Conflict(message);
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertConflict(result, message));
@@ -209,7 +209,7 @@ public sealed class TestBaseTests
 
         const string actualMessage = "Test Actual Message";
 
-        Result result = Result.Conflict(actualMessage);
+        NUnit.Framework.Result result = NUnit.Framework.Result.Conflict(actualMessage);
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertConflict(result, expectedMessage));
@@ -219,7 +219,7 @@ public sealed class TestBaseTests
     public void AssertCanceled_WhenCanceled_DoesNotThrow()
     {
         // Arrange
-        Result result = Result.Canceled();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Canceled();
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertCanceled(result));
@@ -229,7 +229,7 @@ public sealed class TestBaseTests
     public void AssertCanceled_WhenNotCanceled_DoesThrow()
     {
         // Arrange
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertCanceled(result));
@@ -239,7 +239,7 @@ public sealed class TestBaseTests
     public void AssertNotFound_WhenNotFound_DoesNotThrow()
     {
         // Arrange
-        Result result = Result.NotFound();
+        NUnit.Framework.Result result = NUnit.Framework.Result.NotFound();
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertNotFound(result));
@@ -249,7 +249,7 @@ public sealed class TestBaseTests
     public void AssertNotFound_WhenNotNotFound_DoesNotThrow()
     {
         // Arrange
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertNotFound(result));
@@ -261,7 +261,7 @@ public sealed class TestBaseTests
         // Arrange
         const string message = "Test Error Message";
 
-        Result result = Result.InternalError(message);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(message);
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertInternalError(result, message));
@@ -275,7 +275,7 @@ public sealed class TestBaseTests
 
         const string actualMessage = "Test Actual Message";
 
-        Result result = Result.InternalError(actualMessage);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(actualMessage);
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, expectedMessage));
@@ -287,7 +287,7 @@ public sealed class TestBaseTests
         // Arrange
         const string message = "Test Error Message";
 
-        Result result = Result.Success();
+        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, message));
@@ -299,7 +299,7 @@ public sealed class TestBaseTests
         // Arrange
         Exception exception = new("Test Exception");
 
-        Result result = Result.InternalError(exception);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(exception);
 
         // Act & Assert
         Assert.DoesNotThrow(() => TestBase.TestAssertInternalError(result, exception));
@@ -313,7 +313,7 @@ public sealed class TestBaseTests
 
         Exception actualException = new("Test Actual Exception");
 
-        Result result = Result.InternalError(actualException);
+        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError(actualException);
 
         // Act & Assert
         Assert.Throws<MultipleAssertException>(() => TestBase.TestAssertInternalError(result, expectedException));

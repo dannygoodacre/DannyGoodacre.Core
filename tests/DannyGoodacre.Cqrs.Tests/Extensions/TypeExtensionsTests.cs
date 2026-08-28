@@ -11,8 +11,8 @@ public sealed class TypeExtensionsTests
     {
         protected override string CommandName => "Simple Command";
 
-        protected override Task<Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result.Success());
+        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult(NUnit.Framework.Result.Success());
     }
 
     private sealed class CommandWithValueHandler(ILogger logger) : CommandHandler<ICommand, int>(logger)
