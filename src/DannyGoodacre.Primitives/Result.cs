@@ -1,50 +1,49 @@
 namespace DannyGoodacre.Primitives;
 
-public record Success;
+public interface IResult;
+public interface IResult<T> : IResult;
 
-public record Canceled;
+public record Success : IResult;
+public record Success<T>(T Value) : Success, IResult<T>;
 
-public record NotFound;
+public record Canceled : IResult;
+public record Canceled<T> : Canceled, IResult<T>;
 
-public record Conflict(Error Error);
+public record Conflict(Error Error) : IResult;
+public record Conflict<T>(Error Error) : Conflict(Error), IResult<T>;
 
-public record DomainError(Error Error);
+public record DomainError(Error Error) : IResult;
+public record DomainError<T>(Error Error) : DomainError(Error), IResult<T>;
 
-public record InternalError(Error Error);
+public record NotFound : IResult;
+public record NotFound<T> : NotFound, IResult<T>;
 
-public record Invalid(ValidationState ValidationState);
+public record InternalError(Error Error) : IResult;
+public record InternalError<T>(Error Error) : InternalError(Error), IResult<T>;
 
-public abstract record Result
+public record Invalid(ValidationState ValidationState) : IResult;
+public record Invalid<T>(ValidationState ValidationState) : Invalid(ValidationState), IResult<T>;
+
+public static class Result
 {
-    protected private Result() { }
+    public static Success Success() => new();
+    public static Success<T> Success<T>(T value) => new(value);
 
-    public bool IsSuccess => this is Success;
+    public static Canceled Canceled() => new();
+    public static Canceled<T> Canceled<T>() => new();
 
-    public bool IsFailure => !IsSuccess;
+    public static Conflict Conflict(Error error) => new(error);
+    public static Conflict<T> Conflict<T>(Error error) => new(error);
 
-    public sealed record Success : Result;
+    public static DomainError DomainError(Error error) => new(error);
+    public static DomainError<T> DomainError<T>(Error error) => new(error);
 
-    public sealed record Canceled(Primitives.Canceled Result) : Result;
+    public static NotFound NotFound() => new();
+    public static NotFound<T> NotFound<T>() => new();
 
-    public sealed record NotFound(Primitives.NotFound Result) : Result;
+    public static InternalError InternalError(Error error) => new(error);
+    public static InternalError<T> InternalError<T>(Error error) => new(error);
 
-    public sealed record Conflict(Primitives.Conflict Result) : Result;
-
-    public sealed record DomainError(Primitives.DomainError Result) : Result;
-
-    public sealed record InternalError(Primitives.InternalError Result) : Result;
-
-    public sealed record Invalid(Primitives.Invalid Result) : Result;
-
-    public static implicit operator Result(Primitives.Canceled result) => new Canceled(result);
-
-    public static implicit operator Result(Primitives.NotFound result) => new NotFound(result);
-
-    public static implicit operator Result(Primitives.Conflict result) => new Conflict(result);
-
-    public static implicit operator Result(Primitives.DomainError result) => new DomainError(result);
-
-    public static implicit operator Result(Primitives.InternalError result) => new InternalError(result);
-
-    public static implicit operator Result(Primitives.Invalid result) => new Invalid(result);
+    public static Invalid Invalid(ValidationState state) => new(state);
+    public static Invalid Invalid<T>(ValidationState state) => new(state);
 }
