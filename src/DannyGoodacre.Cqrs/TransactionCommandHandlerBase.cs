@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class TransactionCommandHandlerBase<TCommand, TResult>
-    : CommandHandlerBase<TCommand, TResult>
+public abstract class TransactionCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand>
     where TCommand : ICommand
-    where TResult : Result
+    where TResult : IResult
 {
     internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit) : base(logger)
     {
@@ -36,7 +35,12 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected async Task<IResult> BaseExecuteAsync(TCommand command,
+                                                   Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
+                                                   Func<ValidationState, TResult> onInvalid,
+                                                   Func<TResult> onCanceled,
+                                                   Func<Error, TResult> onInternalError,
+                                                   CancellationToken cancellationToken = default)
     {
         TResult result;
 
@@ -44,9 +48,14 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult>
         {
             result = await TransactionUnit.ExecuteInTransactionAsync(async innerCancellationToken =>
             {
-                TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
+                TResult innerResult = await base.BaseExecuteAsync(command,
+                                                                  internalExecuteAsync,
+                                                                  onInvalid,
+                                                                  onCanceled,
+                                                                  onInternalError,
+                                                                  innerCancellationToken);
 
-                if (!innerResult.IsSuccess)
+                if (innerResult is not Success)
                 {
                     return innerResult;
                 }

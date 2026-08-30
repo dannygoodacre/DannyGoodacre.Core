@@ -17,7 +17,7 @@ public abstract class CommandHandlerTestBase<TCommandHandler, TResultType>
 public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
     : TestBase
     where TCommandHandler : class
-    where TResult : NUnit.Framework.Result
+    where TResult : Result
 {
     internal CommandHandlerTestCore() { }
 

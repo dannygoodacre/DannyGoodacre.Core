@@ -4,6 +4,7 @@
         <Project Path="./src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj" />
         <Project Path="./src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj" />
         <Project Path="./src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
+        <Project Path="src/Cqrs.Test/Cqrs.Test.csproj" />
         <Project Path="src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj" />
         <Project Path="src/DannyGoodacre.Functional.Test/DannyGoodacre.Functional.Test.csproj" />
     </Folder>

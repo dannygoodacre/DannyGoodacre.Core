@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class StateCommandHandlerBase<TCommand, TResult>
-    : CommandHandlerBase<TCommand, TResult>
+public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand>
     where TCommand : ICommand
-    where TResult : Result
+    where TResult : IResult
 {
     internal StateCommandHandlerBase(ILogger logger, IStateUnit stateUnit) : base(logger)
     {
@@ -18,11 +17,21 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected private async Task<TResult> BaseExecuteAsync(TCommand command,
+                                                           Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
+                                                           Func<ValidationState, TResult> onInvalid,
+                                                           Func<TResult> onCanceled,
+                                                           Func<Error, TResult> onInternalError,
+                                                           CancellationToken cancellationToken = default)
     {
-        TResult result = await base.ExecuteAsync(command, cancellationToken);
+        TResult result = await base.BaseExecuteAsync(command,
+                                                     internalExecuteAsync,
+                                                     onInvalid,
+                                                     onCanceled,
+                                                     onInternalError,
+                                                     cancellationToken);
 
-        if (!result.IsSuccess)
+        if (result is not Success)
         {
             return result;
         }
@@ -35,13 +44,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
         {
             Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
-            return Canceled();
+            return onCanceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
-            return InternalError(ex.Message);
+            return onInternalError(ex.Message);
         }
 
         try
@@ -52,13 +61,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
         {
             Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
-            return Canceled();
+            return onCanceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
-            return InternalError(ex.Message);
+            return onInternalError(ex.Message);
         }
 
         return result;
