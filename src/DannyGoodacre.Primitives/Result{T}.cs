@@ -6,9 +6,9 @@ public record Success<T>(T Value) : Success, IResult<T>;
 
 public record Canceled<T> : Canceled, IResult<T>;
 
-public record Conflict<T>(string Error) : Conflict(Error), IResult<T>;
+public record Conflict<T>(string Message) : Conflict(Message), IResult<T>;
 
-public record DomainError<T>(string Error) : DomainError(Error), IResult<T>;
+public record DomainError<T>(string Message) : DomainError(Message), IResult<T>;
 
 public record NotFound<T> : NotFound, IResult<T>;
 
@@ -22,9 +22,9 @@ public static class Result<T>
 
     public static Canceled<T> Canceled() => new();
 
-    public static Conflict<T> Conflict(string error) => new(error);
+    public static Conflict<T> Conflict(string message) => new(message);
 
-    public static DomainError<T> DomainError(string error) => new(error);
+    public static DomainError<T> DomainError(string messaeg) => new(messaeg);
 
     public static NotFound<T> NotFound() => new();
 

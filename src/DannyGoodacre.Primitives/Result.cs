@@ -7,9 +7,9 @@ public interface IResult
         {
             Canceled => new Canceled<TOut>(),
 
-            Conflict conflict => new Conflict<TOut>(conflict.Error),
+            Conflict conflict => new Conflict<TOut>(conflict.Message),
 
-            DomainError domainError => new DomainError<TOut>(domainError.Error),
+            DomainError domainError => new DomainError<TOut>(domainError.Message),
 
             InternalError internalError => new InternalError<TOut>(internalError.Error),
 
@@ -27,9 +27,9 @@ public record Success : IResult;
 
 public record Canceled : IResult;
 
-public record Conflict(string Error) : IResult;
+public record Conflict(string Message) : IResult;
 
-public record DomainError(string Error) : IResult;
+public record DomainError(string Message) : IResult;
 
 public record InternalError(Error Error) : IResult;
 

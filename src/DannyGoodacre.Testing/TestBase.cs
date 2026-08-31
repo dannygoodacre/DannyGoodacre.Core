@@ -27,28 +27,28 @@ public abstract class TestBase
     {
         Assert.That(result, Is.InstanceOf<Conflict>());
 
-        Assert.That(((Conflict)result).Error, Is.EqualTo(error));
+        Assert.That(((Conflict)result).Message, Is.EqualTo(error));
     }
 
     protected static void AssertConflict<T>(IResult<T> result, string error)
     {
         Assert.That(result, Is.InstanceOf<Conflict<T>>());
 
-        Assert.That(((Conflict<T>)result).Error, Is.EqualTo(error));
+        Assert.That(((Conflict<T>)result).Message, Is.EqualTo(error));
     }
 
     protected static void AssertDomainError(IResult result, string error)
     {
         Assert.That(result, Is.InstanceOf<DomainError>());
 
-        Assert.That(((DomainError)result).Error, Is.EqualTo(error));
+        Assert.That(((DomainError)result).Message, Is.EqualTo(error));
     }
 
     protected static void AssertDomainError<T>(IResult<T> result, string error)
     {
         Assert.That(result, Is.InstanceOf<DomainError<T>>());
 
-        Assert.That(((DomainError<T>)result).Error, Is.EqualTo(error));
+        Assert.That(((DomainError<T>)result).Message, Is.EqualTo(error));
     }
 
     protected static void AssertInternalError(IResult result, Error error)
