@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Primitives;
 
-public static class ResultFunctionalExtensions
+public static class ResultExtensions
 {
     extension(Result)
     {

@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Primitives;
 
-public static class TypedResultFunctionalExtensions
+public static class ResultTExtensions
 {
     extension<T>(IResult<T> result)
     {
