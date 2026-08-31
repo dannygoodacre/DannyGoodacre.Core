@@ -35,7 +35,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected async Task<IResult> BaseExecuteAsync(TCommand command,
+    protected async Task<TResult> BaseExecuteAsync(TCommand command,
                                                    Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
                                                    Func<ValidationState, TResult> onInvalid,
                                                    Func<TResult> onCanceled,
@@ -69,7 +69,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
 
                 Logger.LogCommandUnexpectedNumberOfChanges(CommandName, ExpectedChanges, actualChanges);
 
-                return InternalError("Attempted to persist an unexpected number of changes.");
+                return onInternalError("Attempted to persist an unexpected number of changes.");
 
             }, cancellationToken);
         }
@@ -77,13 +77,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
         {
             Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
-            return Canceled();
+            return onCanceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
-            return InternalError(ex.Message);
+            return onInternalError(ex.Message);
         }
 
         try
@@ -94,13 +94,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
         {
             Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
-            return Canceled();
+            return onCanceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
-            return InternalError(ex.Message);
+            return onInternalError(ex.Message);
         }
 
         return result;
