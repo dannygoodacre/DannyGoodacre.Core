@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand>
+public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : IResult
 {
@@ -17,19 +17,15 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected private async Task<TResult> BaseExecuteAsync(TCommand command,
-                                                           Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
-                                                           Func<ValidationState, TResult> onInvalid,
-                                                           Func<TResult> onCanceled,
-                                                           Func<Error, TResult> onInternalError,
-                                                           CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Execute the command by validating it first and, if valid, execute the internal logic.
+    /// </summary>
+    /// <param name="command">The command to validate and process.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
+    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        TResult result = await base.BaseExecuteAsync(command,
-                                                     internalExecuteAsync,
-                                                     onInvalid,
-                                                     onCanceled,
-                                                     onInternalError,
-                                                     cancellationToken);
+        TResult result = await base.ExecuteAsync(command, cancellationToken);
 
         if (result is not Success)
         {
@@ -44,13 +40,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
         {
             Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
-            return onCanceled();
+            return Canceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
-            return onInternalError(ex.Message);
+            return InternalError(ex.Message);
         }
 
         try
@@ -61,13 +57,13 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
         {
             Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
-            return onCanceled();
+            return Canceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
-            return onInternalError(ex.Message);
+            return InternalError(ex.Message);
         }
 
         return result;

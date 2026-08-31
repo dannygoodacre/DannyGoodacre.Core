@@ -14,27 +14,17 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
     : StateCommandHandlerBase<TCommand, IResult>(logger, stateUnit)
     where TCommand : ICommand
 {
-    /// <summary>
-    /// The internal command logic.
-    /// </summary>
-    /// <param name="command">The valid command to process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<IResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
+    protected override IResult Canceled() => new Canceled();
 
-    /// <summary>
-    /// Execute the command by validating it first and, if valid, execute the internal logic.
-    /// </summary>
-    /// <param name="command">The command to validate and process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
-    protected Task<IResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
-        => BaseExecuteAsync(command,
-                            InternalExecuteAsync,
-                            VoidResultFactories.OnInvalid,
-                            VoidResultFactories.OnCanceled,
-                            VoidResultFactories.OnInternalError,
-                            cancellationToken);
+    protected override IResult Conflict(string error) => new Conflict(error);
+
+    protected override IResult DomainError(string error) => new DomainError(error);
+
+    protected override IResult InternalError(Error error) => new InternalError(error);
+
+    protected override IResult Invalid(ValidationState validationState) => new Invalid(validationState);
+
+    protected override IResult NotFound() => new NotFound();
 
     protected IResult Success() => new Success();
 }
@@ -51,33 +41,17 @@ public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, ISt
     : StateCommandHandlerBase<TCommand, IResult<TResult>>(logger, stateUnit)
     where TCommand : ICommand
 {
-    /// <summary>
-    /// The internal command logic.
-    /// </summary>
-    /// <param name="command">The valid command to process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<IResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
+    protected override IResult<TResult> Canceled() => new Canceled<TResult>();
 
-    /// <summary>
-    /// Execute the command by validating it first and, if valid, execute the internal logic.
-    /// </summary>
-    /// <param name="command">The command to validate and process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
-    protected Task<IResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
-        => BaseExecuteAsync(command,
-                            InternalExecuteAsync,
-                            _onInvalid,
-                            _onCanceled,
-                            _onInternalError,
-                            cancellationToken);
+    protected override IResult<TResult> Conflict(string error) => new Conflict<TResult>(error);
+
+    protected override IResult<TResult> DomainError(string error) => new DomainError<TResult>(error);
+
+    protected override IResult<TResult> InternalError(Error error) => new InternalError<TResult>(error);
+
+    protected override IResult<TResult> Invalid(ValidationState validationState) => new Invalid<TResult>(validationState);
+
+    protected override IResult<TResult> NotFound() => new NotFound<TResult>();
 
     protected IResult<TResult> Success(TResult result) => new Success<TResult>(result);
-
-    private readonly static Func<ValidationState, Invalid<TResult>> _onInvalid = validationState => new Invalid<TResult>(validationState);
-
-    private readonly static Func<Canceled<TResult>> _onCanceled = () => new Canceled<TResult>();
-
-    private readonly static Func<Error, InternalError<TResult>> _onInternalError = error => new InternalError<TResult>(error);
 }

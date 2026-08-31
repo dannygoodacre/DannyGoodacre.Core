@@ -3,8 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class CommandHandlerBase<TCommand>
+public abstract class CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
+    where TResult : IResult
 {
     internal CommandHandlerBase(ILogger logger)
     {
@@ -28,13 +29,14 @@ public abstract class CommandHandlerBase<TCommand>
     /// <param name="command">The command to validate.</param>
     protected virtual void Validate(ValidationState validationState, TCommand command) { }
 
-    protected private async Task<TResult> BaseExecuteAsync<TResult>(
-        TCommand command,
-        Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
-        Func<ValidationState, TResult> onInvalid,
-        Func<TResult> onCanceled,
-        Func<Error, TResult> onInternalError,
-        CancellationToken cancellationToken = default)
+    protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Execute the command by validating it first and, if valid, execute the internal logic.
+    /// </summary>
+    /// <param name="command">The command to validate and process.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    protected async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -46,44 +48,42 @@ public abstract class CommandHandlerBase<TCommand>
             {
                 Logger.LogCommandFailedValidation(CommandName, validationState);
 
-                return onInvalid(validationState);
+                return Invalid(validationState);
             }
 
             if (!cancellationToken.IsCancellationRequested)
             {
-                return await internalExecuteAsync(command, cancellationToken);
+                return await InternalExecuteAsync(command, cancellationToken);
             }
 
             Logger.LogCommandCanceledBeforeExecution(CommandName);
 
-            return onCanceled();
+            return Canceled();
 
         }
         catch (OperationCanceledException)
         {
             Logger.LogCommandCanceledDuringExecution(CommandName);
 
-            return onCanceled();
+            return Canceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailed(CommandName, ex);
 
-            return onInternalError(ex.Message);
+            return InternalError(ex.Message);
         }
     }
 
-    protected IResult Invalid(ValidationState validationState) => Result.Invalid(validationState);
+    protected abstract TResult Canceled();
 
-    protected IResult DomainError(string error) => Result.DomainError(error);
+    protected abstract TResult Conflict(string error);
 
-    protected IResult Conflict(string error) => Result.Conflict(error);
+    protected abstract TResult DomainError(string error);
 
-    protected IResult Canceled() => Result.Canceled();
+    protected abstract TResult InternalError(Error error);
 
-    protected IResult NotFound() => Result.NotFound();
+    protected abstract TResult Invalid(ValidationState validationState);
 
-    protected IResult InternalError(string error) => Result.InternalError(error);
-
-    protected IResult InternalError(Exception exception) => Result.InternalError(exception);
+    protected abstract TResult NotFound();
 }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class TransactionCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand>
+public abstract class TransactionCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
     where TResult : IResult
 {
@@ -18,7 +18,6 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     /// <remarks>
     /// This is used in derived classes to perform additional data persistence and transaction control.
     /// </remarks>
-    // ReSharper disable once MemberCanBePrivate.Global
     protected ITransactionUnit TransactionUnit { get; }
 
     /// <summary>
@@ -35,12 +34,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected async Task<TResult> BaseExecuteAsync(TCommand command,
-                                                   Func<TCommand, CancellationToken, Task<TResult>> internalExecuteAsync,
-                                                   Func<ValidationState, TResult> onInvalid,
-                                                   Func<TResult> onCanceled,
-                                                   Func<Error, TResult> onInternalError,
-                                                   CancellationToken cancellationToken = default)
+    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         TResult result;
 
@@ -48,12 +42,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
         {
             result = await TransactionUnit.ExecuteInTransactionAsync(async innerCancellationToken =>
             {
-                TResult innerResult = await base.BaseExecuteAsync(command,
-                                                                  internalExecuteAsync,
-                                                                  onInvalid,
-                                                                  onCanceled,
-                                                                  onInternalError,
-                                                                  innerCancellationToken);
+                TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
 
                 if (innerResult is not Success)
                 {
@@ -69,7 +58,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
 
                 Logger.LogCommandUnexpectedNumberOfChanges(CommandName, ExpectedChanges, actualChanges);
 
-                return onInternalError("Attempted to persist an unexpected number of changes.");
+                return InternalError("Attempted to persist an unexpected number of changes.");
 
             }, cancellationToken);
         }
@@ -77,13 +66,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
         {
             Logger.LogCommandCanceledWhilePersistingChanges(CommandName);
 
-            return onCanceled();
+            return Canceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedWhilePersistingChanges(CommandName, ex);
 
-            return onInternalError(ex.Message);
+            return InternalError(ex.Message);
         }
 
         try
@@ -94,13 +83,13 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
         {
             Logger.LogCommandCanceledDuringAfterSave(CommandName);
 
-            return onCanceled();
+            return Canceled();
         }
         catch (Exception ex)
         {
             Logger.LogCommandFailedDuringAfterSave(CommandName, ex);
 
-            return onInternalError(ex.Message);
+            return InternalError(ex.Message);
         }
 
         return result;
