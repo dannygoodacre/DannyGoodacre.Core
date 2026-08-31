@@ -7,17 +7,17 @@ using NUnit.Framework;
 namespace DannyGoodacre.Cqrs.Testing;
 
 public abstract class TransactionCommandHandlerTestBase<TCommandHandler>
-    : TransactionCommandHandlerTestCore<TCommandHandler, NUnit.Framework.Result>
+    : TransactionCommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
 public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResultType>
-    : TransactionCommandHandlerTestCore<TCommandHandler, Result<TResultType>>
+    : TransactionCommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
     where TCommandHandler : class;
 
 public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult>
-    : CommandHandlerTestCore<TCommandHandler, TResult>
+    : CommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class
-    where TResult : NUnit.Framework.Result
+    where TResult : IResult
 {
     internal TransactionCommandHandlerTestCore() { }
 

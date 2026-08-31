@@ -7,48 +7,13 @@ namespace DannyGoodacre.Primitives.Tests;
 public sealed class ResultTests : TestBase
 {
     [Test]
-    public void IsSuccess_WhenSuccessful_ShouldReturnTrue()
-    {
-        // Arrange
-        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
-
-        // Act
-        bool isSuccess = result.IsSuccess;
-
-        // Assert
-        Assert.That(isSuccess, Is.True);
-    }
-
-    [Test]
-    public void IsSuccess_WhenUnsuccessful_ShouldReturnFalse()
-    {
-        // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.InternalError("Test Error Message");
-
-        // Act
-        bool isSuccess = result.IsSuccess;
-
-        // Assert
-        Assert.That(isSuccess, Is.False);
-    }
-
-    [Test]
     public void Success()
     {
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.Success();
+        IResult result = Result.Success();
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Success));
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertSuccess(result);
     }
 
     [Test]
@@ -67,19 +32,10 @@ public sealed class ResultTests : TestBase
         validationState.AddError(property2, error2);
 
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.Invalid(validationState);
+        IResult result = Result.Invalid(validationState);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
-        }
+        AssertInvalid(result, validationState);
     }
 
     [Test]
@@ -89,19 +45,10 @@ public sealed class ResultTests : TestBase
         const string message = "Test Error Message";
 
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.DomainError(message);
+        IResult result = Result.DomainError(message);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
-
-            Assert.That(result.Error, Is.EqualTo(message));
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertDomainError(result, message);
     }
 
     [Test]
@@ -111,57 +58,43 @@ public sealed class ResultTests : TestBase
         const string message = "Test Conflict Message";
 
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.Conflict(message);
+        IResult result = Result.Conflict(message);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
+        AssertConflict(result, message);
+    }
 
-            Assert.That(result.Error, Is.EqualTo(message));
+    [Test]
+    public void ConflictWithValue()
+    {
+        // Arrange
+        const string message = "Test Conflict Message";
 
-            Assert.That(result.Exception, Is.Null);
+        // Act
+        IResult<int> result = Result.Conflict<int>(message);
 
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        // Assert
+        AssertConflict(result, message);
     }
 
     [Test]
     public void Canceled()
     {
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.Canceled();
+        IResult result = Result.Canceled();
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertCanceled(result);
     }
 
     [Test]
     public void NotFound()
     {
         // Act
-        NUnit.Framework.Result result = NUnit.Framework.Result.NotFound();
+        IResult result = Result.NotFound();
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertNotFound(result);
     }
 
     [Test]

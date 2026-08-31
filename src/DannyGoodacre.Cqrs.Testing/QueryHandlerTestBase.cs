@@ -17,7 +17,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
 
     protected TQueryHandler QueryHandler { get; set; } = null!;
 
-    protected abstract Task<Result<TResultType>> Act();
+    protected abstract Task<IResult<TResultType>> Act();
 
     [SetUp]
     public void BaseSetUp()

@@ -1,14 +1,19 @@
 ﻿using DannyGoodacre.Cqrs;
 using DannyGoodacre.Primitives;
+using DannyGoodacre.Testing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cqrs.Test;
 
-class Program
+class Program : TestBase
 {
-    static async Task Main(string[] args)
+    public async static Task Main(string[] args)
     {
+        IResult<int> result = new Success<int>(123);
+
+        AssertSuccess(result, 123);
+
         var loggerFactory = new NullLoggerFactory();
 
         var logger = loggerFactory.CreateLogger<TestCommandHandler>();

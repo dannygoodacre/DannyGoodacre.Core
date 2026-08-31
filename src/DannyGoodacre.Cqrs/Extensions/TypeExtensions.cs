@@ -26,27 +26,27 @@ internal static class TypeExtensions
             return false;
         }
 
-        // public bool IsQueryHandler()
-        // {
-        //     Type? baseType = type.BaseType;
-        //
-        //     while (baseType is not null)
-        //     {
-        //         if (baseType.IsGenericType)
-        //         {
-        //             Type definition = baseType.GetGenericTypeDefinition();
-        //
-        //             if (definition == typeof(QueryHandler<,>))
-        //             {
-        //                 return true;
-        //             }
-        //         }
-        //
-        //         baseType = baseType.BaseType;
-        //     }
-        //
-        //     return false;
-        // }
+        public bool IsQueryHandler()
+        {
+            Type? baseType = type.BaseType;
+
+            while (baseType is not null)
+            {
+                if (baseType.IsGenericType)
+                {
+                    Type definition = baseType.GetGenericTypeDefinition();
+
+                    if (definition == typeof(QueryHandler<,>))
+                    {
+                        return true;
+                    }
+                }
+
+                baseType = baseType.BaseType;
+            }
+
+            return false;
+        }
 
         internal IEnumerable<Type> GetHandlerInterfaces()
             => type.GetInterfaces()

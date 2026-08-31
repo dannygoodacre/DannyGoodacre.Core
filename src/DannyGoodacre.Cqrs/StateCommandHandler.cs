@@ -36,22 +36,22 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
 /// <param name="logger">The logger used for structured reporting.</param>
 /// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
-/// <typeparam name="TResult">The type of the return value in <see cref="IResult{T}"/>.</typeparam>
-public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, IStateUnit stateUnit)
-    : StateCommandHandlerBase<TCommand, IResult<TResult>>(logger, stateUnit)
+/// <typeparam name="TResultType">The type of the return value in <see cref="IResult{T}"/>.</typeparam>
+public abstract class StateCommandHandler<TCommand, TResultType>(ILogger logger, IStateUnit stateUnit)
+    : StateCommandHandlerBase<TCommand, IResult<TResultType>>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected override IResult<TResult> Canceled() => new Canceled<TResult>();
+    protected override IResult<TResultType> Canceled() => new Canceled<TResultType>();
 
-    protected override IResult<TResult> Conflict(string error) => new Conflict<TResult>(error);
+    protected override IResult<TResultType> Conflict(string error) => new Conflict<TResultType>(error);
 
-    protected override IResult<TResult> DomainError(string error) => new DomainError<TResult>(error);
+    protected override IResult<TResultType> DomainError(string error) => new DomainError<TResultType>(error);
 
-    protected override IResult<TResult> InternalError(Error error) => new InternalError<TResult>(error);
+    protected override IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
 
-    protected override IResult<TResult> Invalid(ValidationState validationState) => new Invalid<TResult>(validationState);
+    protected override IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
 
-    protected override IResult<TResult> NotFound() => new NotFound<TResult>();
+    protected override IResult<TResultType> NotFound() => new NotFound<TResultType>();
 
-    protected IResult<TResult> Success(TResult result) => new Success<TResult>(result);
+    protected IResult<TResultType> Success(TResultType result) => new Success<TResultType>(result);
 }
