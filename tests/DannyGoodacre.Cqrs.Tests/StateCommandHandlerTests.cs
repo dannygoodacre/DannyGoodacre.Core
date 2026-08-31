@@ -1,9 +1,3 @@
-using DannyGoodacre.Cqrs.Testing;
-using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Cqrs.Tests;
 
 [TestFixture]
@@ -18,13 +12,13 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         protected override void Validate(ValidationState validationState, TestCommand command)
             => _testValidate(validationState, command);
 
-        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        protected override Task<IResult> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, NUnit.Framework.Result result, CancellationToken cancellationToken = default)
+        protected override Task AfterSaveAsync(TestCommand command, IResult result, CancellationToken cancellationToken = default)
             => _testAfterSaveAsync(command, result, cancellationToken);
 
-        public Task<NUnit.Framework.Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        public Task<IResult> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
     }
 
@@ -34,13 +28,13 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
     private static Action<ValidationState, TestCommand> _testValidate = null!;
 
-    private static Func<TestCommand, CancellationToken, Task<NUnit.Framework.Result>> _testInternalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<IResult>> _testInternalExecuteAsync = null!;
 
-    private static Func<TestCommand, NUnit.Framework.Result, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, IResult, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     protected override string CommandName => TestName;
 
-    protected override Task<NUnit.Framework.Result> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<IResult> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
@@ -49,7 +43,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(NUnit.Framework.Result.Success());
+        _testInternalExecuteAsync = (_, _) => Task.FromResult<IResult>(new Success());
 
         _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
 
@@ -62,10 +56,10 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         // Arrange
         const string testError = "Test Internal Error";
 
-        _testInternalExecuteAsync =  (_, _) => Task.FromResult(NUnit.Framework.Result.InternalError(testError));
+        _testInternalExecuteAsync =  (_, _) => Task.FromResult<IResult>(new InternalError(testError));
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testError);
@@ -86,7 +80,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -111,7 +105,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -130,7 +124,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -153,7 +147,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -166,7 +160,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         SetupStateUnit_SaveChangesAsync();
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertSuccess(result);

@@ -1,7 +1,3 @@
-using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Cqrs.Extensions.Tests;
 
 [TestFixture]
@@ -11,16 +7,16 @@ public sealed class TypeExtensionsTests
     {
         protected override string CommandName => "Simple Command";
 
-        protected override Task<NUnit.Framework.Result> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(NUnit.Framework.Result.Success());
+        protected override Task<IResult> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult>(new Success());
     }
 
     private sealed class CommandWithValueHandler(ILogger logger) : CommandHandler<ICommand, int>(logger)
     {
         protected override string CommandName => "Result Command";
 
-        protected override Task<Result<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult(Result<int>.Success(123));
+        protected override Task<IResult<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<int>>(new Success<int>(123));
     }
 
     private sealed class DeepCommandHandler(ILogger logger) : SimpleCommandHandler(logger);
@@ -29,8 +25,8 @@ public sealed class TypeExtensionsTests
     {
         protected override string QueryName => "Simple Query";
 
-        protected override Task<Result<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken)
-            => Task.FromResult(Result<int>.Success(123));
+        protected override Task<IResult<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<int>>(new Success<int>(123));
     }
 
     private sealed class DeepQueryHandler(ILogger logger) : SimpleQueryHandler(logger);

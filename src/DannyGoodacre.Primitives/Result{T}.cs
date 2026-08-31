@@ -1,0 +1,34 @@
+namespace DannyGoodacre.Primitives;
+
+public interface IResult<T> : IResult;
+
+public record Success<T>(T Value) : Success, IResult<T>;
+
+public record Canceled<T> : Canceled, IResult<T>;
+
+public record Conflict<T>(string Error) : Conflict(Error), IResult<T>;
+
+public record DomainError<T>(string Error) : DomainError(Error), IResult<T>;
+
+public record NotFound<T> : NotFound, IResult<T>;
+
+public record InternalError<T>(Error Error) : InternalError(Error), IResult<T>;
+
+public record Invalid<T>(ValidationState ValidationState) : Invalid(ValidationState), IResult<T>;
+
+public static class Result<T>
+{
+    public static Success<T> Success(T value) => new(value);
+
+    public static Canceled<T> Canceled() => new();
+
+    public static Conflict<T> Conflict(string error) => new(error);
+
+    public static DomainError<T> DomainError(string error) => new(error);
+
+    public static NotFound<T> NotFound() => new();
+
+    public static InternalError<T> InternalError(Error error) => new(error);
+
+    public static Invalid<T> Invalid(ValidationState state) => new(state);
+}

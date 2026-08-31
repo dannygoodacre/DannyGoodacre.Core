@@ -1,8 +1,3 @@
-using DannyGoodacre.Cqrs.Testing;
-using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Cqrs.Tests;
 
 [TestFixture]
@@ -17,32 +12,25 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         protected override void Validate(ValidationState validationState, TestQuery query)
             => _testValidate(validationState, query);
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
+        protected override Task<IResult<int>> InternalExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(query, cancellationToken);
 
-        public Task<Result<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
+        public Task<IResult<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => ExecuteAsync(query, cancellationToken);
 
-        public NUnit.Framework.Result TestInvalid(ValidationState validationState)
-            => Invalid(validationState);
+        public IResult TestInvalid(ValidationState validationState) => Invalid(validationState);
 
-        public NUnit.Framework.Result TestDomainError(string error)
-            => DomainError(error);
+        public IResult TestDomainError(string error) => DomainError(error);
 
-        public NUnit.Framework.Result TestConflict(string error)
-            => Conflict(error);
+        public IResult TestConflict(string error) => Conflict(error);
 
-        public NUnit.Framework.Result TestCanceled()
-            => Canceled();
+        public IResult TestCanceled() => Canceled();
 
-        public NUnit.Framework.Result TestNotFound()
-            => NotFound();
+        public IResult TestNotFound() => NotFound();
 
-        public NUnit.Framework.Result TestInternalError(string error)
-            => InternalError(error);
+        public IResult TestInternalError(string error) => InternalError(error);
 
-        public NUnit.Framework.Result TestInternalError(Exception exception)
-            => InternalError(exception);
+        public IResult TestInternalError(Exception exception) => InternalError(exception);
     }
 
     private const string TestName = "Test Query Handler";
@@ -53,18 +41,18 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
     private static Action<ValidationState, TestQuery> _testValidate = null!;
 
-    private static Func<TestQuery, CancellationToken, Task<Result<int>>> _testInternalExecuteAsync = null!;
+    private static Func<TestQuery, CancellationToken, Task<IResult<int>>> _testInternalExecuteAsync = null!;
 
     protected override string QueryName => TestName;
 
-    protected override Task<Result<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, TestCancellationToken);
+    protected override Task<IResult<int>> Act() => QueryHandler.TestExecuteAsync(_testQuery, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
     {
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result<int>.Success(TestResultValue));
+        _testInternalExecuteAsync = (_, _) => Task.FromResult<IResult<int>>(new Success<int>(TestResultValue));
 
         _testQuery = new TestQuery();
 
@@ -79,6 +67,10 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         const string testError = "Test Error";
 
+        var testValidationState = new ValidationState();
+
+        testValidationState.AddError(testProperty, testError);
+
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
         LoggerMock.IsEnabled();
@@ -86,10 +78,10 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         LoggerMock.LogQueryFailedValidation(QueryName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
-        Result<int> result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
-        AssertInvalid(result);
+        AssertInvalid(result, testValidationState);
     }
 
     [Test]
@@ -107,7 +99,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         await cancellationTokenSource.CancelAsync();
 
         // Act
-        Result<int> result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -117,7 +109,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public async Task WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
-        Result<int> result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertSuccess(result, TestResultValue);
@@ -134,7 +126,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         LoggerMock.LogQueryCanceledDuringExecution(QueryName);
 
         // Act
-        Result<int> result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -155,7 +147,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         LoggerMock.LogQueryFailed(QueryName, exception);
 
         // Act
-        Result<int> result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -168,10 +160,10 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         ValidationState testValidationState = new();
 
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestInvalid(testValidationState);
+        IResult result = QueryHandler.TestInvalid(testValidationState);
 
         // Assert
-        AssertInvalid(result);
+        AssertInvalid(result, testValidationState);
     }
 
     [Test]
@@ -181,7 +173,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestDomainError(testErrorMessage);
+        IResult result = QueryHandler.TestDomainError(testErrorMessage);
 
         // Assert
         AssertDomainError(result, testErrorMessage);
@@ -194,7 +186,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestConflict(testErrorMessage);
+        IResult result = QueryHandler.TestConflict(testErrorMessage);
 
         // Assert
         AssertConflict(result, testErrorMessage);
@@ -204,7 +196,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public void Canceled()
     {
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestCanceled();
+        IResult result = QueryHandler.TestCanceled();
 
         // Assert
         AssertCanceled(result);
@@ -214,7 +206,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     public void NotFound()
     {
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestNotFound();
+        IResult result = QueryHandler.TestNotFound();
 
         // Assert
         AssertNotFound(result);
@@ -227,7 +219,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestInternalError(testErrorMessage);
+        IResult result = QueryHandler.TestInternalError(testErrorMessage);
 
         // Assert
         AssertInternalError(result, testErrorMessage);
@@ -240,7 +232,7 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         var testException = new Exception("Test Exception Message");
 
         // Act
-        NUnit.Framework.Result result = QueryHandler.TestInternalError(testException);
+        IResult result = QueryHandler.TestInternalError(testException);
 
         // Assert
         AssertInternalError(result, testException);

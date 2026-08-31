@@ -1,9 +1,3 @@
-using DannyGoodacre.Cqrs.Testing;
-using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Cqrs.Tests;
 
 [TestFixture]
@@ -18,13 +12,13 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
         protected override int ExpectedChanges => _testExpectedChanges;
 
-        protected override Task<Result<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        protected override Task<IResult<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, Result<int> result, CancellationToken cancellationToken = default)
+        protected override Task AfterSaveAsync(TestCommand command, IResult<int> result, CancellationToken cancellationToken = default)
             => _testAfterSaveAsync(command, result, cancellationToken);
 
-        public Task<Result<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        public Task<IResult<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
     }
 
@@ -36,15 +30,15 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
     private static int _testActualChanges;
 
-    private static Func<TestCommand, CancellationToken, Task<Result<int>>> _internalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<IResult<int>>> _internalExecuteAsync = null!;
 
-    private static Func<TestCommand, NUnit.Framework.Result, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, IResult, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     private readonly TestCommand _testCommand = new();
 
     protected override string CommandName => TestName;
 
-    protected override Task<Result<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<IResult<int>> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     protected override int TestActualChanges => _testActualChanges;
 
@@ -53,7 +47,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
     {
         _testExpectedChanges = -1;
 
-        _internalExecuteAsync = (_, _) => Task.FromResult(NUnit.Framework.Result.Success(TestResultValue));
+        _internalExecuteAsync = (_, _) => Task.FromResult<IResult<int>>(new Success<int>(TestResultValue));
 
         _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
 
@@ -66,12 +60,12 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         // Arrange
         const string testError = "Test Internal Error";
 
-        _internalExecuteAsync = (_, _) => Task.FromResult(Result<int>.InternalError(testError));
+        _internalExecuteAsync = (_, _) => Task.FromResult<IResult<int>>(new InternalError<int>(testError));
 
         SetupTransactionUnit_ExecuteInTransactionAsync();
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testError);
@@ -94,7 +88,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandUnexpectedNumberOfChanges(CommandName, _testExpectedChanges, _testActualChanges);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, "Attempted to persist an unexpected number of changes.");
@@ -113,7 +107,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -128,7 +122,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         SetupTransactionUnit_SaveChangesAsync();
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -140,7 +134,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         // Arrange
         TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
+                It.IsAny<Func<CancellationToken, Task<IResult<int>>>>(),
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
             .ThrowsAsync(new OperationCanceledException())
             .Verifiable(Times.Once);
@@ -150,7 +144,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -168,7 +162,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
 
         TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<Result<int>>>>(),
+                It.IsAny<Func<CancellationToken, Task<IResult<int>>>>(),
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
             .ThrowsAsync(exception)
             .Verifiable(Times.Once);
@@ -178,7 +172,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -199,7 +193,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -224,7 +218,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
-        NUnit.Framework.Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);

@@ -15,7 +15,7 @@ public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResult
     where TCommandHandler : class;
 
 public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult>
-    : CommandHandlerTestCore<TCommandHandler, IResult>
+    : CommandHandlerTestCore<TCommandHandler, TResult>
     where TCommandHandler : class
     where TResult : IResult
 {

@@ -10,38 +10,77 @@ public abstract class TestBase
     [TearDown]
     public void BaseTearDown() => VerifyAllAndNoOtherCalls();
 
+    protected static void AssertSuccess(IResult result)
+        => Assert.That(result is Success);
+
+    protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
+    {
+        Assert.That(result, Is.InstanceOf<Success<T>>());
+
+        Assert.That(((Success<T>)result).Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
+    }
+
     protected static void AssertCanceled(IResult result)
-        => Assert.That(result is Canceled, Is.True);
+        => Assert.That(result, Is.InstanceOf<Canceled>());
 
     protected static void AssertConflict(IResult result, string error)
-        => Assert.That(result, Is.EqualTo(new Conflict(error)));
+    {
+        Assert.That(result, Is.InstanceOf<Conflict>());
+
+        Assert.That(((Conflict)result).Error, Is.EqualTo(error));
+    }
 
     protected static void AssertConflict<T>(IResult<T> result, string error)
-        => Assert.That(result, Is.EqualTo(new Conflict<T>(error)));
+    {
+        Assert.That(result, Is.InstanceOf<Conflict<T>>());
 
-    protected static void AssertDomainError(IResult result, Error error)
-        => Assert.That(result, Is.EqualTo(new DomainError(error)));
+        Assert.That(((Conflict<T>)result).Error, Is.EqualTo(error));
+    }
 
-    protected static void AssertDomainError<T>(IResult<T> result, Error error)
-        => Assert.That(result, Is.EqualTo(new DomainError<T>(error)));
+    protected static void AssertDomainError(IResult result, string error)
+    {
+        Assert.That(result, Is.InstanceOf<DomainError>());
+
+        Assert.That(((DomainError)result).Error, Is.EqualTo(error));
+    }
+
+    protected static void AssertDomainError<T>(IResult<T> result, string error)
+    {
+        Assert.That(result, Is.InstanceOf<DomainError<T>>());
+
+        Assert.That(((DomainError<T>)result).Error, Is.EqualTo(error));
+    }
 
     protected static void AssertInternalError(IResult result, Error error)
-        => Assert.That(result, Is.EqualTo(new InternalError(error)));
+    {
+        Assert.That(result, Is.InstanceOf<InternalError>());
+
+        Assert.That(((InternalError)result).Error, Is.EqualTo(error));
+    }
 
     protected static void AssertInternalError<T>(IResult<T> result, Error error)
-        => Assert.That(result, Is.EqualTo(new InternalError<T>(error)));
+    {
+        Assert.That(result, Is.InstanceOf<InternalError<T>>());
+
+        Assert.That(((InternalError<T>)result).Error, Is.EqualTo(error));
+    }
 
     protected static void AssertInvalid(IResult result, ValidationState validationState)
-        => Assert.That(result, Is.EqualTo(new Invalid(validationState)));
+    {
+        Assert.That(result, Is.InstanceOf<Invalid>());
+
+        Assert.That(((Invalid)result).ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
+    }
+
+    protected static void AssertInvalid<T>(IResult<T> result, ValidationState validationState)
+    {
+        Assert.That(result, Is.InstanceOf<Invalid<T>>());
+
+        Assert.That(((Invalid<T>)result).ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
+    }
 
     protected static void AssertNotFound(IResult result)
         => Assert.That(result is NotFound, Is.True);
-
-    protected static void AssertSuccess(IResult result)
-        => Assert.That(result is Success, Is.True);
-
-    protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
-        => Assert.That(result, Is.EqualTo(new Success<T>(expectedValue)));
 
     private void VerifyAllAndNoOtherCalls()
     {
