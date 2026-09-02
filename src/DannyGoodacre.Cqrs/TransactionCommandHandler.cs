@@ -16,9 +16,9 @@ public abstract class TransactionCommandHandler<TCommand>(ILogger logger, ITrans
 {
     protected override IResult Canceled() => new Canceled();
 
-    protected override IResult Conflict(string error) => new Conflict(error);
+    protected override IResult Conflict(string message) => new Conflict(message);
 
-    protected override IResult DomainError(string error) => new DomainError(error);
+    protected override IResult DomainError(string message) => new DomainError(message);
 
     protected override IResult InternalError(Error error) => new InternalError(error);
 
@@ -42,9 +42,9 @@ public abstract class TransactionCommandHandler<TCommand, TResultType>(ILogger l
 {
     protected override IResult<TResultType> Canceled() => new Canceled<TResultType>();
 
-    protected override IResult<TResultType> Conflict(string error) => new Conflict<TResultType>(error);
+    protected override IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
 
-    protected override IResult<TResultType> DomainError(string error) => new DomainError<TResultType>(error);
+    protected override IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
 
     protected override IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
 

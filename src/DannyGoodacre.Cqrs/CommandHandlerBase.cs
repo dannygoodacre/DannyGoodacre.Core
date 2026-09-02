@@ -77,9 +77,9 @@ public abstract class CommandHandlerBase<TCommand, TResult>
 
     protected abstract TResult Canceled();
 
-    protected abstract TResult Conflict(string error);
+    protected abstract TResult Conflict(string message);
 
-    protected abstract TResult DomainError(string error);
+    protected abstract TResult DomainError(string message);
 
     protected abstract TResult InternalError(Error error);
 

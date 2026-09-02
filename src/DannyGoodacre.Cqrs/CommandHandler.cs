@@ -15,9 +15,9 @@ public abstract class CommandHandler<TCommand>(ILogger logger)
 {
     protected override IResult Canceled() => new Canceled();
 
-    protected override IResult Conflict(string error) => new Conflict(error);
+    protected override IResult Conflict(string message) => new Conflict(message);
 
-    protected override IResult DomainError(string error) => new DomainError(error);
+    protected override IResult DomainError(string message) => new DomainError(message);
 
     protected override IResult InternalError(Error error) => new InternalError(error);
 
@@ -41,9 +41,9 @@ public abstract class CommandHandler<TCommand, TResultType>(ILogger logger)
 {
     protected override IResult<TResultType> Canceled() => new Canceled<TResultType>();
 
-    protected override IResult<TResultType> Conflict(string error) => new Conflict<TResultType>(error);
+    protected override IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
 
-    protected override IResult<TResultType> DomainError(string error) => new DomainError<TResultType>(error);
+    protected override IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
 
     protected override IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
 
@@ -51,5 +51,5 @@ public abstract class CommandHandler<TCommand, TResultType>(ILogger logger)
 
     protected override IResult<TResultType> NotFound() => new NotFound<TResultType>();
 
-    protected IResult<TResultType> Success(TResultType result) => new Success<TResultType>(result);
+    protected IResult<TResultType> Success(TResultType value) => new Success<TResultType>(value);
 }
