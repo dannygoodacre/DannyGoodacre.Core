@@ -23,6 +23,7 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
     /// On failure or rollback, the <see cref="DbContext.ChangeTracker"/> is cleared to discard stale entities.
     /// </remarks>
     public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+        where TResult : IResult
     {
         if (context.Database.CurrentTransaction is not null)
         {

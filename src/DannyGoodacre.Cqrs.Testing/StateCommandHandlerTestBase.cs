@@ -1,6 +1,4 @@
 using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 

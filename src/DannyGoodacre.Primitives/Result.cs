@@ -1,7 +1,17 @@
 namespace DannyGoodacre.Primitives;
 
+/// <summary>
+/// The outcome of an operation, without throwing exceptions.
+/// </summary>
 public interface IResult
 {
+    /// <summary>
+    /// Convert a non-success <see cref="IResult"/> to a strongly-typed failure <see cref="IResult{TOut}"/>.
+    /// </summary>
+    /// <typeparam name="TOut">The target payload type.</typeparam>
+    /// <returns>A typed failure matching the current outcome.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to map a <see cref="Success"/> result.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unknown result is given.</exception>
     public IResult<TOut> MapFailure<TOut>()
         => this switch
         {
@@ -37,6 +47,9 @@ public record Invalid(ValidationState ValidationState) : IResult;
 
 public record NotFound : IResult;
 
+/// <summary>
+/// Static factory methods for creating <see cref="IResult"/> instances.
+/// </summary>
 public static class Result
 {
     public static Success Success() => new();
@@ -45,9 +58,9 @@ public static class Result
 
     public static Canceled Canceled() => new();
 
-    public static Conflict Conflict(string error) => new(error);
+    public static Conflict Conflict(string message) => new(message);
 
-    public static DomainError DomainError(string error) => new(error);
+    public static DomainError DomainError(string message) => new(message);
 
     public static InternalError InternalError(Error error) => new(error);
 

@@ -63,6 +63,7 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.FromResult(1);
 
         public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
+            where TResult : IResult
         {
             return await operation(cancellationToken);
         }

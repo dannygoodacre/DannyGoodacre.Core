@@ -48,7 +48,7 @@ internal static class TypeExtensions
             return false;
         }
 
-        internal IEnumerable<Type> GetHandlerInterfaces()
+        public IEnumerable<Type> GetHandlerInterfaces()
             => type.GetInterfaces()
                 .Where(x => x != typeof(IDisposable) && x != typeof(IAsyncDisposable));
     }

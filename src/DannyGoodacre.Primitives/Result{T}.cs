@@ -1,6 +1,10 @@
 namespace DannyGoodacre.Primitives;
 
-public interface IResult<T> : IResult;
+/// <summary>
+/// The outcome of an operation with a <typeparamref name="T"/> payload, without throwing exceptions.
+/// </summary>
+/// <typeparam name="T">The type of value returned when the operation succeeds.</typeparam>
+public interface IResult<out T> : IResult;
 
 public record Success<T>(T Value) : Success, IResult<T>;
 
@@ -16,6 +20,9 @@ public record InternalError<T>(Error Error) : InternalError(Error), IResult<T>;
 
 public record Invalid<T>(ValidationState ValidationState) : Invalid(ValidationState), IResult<T>;
 
+/// <summary>
+/// Static factory methods for creating <see cref="IResult{T}"/> instances.
+/// </summary>
 public static class Result<T>
 {
     public static Success<T> Success(T value) => new(value);
@@ -24,7 +31,7 @@ public static class Result<T>
 
     public static Conflict<T> Conflict(string message) => new(message);
 
-    public static DomainError<T> DomainError(string messaeg) => new(messaeg);
+    public static DomainError<T> DomainError(string message) => new(message);
 
     public static NotFound<T> NotFound() => new();
 
