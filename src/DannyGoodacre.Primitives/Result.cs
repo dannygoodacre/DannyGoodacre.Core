@@ -5,6 +5,10 @@ namespace DannyGoodacre.Primitives;
 /// </summary>
 public interface IResult
 {
+    public bool IsSuccess => this is Success;
+
+    public bool IsFailure => !IsSuccess;
+
     /// <summary>
     /// Convert a non-success <see cref="IResult"/> to a strongly-typed failure <see cref="IResult{TOut}"/>.
     /// </summary>
