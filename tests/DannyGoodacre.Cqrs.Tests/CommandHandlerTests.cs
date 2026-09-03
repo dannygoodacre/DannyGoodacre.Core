@@ -18,23 +18,19 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         public Task<IResult> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
 
-        public IResult TestCanceled()
-            => Canceled();
+        public IResult TestCanceled() => Canceled();
 
-        public IResult TestConflict(string error)
-            => Conflict(error);
+        public IResult TestConflict(string message) => Conflict(message);
 
-        public IResult TestDomainError(string error)
-            => DomainError(error);
+        public IResult TestDomainError(string message) => DomainError(message);
 
-        public IResult TestInternalError(Error error)
-            => InternalError(error);
+        public IResult TestInternalError(Error error) => InternalError(error);
 
-        public IResult TestInvalid(ValidationState validationState)
-            => Invalid(validationState);
+        public IResult TestInvalid(ValidationState validationState) => Invalid(validationState);
 
-        public IResult TestNotFound()
-            => NotFound();
+        public IResult TestNotFound() => NotFound();
+
+        public IResult TestSuccess() => Success();
     }
 
     private const string TestName = "Test Command Handler";
@@ -157,29 +153,13 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     }
 
     [Test]
-    public void Invalid()
+    public void Canceled()
     {
-        // Arrange
-        ValidationState testValidationState = new();
-
         // Act
-        IResult result = CommandHandler.TestInvalid(testValidationState);
+        IResult result = CommandHandler.TestCanceled();
 
         // Assert
-        AssertInvalid(result, testValidationState);
-    }
-
-    [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string testErrorMessage = "Test Error Message";
-
-        // Act
-        IResult result = CommandHandler.TestDomainError(testErrorMessage);
-
-        // Assert
-        AssertDomainError(result, testErrorMessage);
+        AssertCanceled(result);
     }
 
     [Test]
@@ -196,23 +176,16 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     }
 
     [Test]
-    public void Canceled()
+    public void DomainError()
     {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
         // Act
-        IResult result = CommandHandler.TestCanceled();
+        IResult result = CommandHandler.TestDomainError(testErrorMessage);
 
         // Assert
-        AssertCanceled(result);
-    }
-
-    [Test]
-    public void NotFound()
-    {
-        // Act
-        IResult result = CommandHandler.TestNotFound();
-
-        // Assert
-        AssertNotFound(result);
+        AssertDomainError(result, testErrorMessage);
     }
 
     [Test]
@@ -239,5 +212,37 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         // Assert
         AssertInternalError(result, testException);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        IResult result = CommandHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result, testValidationState);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        IResult result = CommandHandler.TestNotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void Success()
+    {
+        // Act
+        IResult result = CommandHandler.TestSuccess();
+
+        AssertSuccess(result);
     }
 }

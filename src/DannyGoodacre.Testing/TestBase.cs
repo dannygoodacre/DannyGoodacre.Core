@@ -23,32 +23,32 @@ public abstract class TestBase
     protected static void AssertCanceled(IResult result)
         => Assert.That(result, Is.InstanceOf<Canceled>());
 
-    protected static void AssertConflict(IResult result, string error)
+    protected static void AssertConflict(IResult result, string message)
     {
         Assert.That(result, Is.InstanceOf<Conflict>());
 
-        Assert.That(((Conflict)result).Message, Is.EqualTo(error));
+        Assert.That(((Conflict)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertConflict<T>(IResult<T> result, string error)
+    protected static void AssertConflict<T>(IResult<T> result, string message)
     {
         Assert.That(result, Is.InstanceOf<Conflict<T>>());
 
-        Assert.That(((Conflict<T>)result).Message, Is.EqualTo(error));
+        Assert.That(((Conflict<T>)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertDomainError(IResult result, string error)
+    protected static void AssertDomainError(IResult result, string message)
     {
         Assert.That(result, Is.InstanceOf<DomainError>());
 
-        Assert.That(((DomainError)result).Message, Is.EqualTo(error));
+        Assert.That(((DomainError)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertDomainError<T>(IResult<T> result, string error)
+    protected static void AssertDomainError<T>(IResult<T> result, string message)
     {
         Assert.That(result, Is.InstanceOf<DomainError<T>>());
 
-        Assert.That(((DomainError<T>)result).Message, Is.EqualTo(error));
+        Assert.That(((DomainError<T>)result).Message, Is.EqualTo(message));
     }
 
     protected static void AssertInternalError(IResult result, Error error)

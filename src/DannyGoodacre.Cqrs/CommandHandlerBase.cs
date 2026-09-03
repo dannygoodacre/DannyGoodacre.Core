@@ -12,14 +12,8 @@ public abstract class CommandHandlerBase<TCommand, TResult>
         Logger = logger;
     }
 
-    /// <summary>
-    /// The display name of the command.
-    /// </summary>
     protected abstract string CommandName { get; }
 
-    /// <summary>
-    /// The <see cref="ILogger"/> instance for structured reporting.
-    /// </summary>
     protected ILogger Logger { get; }
 
     /// <summary>
@@ -34,7 +28,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// </summary>
     /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> or <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
+    /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -42,6 +36,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// </summary>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
     protected async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try

@@ -19,10 +19,9 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
 
     /// <summary>
     /// Execute the command by validating it first and, if valid, execute the internal logic.
+    /// If the command succeeds, persist all state changes and call <see cref="AfterSaveAsync"/>.
     /// </summary>
-    /// <param name="command">The command to validate and process.</param>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>An <see cref="IResult{T}"/> indicating the outcome of the operation.</returns>
+    /// <inheritdoc cref="CommandHandlerBase{TCommand,TResult}.ExecuteAsync" />
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         TResult result = await base.ExecuteAsync(command, cancellationToken);

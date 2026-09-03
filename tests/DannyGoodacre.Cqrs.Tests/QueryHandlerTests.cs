@@ -18,19 +18,21 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
         public Task<IResult<int>> TestExecuteAsync(TestQuery query, CancellationToken cancellationToken = default)
             => ExecuteAsync(query, cancellationToken);
 
-        public IResult TestInvalid(ValidationState validationState) => Invalid(validationState);
+        public IResult<int> TestCanceled() => Canceled();
 
-        public IResult TestDomainError(string error) => DomainError(error);
+        public IResult<int> TestConflict(string message) => Conflict(message);
 
-        public IResult TestConflict(string error) => Conflict(error);
+        public IResult<int> TestDomainError(string message) => DomainError(message);
 
-        public IResult TestCanceled() => Canceled();
+        public IResult<int> TestInternalError(string error) => InternalError(error);
 
-        public IResult TestNotFound() => NotFound();
+        public IResult<int> TestInternalError(Exception exception) => InternalError(exception);
 
-        public IResult TestInternalError(string error) => InternalError(error);
+        public IResult<int> TestInvalid(ValidationState validationState) => Invalid(validationState);
 
-        public IResult TestInternalError(Exception exception) => InternalError(exception);
+        public IResult<int> TestNotFound() => NotFound();
+
+        public IResult<int> TestSuccess(int value) => Success(value);
     }
 
     private const string TestName = "Test Query Handler";
@@ -154,19 +156,6 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
     }
 
     [Test]
-    public void Invalid()
-    {
-        // Arrange
-        ValidationState testValidationState = new();
-
-        // Act
-        IResult result = QueryHandler.TestInvalid(testValidationState);
-
-        // Assert
-        AssertInvalid(result, testValidationState);
-    }
-
-    [Test]
     public void DomainError()
     {
         // Arrange
@@ -236,5 +225,31 @@ public class QueryHandlerTests : QueryHandlerTestBase<QueryHandlerTests.TestQuer
 
         // Assert
         AssertInternalError(result, testException);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        IResult result = QueryHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result, testValidationState);
+    }
+
+    [Test]
+    public void Success()
+    {
+        // Arrange
+        const int testValue = 123;
+
+        // Act
+        IResult<int> result = QueryHandler.TestSuccess(testValue);
+
+        // Assert
+        AssertSuccess(result, testValue);
     }
 }

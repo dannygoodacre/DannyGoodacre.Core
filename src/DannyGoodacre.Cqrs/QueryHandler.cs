@@ -6,14 +6,8 @@ namespace DannyGoodacre.Cqrs;
 public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
     where TQuery : IQuery
 {
-    /// <summary>
-    /// The display name of the command.
-    /// </summary>
     protected abstract string QueryName { get; }
 
-    /// <summary>
-    /// The <see cref="ILogger"/> instance for structured reporting.
-    /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
     protected ILogger Logger { get; } = logger;
 
@@ -29,7 +23,7 @@ public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
     /// </summary>
     /// <param name="query">The valid query to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
+    /// <returns>An <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
     protected abstract Task<IResult<TResultType>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>

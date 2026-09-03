@@ -18,26 +18,21 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
         public Task<IResult<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
 
-        public IResult<int> TestInvalid(ValidationState validationState)
-            => Invalid(validationState);
+        public IResult<int> TestCanceled() => Canceled();
 
-        public IResult<int> TestDomainError(string error)
-            => DomainError(error);
+        public IResult<int> TestConflict(string message) => Conflict(message);
 
-        public IResult<int> TestConflict(string error)
-            => Conflict(error);
+        public IResult<int> TestDomainError(string message) => DomainError(message);
 
-        public IResult<int> TestCanceled()
-            => Canceled();
+        public IResult<int> TestInternalError(string error) => InternalError(error);
 
-        public IResult<int> TestNotFound()
-            => NotFound();
+        public IResult<int> TestInternalError(Exception exception) => InternalError(exception);
 
-        public IResult<int> TestInternalError(string error)
-            => InternalError(error);
+        public IResult<int> TestInvalid(ValidationState validationState) => Invalid(validationState);
 
-        public IResult<int> TestInternalError(Exception exception)
-            => InternalError(exception);
+        public IResult<int> TestNotFound() => NotFound();
+
+        public IResult<int> TestSuccess(int value) => Success(value);
     }
 
     private const string TestName = "Test Command Handler";
@@ -162,29 +157,13 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public void Invalid()
+    public void Canceled()
     {
-        // Arrange
-        ValidationState testValidationState = new();
-
         // Act
-        IResult<int> result = CommandHandler.TestInvalid(testValidationState);
+        IResult<int> result = CommandHandler.TestCanceled();
 
         // Assert
-        AssertInvalid(result, testValidationState);
-    }
-
-    [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string testErrorMessage = "Test Error Message";
-
-        // Act
-        IResult<int> result = CommandHandler.TestDomainError(testErrorMessage);
-
-        // Assert
-        AssertDomainError(result, testErrorMessage);
+        AssertCanceled(result);
     }
 
     [Test]
@@ -201,23 +180,16 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
     }
 
     [Test]
-    public void Canceled()
+    public void DomainError()
     {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
         // Act
-        IResult<int> result = CommandHandler.TestCanceled();
+        IResult<int> result = CommandHandler.TestDomainError(testErrorMessage);
 
         // Assert
-        AssertCanceled(result);
-    }
-
-    [Test]
-    public void NotFound()
-    {
-        // Act
-        IResult<int> result = CommandHandler.TestNotFound();
-
-        // Assert
-        AssertNotFound(result);
+        AssertDomainError(result, testErrorMessage);
     }
 
     [Test]
@@ -244,5 +216,41 @@ public sealed class CommandHandlerWithReturnValueTests : CommandHandlerTestBase<
 
         // Assert
         AssertInternalError(result, testException);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        IResult<int> result = CommandHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result, testValidationState);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        IResult<int> result = CommandHandler.TestNotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void Success()
+    {
+        // Arrange
+        const int testValue = 123;
+
+        // Act
+        IResult<int> result = CommandHandler.TestSuccess(testValue);
+
+        // Assert
+        AssertSuccess(result, testValue);
     }
 }

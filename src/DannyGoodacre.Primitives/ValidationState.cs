@@ -11,11 +11,11 @@ public class ValidationState
 
     public void AddError(string property, string error)
     {
-        ref List<string>? list = ref CollectionsMarshal.GetValueRefOrAddDefault(_errors, property, out _);
+        ref List<string>? errors = ref CollectionsMarshal.GetValueRefOrAddDefault(_errors, property, out _);
 
-        list ??= [];
+        errors ??= [];
 
-        list.Add(error);
+        errors.Add(error);
     }
 
     public bool HasErrors => _errors.Count > 0;
@@ -29,7 +29,7 @@ public class ValidationState
 
         var stringBuilder = new StringBuilder();
 
-        foreach (var (property, errors) in Errors)
+        foreach ((string property, List<string> errors) in Errors)
         {
             stringBuilder.AppendLine($"{property}:");
 

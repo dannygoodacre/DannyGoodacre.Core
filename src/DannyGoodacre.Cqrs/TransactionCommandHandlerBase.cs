@@ -18,6 +18,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     /// <remarks>
     /// This is used in derived classes to perform additional data persistence and transaction control.
     /// </remarks>
+    // ReSharper disable once MemberCanBePrivate.Global
     protected ITransactionUnit TransactionUnit { get; }
 
     /// <summary>
@@ -34,6 +35,11 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
+    /// <summary>
+    /// Execute the command by validating it first and, if valid, execute the internal logic in a transaction.
+    /// If the command succeeds, persist all state changes and call <see cref="AfterSaveAsync"/>.
+    /// </summary>
+    /// <inheritdoc cref="CommandHandlerBase{TCommand,TResult}.ExecuteAsync" />
     protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         TResult result;
