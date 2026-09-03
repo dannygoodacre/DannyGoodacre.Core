@@ -3,17 +3,11 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class QueryHandler<TQuery, TResult>(ILogger logger)
+public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
     where TQuery : IQuery
 {
-    /// <summary>
-    /// The display name of the command.
-    /// </summary>
     protected abstract string QueryName { get; }
 
-    /// <summary>
-    /// The <see cref="ILogger"/> instance for structured reporting.
-    /// </summary>
     // ReSharper disable once MemberCanBePrivate.Global
     protected ILogger Logger { get; } = logger;
 
@@ -29,16 +23,16 @@ public abstract class QueryHandler<TQuery, TResult>(ILogger logger)
     /// </summary>
     /// <param name="query">The valid query to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<Result<TResult>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken = default);
+    /// <returns>An <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
+    protected abstract Task<IResult<TResultType>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Run the query by validating first and, if successful, execute the internal logic.
     /// </summary>
     /// <param name="query">The query to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async Task<Result<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
+    /// <returns>An <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
+    protected async Task<IResult<TResultType>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -77,19 +71,17 @@ public abstract class QueryHandler<TQuery, TResult>(ILogger logger)
         }
     }
 
-    protected Result<TResult> Success(TResult result) => Result<TResult>.Success(result);
+    protected IResult<TResultType> Canceled() => new Canceled<TResultType>();
 
-    protected Result<TResult> Invalid(ValidationState validationState) => Result<TResult>.Invalid(validationState);
+    protected IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
 
-    protected Result<TResult> DomainError(string error) => Result<TResult>.DomainError(error);
+    protected IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
 
-    protected Result<TResult> Conflict(string error) => Result<TResult>.Conflict(error);
+    protected IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
 
-    protected Result<TResult> Canceled() => Result<TResult>.Canceled();
+    protected IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
 
-    protected Result<TResult> NotFound() => Result<TResult>.NotFound();
+    protected IResult<TResultType> NotFound() => new NotFound<TResultType>();
 
-    protected Result<TResult> InternalError(string error) => Result<TResult>.InternalError(error);
-
-    protected Result<TResult> InternalError(Exception exception) => Result<TResult>.InternalError(exception);
+    protected IResult<TResultType> Success(TResultType value) => new Success<TResultType>(value);
 }

@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class StateCommandHandlerBase<TCommand, TResult>
-    : CommandHandlerBase<TCommand, TResult>
+public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
-    where TResult : Result
+    where TResult : IResult
 {
     internal StateCommandHandlerBase(ILogger logger, IStateUnit stateUnit) : base(logger)
     {
@@ -18,11 +17,16 @@ public abstract class StateCommandHandlerBase<TCommand, TResult>
     protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    protected async override Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Execute the command by validating it first and, if valid, execute the internal logic.
+    /// If the command succeeds, persist all state changes and call <see cref="AfterSaveAsync"/>.
+    /// </summary>
+    /// <inheritdoc cref="CommandHandlerBase{TCommand,TResult}.ExecuteAsync" />
+    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         TResult result = await base.ExecuteAsync(command, cancellationToken);
 
-        if (!result.IsSuccess)
+        if (result is not Success)
         {
             return result;
         }

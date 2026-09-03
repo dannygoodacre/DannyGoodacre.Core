@@ -10,105 +10,77 @@ public abstract class TestBase
     [TearDown]
     public void BaseTearDown() => VerifyAllAndNoOtherCalls();
 
-    protected static void AssertSuccess(Result result)
-    {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.True);
+    protected static void AssertCanceled(IResult result)
+        => Assert.That(result, Is.InstanceOf<Canceled>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.Success));
-        }
+    protected static void AssertConflict(IResult result, string message)
+    {
+        Assert.That(result, Is.InstanceOf<Conflict>());
+
+        Assert.That(((Conflict)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertSuccess<T>(Result<T> result, T expectedValue)
+    protected static void AssertConflict<T>(IResult<T> result, string message)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result, Is.InstanceOf<Conflict<T>>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.Success));
-
-            Assert.That(result.Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
-        }
+        Assert.That(((Conflict<T>)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertInvalid(Result result)
+    protected static void AssertDomainError(IResult result, string message)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<DomainError>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-        }
+        Assert.That(((DomainError)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertDomainError(Result result, string error)
+    protected static void AssertDomainError<T>(IResult<T> result, string message)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<DomainError<T>>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
-
-            Assert.That(result.Error, Is.EqualTo(error));
-        }
+        Assert.That(((DomainError<T>)result).Message, Is.EqualTo(message));
     }
 
-    protected static void AssertConflict(Result result, string error)
+    protected static void AssertInternalError(IResult result, Error error)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<InternalError>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
-
-            Assert.That(result.Error, Is.EqualTo(error));
-        }
+        Assert.That(((InternalError)result).Error, Is.EqualTo(error));
     }
 
-    protected static void AssertCanceled(Result result)
+    protected static void AssertInternalError<T>(IResult<T> result, Error error)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<InternalError<T>>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
-        }
+        Assert.That(((InternalError<T>)result).Error, Is.EqualTo(error));
     }
 
-    protected static void AssertNotFound(Result result)
+    protected static void AssertInvalid(IResult result, ValidationState validationState)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<Invalid>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
-        }
+        Assert.That(((Invalid)result).ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
     }
 
-    protected static void AssertInternalError(Result result, string error)
+    protected static void AssertInvalid<T>(IResult<T> result, ValidationState validationState)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<Invalid<T>>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-
-            Assert.That(result.Error, Is.EqualTo(error));
-        }
+        Assert.That(((Invalid<T>)result).ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
     }
 
-    protected static void AssertInternalError(Result result, Exception exception)
+    protected static void AssertSuccess(IResult result)
+        => Assert.That(result is Success);
+
+    protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
     {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result, Is.InstanceOf<Success<T>>());
 
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-
-            Assert.That(result.Exception, Is.EqualTo(exception));
-        }
+        Assert.That(((Success<T>)result).Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
     }
+
+    protected static void AssertNotFound(IResult result)
+        => Assert.That(result is NotFound, Is.True);
 
     private void VerifyAllAndNoOtherCalls()
     {

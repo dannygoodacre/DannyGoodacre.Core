@@ -1,15 +1,29 @@
 # Result
 
-The `Result` and `Result<T>` classes provide a unified way to handle operation outcomes. Instead of relying on exceptions for flow control, these classes encapsulate success, failure, and validation states in a predictable, type-safe manner.
+The `IResult` and `IResult<T>` interfaces provide a unified way to represent operation outcomes. Instead of relying on exceptions for flow control, these records encapsulate success, failure, and validation states in a predictable, type-safe manner.
 
-## Result
+Using pattern matching, we can safely convert a given `IResult` to its outcome. 
 
-This class represents the status of an operation only. It tracks the status of the operation and, where applicable, a [ValidationState](./ValidationState.md) object and/or an `Exception` object.
+## Outcomes
+
+| Outcome       | Definition                                            |
+|---------------|-------------------------------------------------------|
+| Success       | The operation completed normally                      |
+| Canceled      | The request was canceled by the caller                |
+| Conflict      | The request conflicts with the current resource state |
+| DomainError   | A business logic rule was violated                    |
+| InternalError | An unexpected system failure or exception occurred    |
+| Invalid       | The request failed validation rules                   |
+| NotFound      | The requested resource does not exist                 |
+
+## IResult
+
+This inteface represents the status of an operation only.
 
 ### Example
 
 ```csharp
-public Result DeleteUser(int id)
+public IResult DeleteUser(int id)
 {
     var user = _repository.Find(id);
 
@@ -22,45 +36,52 @@ public Result DeleteUser(int id)
 
     return Result.Success();
 }
+    
+// Consuming the result
+IResult result = DeleteUser(123);
+
+if (result is Success)
+{
+    ...
+}
+else if (result is Canceled)
+{
+    ...
+}
 ```
 
-## Result\<T\>
+## IResult\<T\>
 
-Inheriting from `Result`, the generic `Result<T>` adds a `Value` property of type `T`.
+The generic `IResult<T>` adds a `Value` property of type `T`.
+
+Since `IResult<T>` inherits from `IResult`, checking for non-success outcomes is simplified: we may check that an `IResult<T>` is an instance of `Conflict` instead of `Conflict<T>`, etc.
 
 ### Example
 
 ```csharp
-public Result<UserDto> GetUser(int id)
+public IResult<UserResponse> GetUser(int id)
 {
-    var user = _repository.Find(id);
+    User user = _repository.Find(id);
 
     if (user is null)
     {
-        return Result<UserDto>.NotFound();
+        return Result<UserResponse>.NotFound();
     }
+    
+    var userResponse = new UserResponse(user.Name);
 
-    return Result.Success(new UserDto(user.Name));
+    return Result.Success(userResponse);
 }
 
 // Consuming the result
-var result = service.GetUser(userId);
+IResult<UserResponse> result = service.GetUser(userId);
 
-if (result.IsSuccess)
+if (result is Success<UserResponse>(var value))
 {
-    Console.WriteLine(result.Value.Name);
+    Console.WriteLine(value.Name);
+}
+else if (result is Conflict conflict)
+{
+    Console.WriteLine(conflict.Message);
 }
 ```
-
-## Status
-
-These classes support various operational outcomes via the `Status` enum:
-
-| Status | Definition |
-| --- | --- |
-| Success | Operation completed normally |
-| Invalid | Input failed validation rules (carries a `ValidationState`) |
-| DomainError | A business logic rule was violated |
-| Canceled | The request was canceled by the caller |
-| NotFound | The requested resource does not exist |
-| InternalError | An unexpected system failure or exception occurred |

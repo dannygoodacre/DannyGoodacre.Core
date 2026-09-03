@@ -1,230 +1,135 @@
-using NUnit.Framework;
-
 namespace DannyGoodacre.Primitives.Tests;
 
 [TestFixture]
-public sealed class ResultWithValueTests
+public sealed class ResultWithValueTests : TestBase
 {
-    [Test]
-    public void IsSuccess_WhenSuccessful_ShouldReturnTrue()
-    {
-        // Arrange
-        const int value = 123;
-
-        Result<int> result = Result<int>.Success(value);
-
-        // Act
-        bool isSuccess = result.IsSuccess;
-
-        // Assert
-        Assert.That(isSuccess, Is.True);
-    }
-
-    [Test]
-    public void IsSuccess_WhenUnsuccessful_ShouldReturnFalse()
-    {
-        // Arrange
-        Result<int> result = Result<int>.InternalError("Test Error Message");
-
-        // Act
-        bool isSuccess = result.IsSuccess;
-
-        // Assert
-        Assert.That(isSuccess, Is.False);
-    }
-
     [Test]
     public void Success()
     {
         // Arrange
-        const int value = 123;
+        const int testValue = 123;
 
         // Act
-        Result<int> result = Result<int>.Success(value);
+        IResult<int> result = Result<int>.Success(testValue);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Success));
-
-            Assert.That(result.Value, Is.EqualTo(value));
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
-    }
-
-    [Test]
-    public void Invalid()
-    {
-        // Arrange
-        ValidationState validationState = new ValidationState();
-
-        const string property1 = "Test Property 1";
-        const string property2 = "Test Property 2";
-
-        const string error1 = "Test Error 1";
-        const string error2 = "Test Error 2";
-
-        validationState.AddError(property1, error1);
-        validationState.AddError(property2, error2);
-
-        // Act
-        Result<int> result = Result<int>.Invalid(validationState);
-
-        // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Invalid));
-
-            Assert.That(result.Value, Is.Default);
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
-        }
-    }
-
-    [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string message = "Test Message";
-
-        // Act
-        Result<int> result = Result<int>.DomainError(message);
-
-        // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.DomainError));
-
-            Assert.That(result.Value, Is.Default);
-
-            Assert.That(result.Error, Is.EqualTo(message));
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
-    }
-
-    [Test]
-    public void Conflict()
-    {
-        // Arrange
-        const string message = "Test Message";
-
-        // Act
-        Result<int> result = Result<int>.Conflict(message);
-
-        // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Conflict));
-
-            Assert.That(result.Value, Is.Default);
-
-            Assert.That(result.Error, Is.EqualTo(message));
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertSuccess(result);
     }
 
     [Test]
     public void Canceled()
     {
         // Act
-        Result<int> result = Result<int>.Canceled();
+        IResult<int> result = Result<int>.Canceled();
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.Canceled));
-
-            Assert.That(result.Value, Is.Default);
-
-            Assert.That(result.Error, Is.Null);
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertCanceled(result);
     }
 
     [Test]
-    public void NotFound()
+    public void Conflict()
     {
+        // Arrange
+        const string testMessage = "Test Conflict Message";
+
         // Act
-        Result<int> result = Result<int>.NotFound();
+        IResult<int> result = Result<int>.Conflict(testMessage);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.NotFound));
+        AssertConflict(result, testMessage);
+    }
 
-            Assert.That(result.Value, Is.Default);
+    [Test]
+    public void DomainError()
+    {
+        // Arrange
+        const string testMessage = "Test Error Message";
 
-            Assert.That(result.Error, Is.Null);
+        // Act
+        IResult<int> result = Result<int>.DomainError(testMessage);
 
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        // Assert
+        AssertDomainError(result, testMessage);
     }
 
     [Test]
     public void InternalError_WithMessage()
     {
-        // Arrange
-        const string message = "Test Error Message";
-
         // Act
-        Result<int> result = Result<int>.InternalError(message);
+        const string testMessage = "Test Error Message";
+
+        IResult<int> result = Result<int>.InternalError(testMessage);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
-
-            Assert.That(result.Value, Is.Default);
-
-            Assert.That(result.Error, Is.EqualTo(message));
-
-            Assert.That(result.Exception, Is.Null);
-
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        AssertInternalError(result, testMessage);
     }
 
     [Test]
     public void InternalError_WithException()
     {
         // Arrange
-        Exception exception = new("Test Exception");
+        var testException = new Exception("Test Exception");
 
         // Act
-        Result<int> result = Result<int>.InternalError(exception);
+        IResult<int> result = Result<int>.InternalError(testException);
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result.Status, Is.EqualTo(Status.InternalError));
+        AssertInternalError(result, testException);
+    }
 
-            Assert.That(result.Value, Is.Default);
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        var testValidationState = new ValidationState();
 
-            Assert.That(result.Error, Is.Null);
+        const string testProperty1 = "Test Property 1";
+        const string testProperty2 = "Test Property 2";
 
-            Assert.That(result.Exception, Is.EqualTo(exception).UsingPropertiesComparer());
+        const string testError1 = "Test Error 1";
+        const string testError2 = "Test Error 2";
 
-            Assert.That(result.ValidationState, Is.Null);
-        }
+        testValidationState.AddError(testProperty1, testError1);
+        testValidationState.AddError(testProperty2, testError2);
+
+        // Act
+        IResult<int> result = Result<int>.Invalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result, testValidationState);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        IResult<int> result = Result<int>.NotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void MapFailure_WhenSuccess_ShouldThrowException()
+    {
+        // Arrange
+        IResult<int> testResult = Result<int>.Success(123);
+
+        // Act & Assert
+        Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<int>());
+    }
+
+    [Test]
+    public void MapFailure_WhenNotSuccess_ShouldReturnResult()
+    {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
+        IResult<int> testResult = Result<int>.InternalError(testErrorMessage);
+
+        // Act
+        IResult<string> result = testResult.MapFailure<string>();
+
+        AssertInternalError(result, testErrorMessage);
     }
 }

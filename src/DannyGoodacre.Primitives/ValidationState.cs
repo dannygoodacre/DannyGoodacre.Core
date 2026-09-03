@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DannyGoodacre.Primitives;
@@ -6,22 +7,18 @@ public class ValidationState
 {
     private readonly Dictionary<string, List<string>> _errors = [];
 
-    public IReadOnlyDictionary<string, IEnumerable<string>> Errors
-        => _errors.ToDictionary(x => x.Key, IEnumerable<string> (x) => x.Value);
+    public IReadOnlyDictionary<string, List<string>> Errors => _errors;
 
     public void AddError(string property, string error)
     {
-        if (_errors.TryGetValue(property, out List<string>? err))
-        {
-            err.Add(error);
+        ref List<string>? errors = ref CollectionsMarshal.GetValueRefOrAddDefault(_errors, property, out _);
 
-            return;
-        }
+        errors ??= [];
 
-        _errors.Add(property, [error]);
+        errors.Add(error);
     }
 
-    public bool HasErrors => _errors.Count != 0;
+    public bool HasErrors => _errors.Count > 0;
 
     public override string ToString()
     {
@@ -32,18 +29,16 @@ public class ValidationState
 
         var stringBuilder = new StringBuilder();
 
-        foreach (var kvp in Errors)
+        foreach ((string property, List<string> errors) in Errors)
         {
-            stringBuilder.AppendLine($"{kvp.Key}:");
+            stringBuilder.AppendLine($"{property}:");
 
-            foreach (var error in kvp.Value)
+            foreach (string error in errors)
             {
                 stringBuilder.AppendLine($"  - {error}");
             }
         }
 
-        return stringBuilder
-            .Remove(stringBuilder.Length - Environment.NewLine.Length, Environment.NewLine.Length)
-            .ToString();
+        return stringBuilder.ToString().TrimEnd();
     }
 }

@@ -1,23 +1,21 @@
 using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
 namespace DannyGoodacre.Cqrs.Testing;
 
 public abstract class TransactionCommandHandlerTestBase<TCommandHandler>
-    : TransactionCommandHandlerTestCore<TCommandHandler, Result>
+    : TransactionCommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
 public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResultType>
-    : TransactionCommandHandlerTestCore<TCommandHandler, Result<TResultType>>
+    : TransactionCommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
     where TCommandHandler : class;
 
 public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult>
     : CommandHandlerTestCore<TCommandHandler, TResult>
     where TCommandHandler : class
-    where TResult : Result
+    where TResult : IResult
 {
     internal TransactionCommandHandlerTestCore() { }
 

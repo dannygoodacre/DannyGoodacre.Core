@@ -20,4 +20,9 @@
         <ProjectReference Include="..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Using Include="DannyGoodacre.Testing" />
+        <Using Include="NUnit.Framework" />
+    </ItemGroup>
+
 </Project>

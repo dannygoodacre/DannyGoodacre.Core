@@ -5,21 +5,15 @@ namespace DannyGoodacre.Cqrs;
 
 public abstract class CommandHandlerBase<TCommand, TResult>
     where TCommand : ICommand
-    where TResult : Result
+    where TResult : IResult
 {
     internal CommandHandlerBase(ILogger logger)
     {
         Logger = logger;
     }
 
-    /// <summary>
-    /// The display name of the command.
-    /// </summary>
     protected abstract string CommandName { get; }
 
-    /// <summary>
-    /// The <see cref="ILogger"/> instance for structured reporting.
-    /// </summary>
     protected ILogger Logger { get; }
 
     /// <summary>
@@ -34,7 +28,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// </summary>
     /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> or <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
+    /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -42,8 +36,8 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// </summary>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>A <see cref="Result"/> or <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
-    protected async virtual Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
+    protected async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -82,19 +76,15 @@ public abstract class CommandHandlerBase<TCommand, TResult>
         }
     }
 
-    protected TResult Invalid(ValidationState validationState) => MapResult(Result.Invalid(validationState));
+    protected abstract TResult Canceled();
 
-    protected TResult DomainError(string error) => MapResult(Result.DomainError(error));
+    protected abstract TResult Conflict(string message);
 
-    protected TResult Conflict(string error) => MapResult(Result.Conflict(error));
+    protected abstract TResult DomainError(string message);
 
-    protected TResult Canceled() => MapResult(Result.Canceled());
+    protected abstract TResult InternalError(Error error);
 
-    protected TResult NotFound() => MapResult(Result.NotFound());
+    protected abstract TResult Invalid(ValidationState validationState);
 
-    protected TResult InternalError(string error) => MapResult(Result.InternalError(error));
-
-    protected TResult InternalError(Exception exception) => MapResult(Result.InternalError(exception));
-
-    protected private abstract TResult MapResult(Result result);
+    protected abstract TResult NotFound();
 }

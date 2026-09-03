@@ -11,12 +11,22 @@ namespace DannyGoodacre.Cqrs;
 /// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
 public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit stateUnit)
-    : StateCommandHandlerBase<TCommand, Result>(logger, stateUnit)
+    : StateCommandHandlerBase<TCommand, IResult>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected private override Result MapResult(Result result) => result;
+    protected override IResult Canceled() => new Canceled();
 
-    protected Result Success() => Result.Success();
+    protected override IResult Conflict(string message) => new Conflict(message);
+
+    protected override IResult DomainError(string message) => new DomainError(message);
+
+    protected override IResult InternalError(Error error) => new InternalError(error);
+
+    protected override IResult Invalid(ValidationState validationState) => new Invalid(validationState);
+
+    protected override IResult NotFound() => new NotFound();
+
+    protected IResult Success() => new Success();
 }
 
 /// <summary>
@@ -26,12 +36,22 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
 /// <param name="logger">The logger used for structured reporting.</param>
 /// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
-/// <typeparam name="TResult">The type of the return value in <see cref="Result{T}"/>.</typeparam>
-public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, IStateUnit stateUnit)
-    : StateCommandHandlerBase<TCommand, Result<TResult>>(logger, stateUnit)
+/// <typeparam name="TResultType">The type of the return value in <see cref="IResult{T}"/>.</typeparam>
+public abstract class StateCommandHandler<TCommand, TResultType>(ILogger logger, IStateUnit stateUnit)
+    : StateCommandHandlerBase<TCommand, IResult<TResultType>>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected private override Result<TResult> MapResult(Result result) => new(result);
+    protected override IResult<TResultType> Canceled() => new Canceled<TResultType>();
 
-    protected Result<TResult> Success(TResult result) => Result<TResult>.Success(result);
+    protected override IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
+
+    protected override IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
+
+    protected override IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
+
+    protected override IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
+
+    protected override IResult<TResultType> NotFound() => new NotFound<TResultType>();
+
+    protected IResult<TResultType> Success(TResultType result) => new Success<TResultType>(result);
 }

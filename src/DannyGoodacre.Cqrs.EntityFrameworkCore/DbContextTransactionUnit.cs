@@ -9,7 +9,7 @@ namespace DannyGoodacre.Cqrs.EntityFrameworkCore;
 /// </summary>
 /// <typeparam name="TDbContext">The type of the underlying <see cref="DbContext"/>.</typeparam>
 /// <param name="context">The database context instance to manage.</param>
-public class DbContextTransactionUnit<TDbContext>(TDbContext context) : IStateUnit, ITransactionUnit
+public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransactionUnit
     where TDbContext : DbContext
 {
     /// <inheritdoc/>
@@ -23,7 +23,7 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : IStateUn
     /// On failure or rollback, the <see cref="DbContext.ChangeTracker"/> is cleared to discard stale entities.
     /// </remarks>
     public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
-        where TResult : Result
+        where TResult : IResult
     {
         if (context.Database.CurrentTransaction is not null)
         {
@@ -34,21 +34,21 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : IStateUn
 
         return await strategy.ExecuteAsync(
             state: (context, operation),
-            operation: async (_, state, ct) =>
+            operation: async (_, state, innerCancellationToken) =>
             {
-                await using IDbContextTransaction transaction = await state.context.Database.BeginTransactionAsync(ct);
+                await using IDbContextTransaction transaction = await state.context.Database.BeginTransactionAsync(innerCancellationToken);
 
                 try
                 {
-                    TResult result = await state.operation(ct);
+                    TResult result = await state.operation(innerCancellationToken);
 
-                    if (result.IsSuccess)
+                    if (result is Success)
                     {
-                        await transaction.CommitAsync(ct);
+                        await transaction.CommitAsync(innerCancellationToken);
                     }
                     else
                     {
-                        await transaction.RollbackAsync(ct);
+                        await transaction.RollbackAsync(innerCancellationToken);
 
                         state.context.ChangeTracker.Clear();
                     }

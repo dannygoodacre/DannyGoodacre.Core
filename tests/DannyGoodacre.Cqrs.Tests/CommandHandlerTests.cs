@@ -1,8 +1,3 @@
-using DannyGoodacre.Cqrs.Testing;
-using DannyGoodacre.Primitives;
-using Microsoft.Extensions.Logging;
-using NUnit.Framework;
-
 namespace DannyGoodacre.Cqrs.Tests;
 
 [TestFixture]
@@ -17,32 +12,25 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         protected override void Validate(ValidationState validationState, TestCommand command)
             => _testValidate(validationState, command);
 
-        protected override Task<Result> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
+        protected override Task<IResult> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        public Task<Result> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
+        public Task<IResult> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken)
             => ExecuteAsync(command, cancellationToken);
 
-        public Result TestInvalid(ValidationState validationState)
-            => Invalid(validationState);
+        public IResult TestCanceled() => Canceled();
 
-        public Result TestDomainError(string error)
-            => DomainError(error);
+        public IResult TestConflict(string message) => Conflict(message);
 
-        public Result TestConflict(string error)
-            => Conflict(error);
+        public IResult TestDomainError(string message) => DomainError(message);
 
-        public Result TestCanceled()
-            => Canceled();
+        public IResult TestInternalError(Error error) => InternalError(error);
 
-        public Result TestNotFound()
-            => NotFound();
+        public IResult TestInvalid(ValidationState validationState) => Invalid(validationState);
 
-        public Result TestInternalError(string error)
-            => InternalError(error);
+        public IResult TestNotFound() => NotFound();
 
-        public Result TestInternalError(Exception exception)
-            => InternalError(exception);
+        public IResult TestSuccess() => Success();
     }
 
     private const string TestName = "Test Command Handler";
@@ -51,11 +39,11 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
     private static Action<ValidationState, TestCommand> _testValidate = null!;
 
-    private static Func<TestCommand, CancellationToken, Task<Result>> _testInternalExecuteAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task<IResult>> _testInternalExecuteAsync = null!;
 
     protected override string CommandName => TestName;
 
-    protected override Task<Result> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
+    protected override Task<IResult> Act() => CommandHandler.TestExecuteAsync(_testCommand, TestCancellationToken);
 
     [SetUp]
     public void SetUp()
@@ -64,7 +52,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         _testValidate = (_, _) => {};
 
-        _testInternalExecuteAsync = (_, _) => Task.FromResult(Result.Success());
+        _testInternalExecuteAsync = (_, _) => Task.FromResult<IResult>(new Success());
 
         CommandHandler = new TestCommandHandler(LoggerMock.Object);
     }
@@ -77,6 +65,10 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         const string testError = "Test Error";
 
+        var testValidationState = new ValidationState();
+
+        testValidationState.AddError(testProperty, testError);
+
         _testValidate = (validationState, _) => validationState.AddError(testProperty, testError);
 
         LoggerMock.IsEnabled();
@@ -84,10 +76,10 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         LoggerMock.LogCommandFailedValidation(CommandName, $"{testProperty}:{Environment.NewLine}  - {testError}");
 
         // Act
-        Result result = await Act();
+        IResult result = await Act();
 
         // Assert
-        AssertInvalid(result);
+        AssertInvalid(result, testValidationState);
     }
 
     [Test]
@@ -106,7 +98,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
 
         // Act
 
-        Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -116,7 +108,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     public async Task WhenSuccessful_ShouldReturnSuccess()
     {
         // Act
-        Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertSuccess(result);
@@ -133,7 +125,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         LoggerMock.LogCommandCanceledDuringExecution(CommandName);
 
         // Act
-        Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -154,36 +146,20 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         LoggerMock.LogCommandFailed(CommandName, exception);
 
         // Act
-        Result result = await Act();
+        IResult result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
     }
 
     [Test]
-    public void Invalid()
+    public void Canceled()
     {
-        // Arrange
-        ValidationState testValidationState = new();
-
         // Act
-        Result result = CommandHandler.TestInvalid(testValidationState);
+        IResult result = CommandHandler.TestCanceled();
 
         // Assert
-        AssertInvalid(result);
-    }
-
-    [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string testErrorMessage = "Test Error Message";
-
-        // Act
-        Result result = CommandHandler.TestDomainError(testErrorMessage);
-
-        // Assert
-        AssertDomainError(result, testErrorMessage);
+        AssertCanceled(result);
     }
 
     [Test]
@@ -193,30 +169,23 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        Result result = CommandHandler.TestConflict(testErrorMessage);
+        IResult result = CommandHandler.TestConflict(testErrorMessage);
 
         // Assert
         AssertConflict(result, testErrorMessage);
     }
 
     [Test]
-    public void Canceled()
+    public void DomainError()
     {
+        // Arrange
+        const string testErrorMessage = "Test Error Message";
+
         // Act
-        Result result = CommandHandler.TestCanceled();
+        IResult result = CommandHandler.TestDomainError(testErrorMessage);
 
         // Assert
-        AssertCanceled(result);
-    }
-
-    [Test]
-    public void NotFound()
-    {
-        // Act
-        Result result = CommandHandler.TestNotFound();
-
-        // Assert
-        AssertNotFound(result);
+        AssertDomainError(result, testErrorMessage);
     }
 
     [Test]
@@ -226,7 +195,7 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
         const string testErrorMessage = "Test Error Message";
 
         // Act
-        Result result = CommandHandler.TestInternalError(testErrorMessage);
+        IResult result = CommandHandler.TestInternalError(testErrorMessage);
 
         // Assert
         AssertInternalError(result, testErrorMessage);
@@ -236,12 +205,44 @@ public sealed class CommandHandlerTests : CommandHandlerTestBase<CommandHandlerT
     public void InternalErrorWithException()
     {
         // Arrange
-        Exception testException = new("Test Exception Message");
+        var testException = new Exception("Test Exception Message");
 
         // Act
-        Result result = CommandHandler.TestInternalError(testException);
+        IResult result = CommandHandler.TestInternalError(testException);
 
         // Assert
         AssertInternalError(result, testException);
+    }
+
+    [Test]
+    public void Invalid()
+    {
+        // Arrange
+        ValidationState testValidationState = new();
+
+        // Act
+        IResult result = CommandHandler.TestInvalid(testValidationState);
+
+        // Assert
+        AssertInvalid(result, testValidationState);
+    }
+
+    [Test]
+    public void NotFound()
+    {
+        // Act
+        IResult result = CommandHandler.TestNotFound();
+
+        // Assert
+        AssertNotFound(result);
+    }
+
+    [Test]
+    public void Success()
+    {
+        // Act
+        IResult result = CommandHandler.TestSuccess();
+
+        AssertSuccess(result);
     }
 }

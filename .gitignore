@@ -58,3 +58,5 @@ nunit-*.xml
 
 coverage_data/
 coverage_report/
+
+*.db

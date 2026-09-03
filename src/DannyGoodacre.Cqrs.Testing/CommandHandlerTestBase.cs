@@ -7,17 +7,17 @@ using NUnit.Framework;
 namespace DannyGoodacre.Cqrs.Testing;
 
 public abstract class CommandHandlerTestBase<TCommandHandler>
-    : CommandHandlerTestCore<TCommandHandler, Result>
+    : CommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
 public abstract class CommandHandlerTestBase<TCommandHandler, TResultType>
-    : CommandHandlerTestCore<TCommandHandler, Result<TResultType>>
+    : CommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
     where TCommandHandler : class;
 
 public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
     : TestBase
     where TCommandHandler : class
-    where TResult : Result
+    where TResult : IResult
 {
     internal CommandHandlerTestCore() { }
 

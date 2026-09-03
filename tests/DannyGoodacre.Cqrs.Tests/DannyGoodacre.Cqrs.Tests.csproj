@@ -26,4 +26,12 @@
         <ProjectReference Include="..\..\src\DannyGoodacre.Cqrs.Testing\DannyGoodacre.Cqrs.Testing.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Using Include="DannyGoodacre.Cqrs.Testing" />
+        <Using Include="DannyGoodacre.Primitives" />
+        <Using Include="Microsoft.Extensions.Logging" />
+        <Using Include="Moq" />
+        <Using Include="NUnit.Framework" />
+    </ItemGroup>
+
 </Project>

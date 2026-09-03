@@ -1,88 +1,70 @@
 namespace DannyGoodacre.Primitives;
 
 /// <summary>
-/// The outcome of an operation, encapsulating its status, error, and validation state.
+/// The outcome of an operation, without throwing exceptions.
 /// </summary>
-public class Result
+public interface IResult
 {
-    public Status Status { get; protected init; }
-
-    public string? Error { get; protected init; }
-
-    public Exception? Exception { get; protected init; }
-
-    public ValidationState? ValidationState { get; protected init; }
-
-    public bool IsSuccess => Status == Status.Success;
-
-    protected private Result() { }
-
-    protected private Result(Result result)
-    {
-        Status = result.Status;
-        Error = result.Error;
-        Exception = result.Exception;
-        ValidationState = result.ValidationState;
-    }
-
-    public static Result Success()
-        => new()
+    /// <summary>
+    /// Convert a non-success <see cref="IResult"/> to a strongly-typed failure <see cref="IResult{TOut}"/>.
+    /// </summary>
+    /// <typeparam name="TOut">The target payload type.</typeparam>
+    /// <returns>A typed failure matching the current outcome.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when attempting to map a <see cref="Success"/> result.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unknown result is given.</exception>
+    public IResult<TOut> MapFailure<TOut>()
+        => this switch
         {
-            Status = Status.Success
+            Canceled => new Canceled<TOut>(),
+
+            Conflict conflict => new Conflict<TOut>(conflict.Message),
+
+            DomainError domainError => new DomainError<TOut>(domainError.Message),
+
+            InternalError internalError => new InternalError<TOut>(internalError.Error),
+
+            Invalid invalid => new Invalid<TOut>(invalid.ValidationState),
+
+            NotFound => new NotFound<TOut>(),
+
+            Success => throw new InvalidOperationException("Cannot map a successful result to a failure."),
+
+            _ => throw new ArgumentOutOfRangeException(nameof(IResult))
         };
+}
 
-    public static Result Invalid(ValidationState validationState)
-        => new()
-        {
-            Status = Status.Invalid,
-            ValidationState = validationState
-        };
+public record Success : IResult;
 
-    public static Result DomainError(string error)
-        => new()
-        {
-            Status = Status.DomainError,
-            Error = error
-        };
+public record Canceled : IResult;
 
-    public static Result Conflict(string error)
-        => new()
-        {
-            Status = Status.Conflict,
-            Error = error
-        };
+public record Conflict(string Message) : IResult;
 
-    public static Result Canceled()
-        => new()
-        {
-            Status = Status.Canceled
-        };
+public record DomainError(string Message) : IResult;
 
-    public static Result NotFound()
-        => new()
-        {
-            Status = Status.NotFound
-        };
+public record InternalError(Error Error) : IResult;
 
-    public static Result InternalError(string error)
-        => new()
-        {
-            Status = Status.InternalError,
-            Error = error
-        };
+public record Invalid(ValidationState ValidationState) : IResult;
 
-    public static Result InternalError(Exception exception)
-        => new()
-        {
-            Status = Status.InternalError,
-            Exception = exception
-        };
+public record NotFound : IResult;
 
-    public static Result<T> Success<T>(T value)
-        => Result<T>.Success(value);
+/// <summary>
+/// Static factory methods for creating <see cref="IResult"/> instances.
+/// </summary>
+public static class Result
+{
+    public static Success Success() => new();
 
-    public Result<TTarget> MapFailure<TTarget>()
-        => IsSuccess
-            ? throw new InvalidOperationException("Cannot map a successful result to a failure.")
-            : new Result<TTarget>(this);
+    public static Success<T> Success<T>(T value) => new(value);
+
+    public static Canceled Canceled() => new();
+
+    public static Conflict Conflict(string message) => new(message);
+
+    public static DomainError DomainError(string message) => new(message);
+
+    public static InternalError InternalError(Error error) => new(error);
+
+    public static Invalid Invalid(ValidationState state) => new(state);
+
+    public static NotFound NotFound() => new();
 }

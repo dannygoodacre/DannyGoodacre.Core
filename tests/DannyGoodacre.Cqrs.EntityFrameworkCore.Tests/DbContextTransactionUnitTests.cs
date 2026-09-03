@@ -78,7 +78,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
         _expectedEntities.Add(testEntity1);
         _expectedEntities.Add(testEntity2);
 
-        Result result;
+        IResult result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
@@ -94,7 +94,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.Success();
+                return new Success();
             });
 
             await transaction.CommitAsync();
@@ -127,7 +127,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
         const string testErrorMessage = "Test Domain Error";
 
-        Result result;
+        IResult result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
@@ -141,7 +141,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.DomainError(testErrorMessage);
+                return new DomainError(testErrorMessage);
             });
         }
 
@@ -174,7 +174,8 @@ public sealed class DbContextTransactionUnitTests : TestBase
         _expectedEntities.Add(testEntity2);
 
         const string testResponse = "Test Response";
-        Result<string> result;
+
+        IResult<string> result;
 
         await using (TestDbContext testContext = CreateDbContext())
         {
@@ -188,7 +189,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
-                return Result.Success(testResponse);
+                return new Success<string>(testResponse);
             });
         }
 
@@ -219,7 +220,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
         const string testExceptionMessage = "Test Exception Message";
 
-        Result? result = null;
+        IResult? result = null;
 
         // Act
         Exception exception = Assert.ThrowsAsync<Exception>(async () =>
@@ -228,7 +229,7 @@ public sealed class DbContextTransactionUnitTests : TestBase
 
             var transactionUnit = new DbContextTransactionUnit<TestDbContext>(testContext);
 
-            result = await transactionUnit.ExecuteInTransactionAsync<Result>(async cancellationToken =>
+            result = await transactionUnit.ExecuteInTransactionAsync<IResult>(async cancellationToken =>
             {
                 testContext.TestEntities.Add(testEntity1);
                 testContext.TestEntities.Add(testEntity2);
