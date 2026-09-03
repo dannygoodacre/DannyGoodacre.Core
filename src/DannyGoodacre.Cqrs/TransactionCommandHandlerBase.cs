@@ -50,7 +50,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
             {
                 TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
 
-                if (innerResult is not Success)
+                if (innerResult.IsFailure)
                 {
                     return innerResult;
                 }
