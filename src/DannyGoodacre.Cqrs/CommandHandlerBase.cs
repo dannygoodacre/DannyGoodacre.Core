@@ -29,6 +29,12 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// <param name="command">The command to validate.</param>
     protected virtual void Validate(ValidationState validationState, TCommand command) { }
 
+    /// <summary>
+    /// The internal command logic.
+    /// </summary>
+    /// <param name="command">The valid command to process.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    /// <returns>A <see cref="Result"/> or <see cref="Result{T}"/> indicating the outcome of the operation.</returns>
     protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
