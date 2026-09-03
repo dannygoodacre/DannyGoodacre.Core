@@ -123,23 +123,111 @@ public sealed class ResultTests : TestBase
     public void MapFailure_WhenSuccess_ShouldThrowException()
     {
         // Arrange
-        IResult testResult = Result.Success();
+        IResult testResult = new Success();
 
         // Act & Assert
         Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<int>());
     }
 
     [Test]
-    public void MapFailure_WhenNotSuccess_ShouldReturnResult()
+    public void MapFailure_WhenCanceled()
     {
         // Arrange
-        const string testErrorMessage = "Test Error Message";
-
-        IResult testResult = Result.InternalError(testErrorMessage);
+        IResult testResult = new Canceled();
 
         // Act
-        IResult<int> result = testResult.MapFailure<int>();
+        IResult result = testResult.MapFailure<int>();
 
-        AssertInternalError(result, testErrorMessage);
+        // Assert
+        Assert.That(result, Is.InstanceOf<Canceled<int>>());
+    }
+
+    [Test]
+    public void MapFailure_WhenConflict()
+    {
+        // Arrange
+        const string testMessage = "Test Conflict Message";
+
+        IResult testResult = new Conflict(testMessage);
+
+        // Act
+        IResult result = testResult.MapFailure<int>();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<Conflict<int>>());
+
+        Assert.That((result as Conflict)?.Message, Is.EqualTo(testMessage));
+    }
+
+    [Test]
+    public void MapFailure_WhenDomainError()
+    {
+        // Arrange
+        const string testMessage = "Test Domain Error Message";
+
+        IResult testResult = new DomainError(testMessage);
+
+        // Act
+        IResult result = testResult.MapFailure<int>();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<DomainError<int>>());
+
+        Assert.That((result as DomainError)?.Message, Is.EqualTo(testMessage));
+    }
+
+    [Test]
+    public void MapFailure_WhenInternalError()
+    {
+        // Arrange
+        const string testMessage = "Test Internal Error Message";
+
+        var testError = new Error(testMessage);
+
+        IResult testResult = new InternalError(testError);
+
+        // Act
+        IResult result = testResult.MapFailure<int>();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<InternalError<int>>());
+
+        Assert.That((result as InternalError)?.Error, Is.EqualTo(testError).UsingPropertiesComparer());
+    }
+
+    [Test]
+    public void MapFailure_WhenInvalid()
+    {
+        // Arrange
+        const string testProperty = "Test Property";
+
+        const string testError = "Test Error";
+
+        var testValidationState = new ValidationState();
+
+        testValidationState.AddError(testProperty, testError);
+
+        IResult testResult = Result.Invalid(testValidationState);
+
+        // Act
+        IResult result = testResult.MapFailure<int>();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<Invalid<int>>());
+
+        Assert.That((result as Invalid<int>)?.ValidationState, Is.EqualTo(testValidationState));
+    }
+
+    [Test]
+    public void MapFailure_NotFound()
+    {
+        // Arrange
+        IResult testResult = new NotFound();
+
+        // Act
+        IResult result = testResult.MapFailure<int>();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<NotFound<int>>());
     }
 }
