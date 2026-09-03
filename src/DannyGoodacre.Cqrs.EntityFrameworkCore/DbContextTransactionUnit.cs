@@ -42,7 +42,7 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
                 {
                     TResult result = await state.operation(innerCancellationToken);
 
-                    if (result is Success)
+                    if (result.IsSuccess)
                     {
                         await transaction.CommitAsync(innerCancellationToken);
                     }

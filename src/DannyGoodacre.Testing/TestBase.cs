@@ -70,7 +70,7 @@ public abstract class TestBase
     }
 
     protected static void AssertSuccess(IResult result)
-        => Assert.That(result is Success);
+        => Assert.That(result, Is.InstanceOf<Success>());
 
     protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
     {

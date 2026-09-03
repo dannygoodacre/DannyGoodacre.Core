@@ -26,7 +26,7 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
     {
         TResult result = await base.ExecuteAsync(command, cancellationToken);
 
-        if (result is not Success)
+        if (result.IsFailure)
         {
             return result;
         }
