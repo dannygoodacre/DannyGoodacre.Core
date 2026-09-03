@@ -77,11 +77,11 @@ public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
 
     protected IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
 
-    protected IResult<TResultType> NotFound() => new NotFound<TResultType>();
-
     protected IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
 
     protected IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
+
+    protected IResult<TResultType> NotFound() => new NotFound<TResultType>();
 
     protected IResult<TResultType> Success(TResultType value) => new Success<TResultType>(value);
 }

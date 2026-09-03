@@ -10,16 +10,6 @@ public abstract class TestBase
     [TearDown]
     public void BaseTearDown() => VerifyAllAndNoOtherCalls();
 
-    protected static void AssertSuccess(IResult result)
-        => Assert.That(result is Success);
-
-    protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
-    {
-        Assert.That(result, Is.InstanceOf<Success<T>>());
-
-        Assert.That(((Success<T>)result).Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
-    }
-
     protected static void AssertCanceled(IResult result)
         => Assert.That(result, Is.InstanceOf<Canceled>());
 
@@ -77,6 +67,16 @@ public abstract class TestBase
         Assert.That(result, Is.InstanceOf<Invalid<T>>());
 
         Assert.That(((Invalid<T>)result).ValidationState, Is.EqualTo(validationState).UsingPropertiesComparer());
+    }
+
+    protected static void AssertSuccess(IResult result)
+        => Assert.That(result is Success);
+
+    protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
+    {
+        Assert.That(result, Is.InstanceOf<Success<T>>());
+
+        Assert.That(((Success<T>)result).Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
     }
 
     protected static void AssertNotFound(IResult result)
