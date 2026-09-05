@@ -66,15 +66,15 @@ public abstract class TransactionCommandHandler<TCommand, TResult>(ILogger logge
 
     protected override IResult<TResult> NotFound() => new NotFound<TResult>();
 
-    protected IResult<TResult> Success(TResult result) => new Success<TResult>(result);
+    protected IResult<TResult> Success(TResult value) => new Success<TResult>(value);
 
     /// <summary>
     /// The hook executed after the command succeeds and state changes are saved.
     /// </summary>
     /// <param name="command">The processed command.</param>
-    /// <param name="result">The value produced from the command.</param>
+    /// <param name="value">The value produced from the command.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+    protected virtual Task AfterSaveAsync(TCommand command, TResult value, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
     protected override sealed Task AfterSaveAsync(TCommand command, IResult<TResult> result, CancellationToken cancellationToken = default)

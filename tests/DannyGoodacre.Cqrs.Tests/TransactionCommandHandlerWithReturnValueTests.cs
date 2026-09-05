@@ -15,7 +15,7 @@ public sealed class TransactionCommandHandlerWithReturnValueTests : TransactionC
         protected override Task<IResult<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, int result, CancellationToken cancellationToken = default)
+        protected override Task AfterSaveAsync(TestCommand command, int value, CancellationToken cancellationToken = default)
             => _testAfterSaveAsync(command, cancellationToken);
 
         public Task<IResult<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
