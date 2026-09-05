@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand, TResult>
+public abstract class StateCommandHandlerBase<TCommand, TResultWrapper> : CommandHandlerBase<TCommand, TResultWrapper>
     where TCommand : ICommand
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal StateCommandHandlerBase(ILogger logger, IStateUnit stateUnit) : base(logger)
     {
@@ -14,7 +14,7 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
 
     private IStateUnit StateUnit { get; }
 
-    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+    protected virtual Task AfterSaveAsync(TCommand command, TResultWrapper result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
     /// <summary>
@@ -22,9 +22,9 @@ public abstract class StateCommandHandlerBase<TCommand, TResult> : CommandHandle
     /// If the command succeeds, persist all state changes and call <see cref="AfterSaveAsync"/>.
     /// </summary>
     /// <inheritdoc cref="CommandHandlerBase{TCommand,TResult}.ExecuteAsync" />
-    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected new async Task<TResultWrapper> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        TResult result = await base.ExecuteAsync(command, cancellationToken);
+        TResultWrapper result = await base.ExecuteAsync(command, cancellationToken);
 
         if (result.IsFailure)
         {

@@ -15,8 +15,8 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
         protected override Task<IResult> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, IResult result, CancellationToken cancellationToken = default)
-            => _testAfterSaveAsync(command, result, cancellationToken);
+        protected override Task AfterSaveAsync(TestCommand command, CancellationToken cancellationToken = default)
+            => _testAfterSaveAsync(command, cancellationToken);
 
         public Task<IResult> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
@@ -30,7 +30,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
     private static Func<TestCommand, CancellationToken, Task<IResult>> _testInternalExecuteAsync = null!;
 
-    private static Func<TestCommand, IResult, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     protected override string CommandName => TestName;
 
@@ -45,7 +45,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         _testInternalExecuteAsync = (_, _) => Task.FromResult<IResult>(new Success());
 
-        _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
+        _testAfterSaveAsync = (_, _) => Task.CompletedTask;
 
         CommandHandler = new TestStateCommandHandler(LoggerMock.Object, StateUnitMock.Object);
     }
@@ -115,7 +115,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
     public async Task WhenCanceledDuringAfterSave_ShouldReturnCanceled()
     {
         // Arrange
-        _testAfterSaveAsync = (_, _, _) => Task.FromException(new OperationCanceledException());
+        _testAfterSaveAsync = (_, _) => Task.FromException(new OperationCanceledException());
 
         SetupStateUnit_SaveChangesAsync();
 
@@ -138,7 +138,7 @@ public sealed class StateCommandHandlerTests : StateCommandHandlerTestBase<State
 
         var exception = new Exception(testExceptionMessage);
 
-        _testAfterSaveAsync = (_, _, _) => Task.FromException(exception);
+        _testAfterSaveAsync = (_, _) => Task.FromException(exception);
 
         SetupStateUnit_SaveChangesAsync();
 

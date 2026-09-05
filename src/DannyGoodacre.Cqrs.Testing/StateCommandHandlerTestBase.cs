@@ -8,14 +8,14 @@ public abstract class StateCommandHandlerTestBase<TCommandHandler>
     : StateCommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
-public abstract class StateCommandHandlerTestBase<TCommandHandler, TResultType>
-    : StateCommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
+public abstract class StateCommandHandlerTestBase<TCommandHandler, TResult>
+    : StateCommandHandlerTestCore<TCommandHandler, IResult<TResult>>
     where TCommandHandler : class;
 
-public abstract class StateCommandHandlerTestCore<TCommandHandler, TResult>
-    : CommandHandlerTestCore<TCommandHandler, TResult>
+public abstract class StateCommandHandlerTestCore<TCommandHandler, TResultWrapper>
+    : CommandHandlerTestCore<TCommandHandler, TResultWrapper>
     where TCommandHandler : class
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal StateCommandHandlerTestCore() { }
 

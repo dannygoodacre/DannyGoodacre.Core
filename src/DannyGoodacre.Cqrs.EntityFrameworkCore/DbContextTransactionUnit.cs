@@ -22,8 +22,8 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
     /// If an existing transaction is detected, the operation runs within it without creating a nested transaction.
     /// On failure or rollback, the <see cref="DbContext.ChangeTracker"/> is cleared to discard stale entities.
     /// </remarks>
-    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
-        where TResult : IResult
+    public async Task<TResultWrapper> ExecuteInTransactionAsync<TResultWrapper>(Func<CancellationToken, Task<TResultWrapper>> operation, CancellationToken cancellationToken = default)
+        where TResultWrapper : IResult
     {
         if (context.Database.CurrentTransaction is not null)
         {
@@ -40,7 +40,7 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
 
                 try
                 {
-                    TResult result = await state.operation(innerCancellationToken);
+                    TResultWrapper result = await state.operation(innerCancellationToken);
 
                     if (result.IsSuccess)
                     {

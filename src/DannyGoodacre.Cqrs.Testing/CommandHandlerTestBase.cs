@@ -10,14 +10,14 @@ public abstract class CommandHandlerTestBase<TCommandHandler>
     : CommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
-public abstract class CommandHandlerTestBase<TCommandHandler, TResultType>
-    : CommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
+public abstract class CommandHandlerTestBase<TCommandHandler, TResult>
+    : CommandHandlerTestCore<TCommandHandler, IResult<TResult>>
     where TCommandHandler : class;
 
-public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
+public abstract class CommandHandlerTestCore<TCommandHandler, TResultWrapper>
     : TestBase
     where TCommandHandler : class
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal CommandHandlerTestCore() { }
 
@@ -29,7 +29,7 @@ public abstract class CommandHandlerTestCore<TCommandHandler, TResult>
 
     protected TCommandHandler CommandHandler { get; set; } = null!;
 
-    protected abstract Task<TResult> Act();
+    protected abstract Task<TResultWrapper> Act();
 
     [SetUp]
     public virtual void BaseSetUp()

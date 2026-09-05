@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
+public abstract class QueryHandler<TQuery, TResult>(ILogger logger)
     where TQuery : IQuery
 {
     protected abstract string QueryName { get; }
@@ -24,7 +24,7 @@ public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
     /// <param name="query">The valid query to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>An <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<IResult<TResultType>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken = default);
+    protected abstract Task<IResult<TResult>> InternalExecuteAsync(TQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Run the query by validating first and, if successful, execute the internal logic.
@@ -32,7 +32,7 @@ public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
     /// <param name="query">The query to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>An <see cref="IResult{TResult}"/> indicating the outcome of the operation.</returns>
-    protected async Task<IResult<TResultType>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
+    protected async Task<IResult<TResult>> ExecuteAsync(TQuery query, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -71,17 +71,17 @@ public abstract class QueryHandler<TQuery, TResultType>(ILogger logger)
         }
     }
 
-    protected IResult<TResultType> Canceled() => new Canceled<TResultType>();
+    protected IResult<TResult> Canceled() => new Canceled<TResult>();
 
-    protected IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
+    protected IResult<TResult> Conflict(string message) => new Conflict<TResult>(message);
 
-    protected IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
+    protected IResult<TResult> DomainError(string message) => new DomainError<TResult>(message);
 
-    protected IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
+    protected IResult<TResult> InternalError(Error error) => new InternalError<TResult>(error);
 
-    protected IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
+    protected IResult<TResult> Invalid(ValidationState validationState) => new Invalid<TResult>(validationState);
 
-    protected IResult<TResultType> NotFound() => new NotFound<TResultType>();
+    protected IResult<TResult> NotFound() => new NotFound<TResult>();
 
-    protected IResult<TResultType> Success(TResultType value) => new Success<TResultType>(value);
+    protected IResult<TResult> Success(TResult value) => new Success<TResult>(value);
 }
