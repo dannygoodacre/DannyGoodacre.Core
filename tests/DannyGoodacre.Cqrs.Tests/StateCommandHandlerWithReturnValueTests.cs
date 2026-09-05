@@ -15,8 +15,8 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         protected override Task<IResult<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, int result, CancellationToken cancellationToken = default)
-            => _testAfterSaveAsync(command, result, cancellationToken);
+        protected override Task AfterSaveAsync(TestCommand command, int value, CancellationToken cancellationToken = default)
+            => _testAfterSaveAsync(command, value, cancellationToken);
 
         public Task<IResult<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);

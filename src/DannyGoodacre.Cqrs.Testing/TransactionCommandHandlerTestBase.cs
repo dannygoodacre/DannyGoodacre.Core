@@ -8,14 +8,14 @@ public abstract class TransactionCommandHandlerTestBase<TCommandHandler>
     : TransactionCommandHandlerTestCore<TCommandHandler, IResult>
     where TCommandHandler : class;
 
-public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResultType>
-    : TransactionCommandHandlerTestCore<TCommandHandler, IResult<TResultType>>
+public abstract class TransactionCommandHandlerTestBase<TCommandHandler, TResult>
+    : TransactionCommandHandlerTestCore<TCommandHandler, IResult<TResult>>
     where TCommandHandler : class;
 
-public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult>
-    : CommandHandlerTestCore<TCommandHandler, TResult>
+public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResultWrapper>
+    : CommandHandlerTestCore<TCommandHandler, TResultWrapper>
     where TCommandHandler : class
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal TransactionCommandHandlerTestCore() { }
 
@@ -41,9 +41,9 @@ public abstract class TransactionCommandHandlerTestCore<TCommandHandler, TResult
     protected void SetupTransactionUnit_ExecuteInTransactionAsync()
         => TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<TResult>>>(),
+                It.IsAny<Func<CancellationToken, Task<TResultWrapper>>>(),
                 It.Is<CancellationToken>(y => y == TestCancellationToken)))
-            .Returns<Func<CancellationToken, Task<TResult>>, CancellationToken>(
+            .Returns<Func<CancellationToken, Task<TResultWrapper>>, CancellationToken>(
                 (operation, ct) => operation(ct))
             .Verifiable(Times.Once);
 }
