@@ -6,7 +6,7 @@ using NUnit.Framework;
 
 namespace DannyGoodacre.Cqrs.Testing;
 
-public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBase
+public abstract class QueryHandlerTestBase<TQueryHandler, TResult> : TestBase
     where TQueryHandler : class
 {
     protected abstract string QueryName { get; }
@@ -17,7 +17,7 @@ public abstract class QueryHandlerTestBase<TQueryHandler, TResultType> : TestBas
 
     protected TQueryHandler QueryHandler { get; set; } = null!;
 
-    protected abstract Task<IResult<TResultType>> Act();
+    protected abstract Task<IResult<TResult>> Act();
 
     [SetUp]
     public void BaseSetUp()

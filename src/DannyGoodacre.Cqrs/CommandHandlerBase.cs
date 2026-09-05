@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class CommandHandlerBase<TCommand, TResult>
+public abstract class CommandHandlerBase<TCommand, TResultWrapper>
     where TCommand : ICommand
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal CommandHandlerBase(ILogger logger)
     {
@@ -29,7 +29,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// <param name="command">The valid command to process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
-    protected abstract Task<TResult> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
+    protected abstract Task<TResultWrapper> InternalExecuteAsync(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Execute the command by validating it first and, if valid, execute the internal logic.
@@ -37,7 +37,7 @@ public abstract class CommandHandlerBase<TCommand, TResult>
     /// <param name="command">The command to validate and process.</param>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>An <see cref="IResult"/> indicating the outcome of the operation.</returns>
-    protected async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected async Task<TResultWrapper> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -76,15 +76,15 @@ public abstract class CommandHandlerBase<TCommand, TResult>
         }
     }
 
-    protected abstract TResult Canceled();
+    protected abstract TResultWrapper Canceled();
 
-    protected abstract TResult Conflict(string message);
+    protected abstract TResultWrapper Conflict(string message);
 
-    protected abstract TResult DomainError(string message);
+    protected abstract TResultWrapper DomainError(string message);
 
-    protected abstract TResult InternalError(Error error);
+    protected abstract TResultWrapper InternalError(Error error);
 
-    protected abstract TResult Invalid(ValidationState validationState);
+    protected abstract TResultWrapper Invalid(ValidationState validationState);
 
-    protected abstract TResult NotFound();
+    protected abstract TResultWrapper NotFound();
 }

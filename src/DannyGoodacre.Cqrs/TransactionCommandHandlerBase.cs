@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public abstract class TransactionCommandHandlerBase<TCommand, TResult> : CommandHandlerBase<TCommand, TResult>
+public abstract class TransactionCommandHandlerBase<TCommand, TResultWrapper> : CommandHandlerBase<TCommand, TResultWrapper>
     where TCommand : ICommand
-    where TResult : IResult
+    where TResultWrapper : IResult
 {
     internal TransactionCommandHandlerBase(ILogger logger, ITransactionUnit transactionUnit) : base(logger)
     {
@@ -32,7 +32,7 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     /// </remarks>
     protected virtual int ExpectedChanges { get; set; } = -1;
 
-    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+    protected virtual Task AfterSaveAsync(TCommand command, TResultWrapper result, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
     /// <summary>
@@ -40,15 +40,15 @@ public abstract class TransactionCommandHandlerBase<TCommand, TResult> : Command
     /// If the command succeeds, persist all state changes and call <see cref="AfterSaveAsync"/>.
     /// </summary>
     /// <inheritdoc cref="CommandHandlerBase{TCommand,TResult}.ExecuteAsync" />
-    protected new async Task<TResult> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
+    protected new async Task<TResultWrapper> ExecuteAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        TResult result;
+        TResultWrapper result;
 
         try
         {
             result = await TransactionUnit.ExecuteInTransactionAsync(async innerCancellationToken =>
             {
-                TResult innerResult = await base.ExecuteAsync(command, innerCancellationToken);
+                TResultWrapper innerResult = await base.ExecuteAsync(command, innerCancellationToken);
 
                 if (innerResult.IsFailure)
                 {
