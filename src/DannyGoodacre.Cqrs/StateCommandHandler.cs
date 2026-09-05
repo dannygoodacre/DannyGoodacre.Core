@@ -27,6 +27,19 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
     protected override IResult NotFound() => new NotFound();
 
     protected IResult Success() => new Success();
+
+    /// <summary>
+    /// The hook executed after the command succeeds and state changes are saved.
+    /// </summary>
+    /// <param name="command">The processed command.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    protected virtual Task AfterSaveAsync(TCommand command, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    protected override sealed Task AfterSaveAsync(TCommand command, IResult result, CancellationToken cancellationToken = default)
+        => result is Success
+            ? AfterSaveAsync(command, cancellationToken)
+            : Task.CompletedTask;
 }
 
 /// <summary>
@@ -36,22 +49,36 @@ public abstract class StateCommandHandler<TCommand>(ILogger logger, IStateUnit s
 /// <param name="logger">The logger used for structured reporting.</param>
 /// <param name="stateUnit">The state unit for persisting changes.</param>
 /// <typeparam name="TCommand">The type of <see cref="ICommand"/> to be handled.</typeparam>
-/// <typeparam name="TResultType">The type of the return value in <see cref="IResult{T}"/>.</typeparam>
-public abstract class StateCommandHandler<TCommand, TResultType>(ILogger logger, IStateUnit stateUnit)
-    : StateCommandHandlerBase<TCommand, IResult<TResultType>>(logger, stateUnit)
+/// <typeparam name="TResult">The type of the return value in <see cref="IResult{T}"/>.</typeparam>
+public abstract class StateCommandHandler<TCommand, TResult>(ILogger logger, IStateUnit stateUnit)
+    : StateCommandHandlerBase<TCommand, IResult<TResult>>(logger, stateUnit)
     where TCommand : ICommand
 {
-    protected override IResult<TResultType> Canceled() => new Canceled<TResultType>();
+    protected override IResult<TResult> Canceled() => new Canceled<TResult>();
 
-    protected override IResult<TResultType> Conflict(string message) => new Conflict<TResultType>(message);
+    protected override IResult<TResult> Conflict(string message) => new Conflict<TResult>(message);
 
-    protected override IResult<TResultType> DomainError(string message) => new DomainError<TResultType>(message);
+    protected override IResult<TResult> DomainError(string message) => new DomainError<TResult>(message);
 
-    protected override IResult<TResultType> InternalError(Error error) => new InternalError<TResultType>(error);
+    protected override IResult<TResult> InternalError(Error error) => new InternalError<TResult>(error);
 
-    protected override IResult<TResultType> Invalid(ValidationState validationState) => new Invalid<TResultType>(validationState);
+    protected override IResult<TResult> Invalid(ValidationState validationState) => new Invalid<TResult>(validationState);
 
-    protected override IResult<TResultType> NotFound() => new NotFound<TResultType>();
+    protected override IResult<TResult> NotFound() => new NotFound<TResult>();
 
-    protected IResult<TResultType> Success(TResultType result) => new Success<TResultType>(result);
+    protected IResult<TResult> Success(TResult result) => new Success<TResult>(result);
+
+    /// <summary>
+    /// The hook executed after the command succeeds and state changes are saved.
+    /// </summary>
+    /// <param name="command">The processed command.</param>
+    /// <param name="result">The value produced from the command.</param>
+    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
+    protected virtual Task AfterSaveAsync(TCommand command, TResult result, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+
+    protected override sealed Task AfterSaveAsync(TCommand command, IResult<TResult> result, CancellationToken cancellationToken = default)
+        => result is Success<TResult> success
+            ? AfterSaveAsync(command, success.Value, cancellationToken)
+            : Task.CompletedTask;
 }

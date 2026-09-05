@@ -15,7 +15,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         protected override Task<IResult<int>> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _testInternalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, IResult<int> result, CancellationToken cancellationToken = default)
+        protected override Task AfterSaveAsync(TestCommand command, int result, CancellationToken cancellationToken = default)
             => _testAfterSaveAsync(command, result, cancellationToken);
 
         public Task<IResult<int>> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
@@ -32,7 +32,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
 
     private static Func<TestCommand, CancellationToken, Task<IResult<int>>> _testInternalExecuteAsync = null!;
 
-    private static Func<TestCommand, IResult<int>, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, int, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     protected override string CommandName => TestName;
 

@@ -15,8 +15,8 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
         protected override Task<IResult> InternalExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => _internalExecuteAsync(command, cancellationToken);
 
-        protected override Task AfterSaveAsync(TestCommand command, IResult result, CancellationToken cancellationToken = default)
-            => _testAfterSaveAsync(command, result, cancellationToken);
+        protected override Task AfterSaveAsync(TestCommand command, CancellationToken cancellationToken = default)
+            => _testAfterSaveAsync(command, cancellationToken);
 
         public Task<IResult> TestExecuteAsync(TestCommand command, CancellationToken cancellationToken = default)
             => ExecuteAsync(command, cancellationToken);
@@ -30,7 +30,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
     private static Func<TestCommand, CancellationToken, Task<IResult>> _internalExecuteAsync = null!;
 
-    private static Func<TestCommand, IResult, CancellationToken, Task> _testAfterSaveAsync = null!;
+    private static Func<TestCommand, CancellationToken, Task> _testAfterSaveAsync = null!;
 
     private readonly TestCommand _testCommand = new();
 
@@ -47,7 +47,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         _internalExecuteAsync = (_, _) => Task.FromResult<IResult>(new Success());
 
-        _testAfterSaveAsync = (_, _, _) => Task.CompletedTask;
+        _testAfterSaveAsync = (_, _) => Task.CompletedTask;
 
         CommandHandler = new TestTransactionCommandHandler(LoggerMock.Object, TransactionUnitMock.Object);
     }
@@ -184,7 +184,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         SetupTransactionUnit_SaveChangesAsync();
 
-        _testAfterSaveAsync = (_, _, _) => Task.FromException(new OperationCanceledException());
+        _testAfterSaveAsync = (_, _) => Task.FromException(new OperationCanceledException());
 
         LoggerMock.IsEnabled();
 
@@ -209,7 +209,7 @@ public sealed class TransactionCommandHandlerTests : TransactionCommandHandlerTe
 
         SetupTransactionUnit_SaveChangesAsync();
 
-        _testAfterSaveAsync = (_, _, _) => Task.FromException(exception);
+        _testAfterSaveAsync = (_, _) => Task.FromException(exception);
 
         LoggerMock.IsEnabled();
 
