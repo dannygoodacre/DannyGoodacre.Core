@@ -12,6 +12,8 @@ public sealed class TestBaseTests
     {
         public static void TestAssertSuccess(IResult result) => AssertSuccess(result);
 
+        public static void TestAssertSuccess<T>(IResult<T> result) => AssertSuccess(result);
+
         public static void TestAssertSuccess<T>(IResult<T> result, T expectedValue) => AssertSuccess(result, expectedValue);
 
         public static void TestAssertInvalid(IResult result, ValidationState validationState) => AssertInvalid(result, validationState);

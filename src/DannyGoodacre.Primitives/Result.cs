@@ -5,39 +5,14 @@ namespace DannyGoodacre.Primitives;
 /// </summary>
 public interface IResult
 {
-    public bool IsSuccess => this is Success;
+    public bool IsSuccess => this is ISuccessResult;
 
     public bool IsFailure => !IsSuccess;
-
-    /// <summary>
-    /// Convert a non-success <see cref="IResult"/> to a strongly-typed failure <see cref="IResult{TOut}"/>.
-    /// </summary>
-    /// <typeparam name="TOut">The target payload type.</typeparam>
-    /// <returns>A typed failure matching the current outcome.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when attempting to map a <see cref="Success"/> result.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when an unknown result is given.</exception>
-    public IResult<TOut> MapFailure<TOut>()
-        => this switch
-        {
-            Canceled => new Canceled<TOut>(),
-
-            Conflict conflict => new Conflict<TOut>(conflict.Message),
-
-            DomainError domainError => new DomainError<TOut>(domainError.Message),
-
-            InternalError internalError => new InternalError<TOut>(internalError.Error),
-
-            Invalid invalid => new Invalid<TOut>(invalid.ValidationState),
-
-            NotFound => new NotFound<TOut>(),
-
-            Success => throw new InvalidOperationException("Cannot map a successful result to a failure."),
-
-            _ => throw new ArgumentOutOfRangeException(nameof(IResult))
-        };
 }
 
-public record Success : IResult;
+public interface ISuccessResult : IResult;
+
+public sealed record Success : ISuccessResult;
 
 public record Canceled : IResult;
 

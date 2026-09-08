@@ -4,6 +4,58 @@ namespace DannyGoodacre.Primitives.Tests;
 public sealed class ResultWithValueTests : TestBase
 {
     [Test]
+    public void IsSuccess_WhenSuccess_ShouldReturnTrue()
+    {
+        // Arrange
+        IResult<int> testResult = Result<int>.Success(123);
+
+        // Act
+        bool result = testResult.IsSuccess;
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSuccess_WhenNotSuccess_ShouldReturnFalse()
+    {
+        // Arrange
+        IResult<int> testResult = Result<int>.Canceled();
+
+        // Act
+        bool result = testResult.IsSuccess;
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsFailure_WhenSuccess_ShouldReturnFalse()
+    {
+        // Arrange
+        IResult<int> testResult = Result<int>.Success(123);
+
+        // Act
+        bool result = testResult.IsFailure;
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsFailure_WhenFailure_ShouldReturnTrue()
+    {
+        // Arrange
+        IResult<int> testResult = Result<int>.Canceled();
+
+        // Act
+        bool result = testResult.IsFailure;
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
     public void Success()
     {
         // Arrange

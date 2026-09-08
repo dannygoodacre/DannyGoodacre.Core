@@ -1,25 +1,43 @@
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DannyGoodacre.Primitives;
 
-public class ValidationState
+/// <summary>
+/// A mutable collection of validation errors grouped by property name.
+/// </summary>
+public readonly record struct ValidationState()
 {
     private readonly Dictionary<string, List<string>> _errors = [];
 
-    public IReadOnlyDictionary<string, List<string>> Errors => _errors;
+    /// <summary>
+    /// A readonly view of the current validation errors.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors
+        => _errors.ToDictionary(kvp => kvp.Key, IReadOnlyList<string> (kvp) => kvp.Value);
 
-    public void AddError(string property, string error)
-    {
-        ref List<string>? errors = ref CollectionsMarshal.GetValueRefOrAddDefault(_errors, property, out _);
-
-        errors ??= [];
-
-        errors.Add(error);
-    }
-
+    /// <summary>
+    /// Indicates whether any validation errors have been recorded.
+    /// </summary>
     public bool HasErrors => _errors.Count > 0;
 
+    /// <summary>
+    /// Append a validation error message to the specified property name.
+    /// </summary>
+    public void AddError(string property, string error)
+    {
+        if (!_errors.TryGetValue(property, out List<string>? list))
+        {
+            list = [];
+
+            _errors[property] = list;
+        }
+
+        list.Add(error);
+    }
+
+    /// <summary>
+    /// A human-readable, multi-line string.
+    /// </summary>
     public override string ToString()
     {
         if (!HasErrors)
@@ -29,7 +47,7 @@ public class ValidationState
 
         var stringBuilder = new StringBuilder();
 
-        foreach ((string property, List<string> errors) in Errors)
+        foreach ((string property, List<string> errors) in _errors)
         {
             stringBuilder.AppendLine($"{property}:");
 
