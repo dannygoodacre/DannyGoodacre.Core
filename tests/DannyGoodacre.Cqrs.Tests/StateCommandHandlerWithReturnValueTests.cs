@@ -162,7 +162,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         SetupStateUnit_SaveChangesAsync();
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertSuccess(result);

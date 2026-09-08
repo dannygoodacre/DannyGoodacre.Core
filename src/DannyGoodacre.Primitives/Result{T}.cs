@@ -4,21 +4,26 @@ namespace DannyGoodacre.Primitives;
 /// The outcome of an operation with a <typeparamref name="T"/> payload, without throwing exceptions.
 /// </summary>
 /// <typeparam name="T">The type of value returned when the operation succeeds.</typeparam>
-public interface IResult<out T> : IResult;
+public interface IResult<out T> : IResult
+{
+    public new bool IsSuccess => this is ISuccessResult;
 
-public record Success<T>(T Value) : Success, IResult<T>;
+    public new bool IsFailure => !IsSuccess;
+}
 
-public record Canceled<T> : Canceled, IResult<T>;
+public sealed record Success<T>(T Value) : ISuccessResult, IResult<T>;
 
-public record Conflict<T>(string Message) : Conflict(Message), IResult<T>;
+public sealed record Canceled<T> : Canceled, IResult<T>;
 
-public record DomainError<T>(string Message) : DomainError(Message), IResult<T>;
+public sealed record Conflict<T>(string Message) : Conflict(Message), IResult<T>;
 
-public record NotFound<T> : NotFound, IResult<T>;
+public sealed record DomainError<T>(string Message) : DomainError(Message), IResult<T>;
 
-public record InternalError<T>(Error Error) : InternalError(Error), IResult<T>;
+public sealed record NotFound<T> : NotFound, IResult<T>;
 
-public record Invalid<T>(ValidationState ValidationState) : Invalid(ValidationState), IResult<T>;
+public sealed record InternalError<T>(Error Error) : InternalError(Error), IResult<T>;
+
+public sealed record Invalid<T>(ValidationState ValidationState) : Invalid(ValidationState), IResult<T>;
 
 /// <summary>
 /// Static factory methods for creating <see cref="IResult{T}"/> instances.

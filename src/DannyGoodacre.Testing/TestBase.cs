@@ -70,13 +70,21 @@ public abstract class TestBase
     }
 
     protected static void AssertSuccess(IResult result)
-        => Assert.That(result, Is.InstanceOf<Success>());
+        => Assert.That(result, Is.AssignableTo<ISuccessResult>());
+
+    protected static void AssertSuccess<T>(IResult<T> result)
+        => Assert.That(result, Is.InstanceOf<Success<T>>());
 
     protected static void AssertSuccess<T>(IResult<T> result, T expectedValue)
     {
-        Assert.That(result, Is.InstanceOf<Success<T>>());
+        if (result is not Success<T>(var value))
+        {
+            Assert.Fail($"Expected Success<{typeof(T).Name}>, but received '{result.GetType().Name}'.");
 
-        Assert.That(((Success<T>)result).Value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
+            return;
+        }
+
+        Assert.That(value, Is.EqualTo(expectedValue).UsingPropertiesComparer());
     }
 
     protected static void AssertNotFound(IResult result)
