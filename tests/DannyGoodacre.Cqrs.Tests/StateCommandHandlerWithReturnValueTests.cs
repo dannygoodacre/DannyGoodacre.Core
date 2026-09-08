@@ -61,7 +61,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         _testInternalExecuteAsync =  (_, _) => Task.FromResult<IResult<int>>(new InternalError<int>(testErrorMessage));
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testErrorMessage);
@@ -82,7 +82,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandCanceledWhilePersistingChanges(CommandName);
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -107,7 +107,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandFailedWhilePersistingChanges(CommandName, exception);
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);
@@ -126,7 +126,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandCanceledDuringAfterSave(CommandName);
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertCanceled(result);
@@ -149,7 +149,7 @@ public sealed class StateCommandHandlerWithReturnValueTests : StateCommandHandle
         LoggerMock.LogCommandFailedDuringAfterSave(CommandName, exception);
 
         // Act
-        IResult result = await Act();
+        IResult<int> result = await Act();
 
         // Assert
         AssertInternalError(result, testExceptionMessage);

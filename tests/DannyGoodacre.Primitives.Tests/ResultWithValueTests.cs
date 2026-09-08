@@ -7,7 +7,7 @@ public sealed class ResultWithValueTests : TestBase
     public void IsSuccess_WhenSuccess_ShouldReturnTrue()
     {
         // Arrange
-        IResult testResult = Result.Success();
+        IResult<int> testResult = Result<int>.Success(123);
 
         // Act
         bool result = testResult.IsSuccess;
@@ -20,7 +20,7 @@ public sealed class ResultWithValueTests : TestBase
     public void IsSuccess_WhenNotSuccess_ShouldReturnFalse()
     {
         // Arrange
-        IResult testResult = Result.Canceled();
+        IResult<int> testResult = Result<int>.Canceled();
 
         // Act
         bool result = testResult.IsSuccess;
@@ -33,7 +33,7 @@ public sealed class ResultWithValueTests : TestBase
     public void IsFailure_WhenSuccess_ShouldReturnFalse()
     {
         // Arrange
-        IResult testResult = Result.Success();
+        IResult<int> testResult = Result<int>.Success(123);
 
         // Act
         bool result = testResult.IsFailure;
@@ -46,7 +46,7 @@ public sealed class ResultWithValueTests : TestBase
     public void IsFailure_WhenFailure_ShouldReturnTrue()
     {
         // Arrange
-        IResult testResult = Result.Canceled();
+        IResult<int> testResult = Result<int>.Canceled();
 
         // Act
         bool result = testResult.IsFailure;
