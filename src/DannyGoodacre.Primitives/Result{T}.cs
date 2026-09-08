@@ -4,12 +4,7 @@ namespace DannyGoodacre.Primitives;
 /// The outcome of an operation with a <typeparamref name="T"/> payload, without throwing exceptions.
 /// </summary>
 /// <typeparam name="T">The type of value returned when the operation succeeds.</typeparam>
-public interface IResult<out T> : IResult
-{
-    public new bool IsSuccess => this is ISuccessResult;
-
-    public new bool IsFailure => !IsSuccess;
-}
+public interface IResult<out T> : IResult;
 
 public sealed record Success<T>(T Value) : ISuccessResult, IResult<T>;
 
