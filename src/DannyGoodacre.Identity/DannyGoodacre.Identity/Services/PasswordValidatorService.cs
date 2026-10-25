@@ -6,7 +6,7 @@ namespace DannyGoodacre.Identity.Application.Services;
 
 internal interface IPasswordValidatorService
 {
-    public IResult IsPasswordValid(ValidationState state, string password);
+    IResult IsPasswordValid(ValidationState state, string password);
 }
 
 internal sealed class PasswordValidatorService(IOptions<IdentityOptions> options)
@@ -18,34 +18,35 @@ internal sealed class PasswordValidatorService(IOptions<IdentityOptions> options
 
     public IResult IsPasswordValid(ValidationState state, string password)
     {
-        if (!state.IsNotNullEmptyOrWhitespace(password, nameof(password)))
+        if (string.IsNullOrWhiteSpace(password))
         {
+            state.AddError(Name, "Password is required.");
             return Result.Invalid(state);
         }
 
-        if (_options.RequireLowercase)
+        if (_options.RequireLowercase && !password.Any(char.IsLower))
         {
-            state.ContainsLowercase(password, Name);
+            state.AddError(Name, "Password must contain at least one lowercase letter ('a'-'z').");
         }
 
-        if (_options.RequireUppercase)
+        if (_options.RequireUppercase && !password.Any(char.IsUpper))
         {
-            state.ContainsUppercase(password, Name);
+            state.AddError(Name, "Password must contain at least one uppercase letter ('A'-'Z').");
         }
 
-        if (_options.RequireDigit)
+        if (_options.RequireDigit && !password.Any(char.IsDigit))
         {
-            state.ContainsDigit(password, Name);
+            state.AddError(Name, "Password must contain at least one digit ('0'-'9').");
         }
 
-        if (_options.RequireNonAlphanumeric)
+        if (_options.RequireNonAlphanumeric && password.All(char.IsLetterOrDigit))
         {
-            state.ContainsNonAlphanumeric(password, Name);
+            state.AddError(Name, "Password must contain at least one non-alphanumeric character.");
         }
 
-        if (_options.MinimumLength > 0)
+        if (_options.MinimumLength > 0 && password.Length < _options.MinimumLength)
         {
-            state.IsAtLeastLength(password, Name, _options.MinimumLength);
+            state.AddError(Name, $"Password must be at least {_options.MinimumLength} characters long.");
         }
 
         return state.HasErrors

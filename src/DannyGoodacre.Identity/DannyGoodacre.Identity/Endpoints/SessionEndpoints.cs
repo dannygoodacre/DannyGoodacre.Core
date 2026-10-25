@@ -1,18 +1,18 @@
 using System.Security.Claims;
 using DannyGoodacre.Identity.Application.Abstractions.Repositories;
-using DannyGoodacre.Identity.Application.Models;
 using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Identity.Domain;
-using DannyGoodacre.Identity.Entities;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Models;
+using DannyGoodacre.Identity.Responses;
 using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Claim = DannyGoodacre.Identity.Entities.Claim;
+using Claim = DannyGoodacre.Identity.Domain.Entities.Claim;
 
 namespace DannyGoodacre.Identity.Endpoints;
 
@@ -57,21 +57,11 @@ internal static class SessionEndpoints
 
                 List<Claim> userClaims = await userClaimRepository.GetManyAsync(user.Id, cancellationToken);
 
-                List<ClaimDefinition> claims = userClaims.Select(x => new ClaimDefinition
-                {
-                    Type = x.Type,
-                    Value = x.Value
-                }).ToList();
+                List<ClaimDefinition> claims = userClaims.Select(x => new ClaimDefinition(x.Type, x.Value)).ToList();
 
                 List<string> roles = user.Roles.Select(x => x.Role.Name).ToList();
 
-                var profileResponse = new UserSecurityProfileResponse
-                {
-                    Id = user.PublicId,
-                    Username = user.Username,
-                    Claims = claims,
-                    Roles = roles
-                };
+                var profileResponse = new UserSecurityProfileResponse(user.PublicId, user.Username, roles, claims);
 
                 ClaimsPrincipal claimsPrincipal = claimService.CreateClaimsPrincipal(profileResponse);
 

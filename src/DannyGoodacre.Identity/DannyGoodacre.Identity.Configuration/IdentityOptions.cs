@@ -2,7 +2,9 @@ namespace DannyGoodacre.Identity.Configuration;
 
 public class IdentityOptions
 {
-   public CookieOptions Cookie { get; set; } = new();
+    public List<string> Permissions { get; set; } = [];
+
+    public CookieOptions Cookie { get; set; } = new();
 
    public PasswordValidatorOptions PasswordValidator { get; set; } = new();
 

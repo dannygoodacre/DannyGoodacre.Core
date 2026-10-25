@@ -1,6 +1,6 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Identity.Application.Abstractions.Repositories;
-using DannyGoodacre.Identity.Entities;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Models;
 using Microsoft.AspNetCore.Builder;

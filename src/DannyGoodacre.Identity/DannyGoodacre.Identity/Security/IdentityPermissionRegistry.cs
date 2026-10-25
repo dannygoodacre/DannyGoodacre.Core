@@ -3,33 +3,38 @@ namespace DannyGoodacre.Identity.Security;
 public interface IIdentityPermissionRegistry
 {
     IReadOnlyCollection<string> AllPermissions { get; }
-
-    void Register(params string[] permissions);
 }
 
-public class IdentityPermissionRegistry : IIdentityPermissionRegistry
+public sealed class IdentityPermissionRegistry : IIdentityPermissionRegistry
 {
-    private readonly HashSet<string> _permissions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        BuiltInPermissions.ClaimsCreate,
-        BuiltInPermissions.ClaimsRead,
-        BuiltInPermissions.ClaimsDelete,
-        BuiltInPermissions.RolesCreate,
-        BuiltInPermissions.RolesRead,
-        BuiltInPermissions.RolesDelete,
-        BuiltInPermissions.UsersDelete
-    };
-
     public const string PermissionClaimType = "Permission";
 
-    public IReadOnlyCollection<string> AllPermissions
-        => _permissions;
+    private readonly HashSet<string> _allPermissions;
 
-    public void Register(params string[] permissions)
+    public IdentityPermissionRegistry(IEnumerable<IPermissionProvider> permissionProviders)
     {
-        foreach (var permission in permissions)
+        _allPermissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            _permissions.Add(permission);
+            BuiltInPermissions.ClaimsCreate,
+            BuiltInPermissions.ClaimsRead,
+            BuiltInPermissions.ClaimsDelete,
+            BuiltInPermissions.RolesCreate,
+            BuiltInPermissions.RolesRead,
+            BuiltInPermissions.RolesDelete,
+            BuiltInPermissions.UsersDelete
+        };
+
+        foreach (var provider in permissionProviders)
+        {
+            foreach (string permission in provider.GetPermissions())
+            {
+                if (!string.IsNullOrWhiteSpace(permission))
+                {
+                    _allPermissions.Add(permission.Trim());
+                }
+            }
         }
     }
+
+    public IReadOnlyCollection<string> AllPermissions => _allPermissions;
 }

@@ -1,4 +1,6 @@
+using DannyGoodacre.Identity.Application;
 using DannyGoodacre.Identity.Application.Abstractions.Repositories;
+using DannyGoodacre.Identity.Domain.Entities;
 using DannyGoodacre.Identity.Models;
 using DannyGoodacre.Identity.Security;
 using Microsoft.AspNetCore.Builder;

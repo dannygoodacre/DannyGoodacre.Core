@@ -1,15 +1,14 @@
 using System.Security.Claims;
-using DannyGoodacre.Identity.Application.Queries;
+using DannyGoodacre.Identity.Application.Abstractions.Repositories;
 using DannyGoodacre.Identity.Configuration;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Identity.Domain.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 
 namespace DannyGoodacre.Identity.Services;
 
-internal sealed class SecurityStampValidatorService(IValidateSecurityStamp validateSecurityStamp,
-                                                    IOptions<IdentityOptions> options)
+internal sealed class SecurityStampValidatorService(IUserRepository userRepository, IOptions<IdentityOptions> options)
     : CookieAuthenticationEvents
 {
     private readonly SecurityStampOptions _options = options.Value.SecurityStamp;
@@ -39,18 +38,12 @@ internal sealed class SecurityStampValidatorService(IValidateSecurityStamp valid
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(securityStamp))
         {
             await RejectAndSignOutAsync(context);
-
             return;
         }
 
-        Result<bool> result = await validateSecurityStamp.ExecuteAsync(username, securityStamp);
+        User? user = await userRepository.GetAsync(username, context.HttpContext.RequestAborted);
 
-        if (!result.IsSuccess)
-        {
-            return;
-        }
-
-        if (!result.Value)
+        if (user is null || !string.Equals(user.SecurityStamp, securityStamp, StringComparison.Ordinal))
         {
             await RejectAndSignOutAsync(context);
 

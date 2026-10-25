@@ -1,5 +1,6 @@
 using DannyGoodacre.Identity.Configuration;
 using DannyGoodacre.Identity.Data;
+using DannyGoodacre.Identity.Hashing;
 using DannyGoodacre.Identity.Security;
 using DannyGoodacre.Identity.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -14,70 +15,61 @@ namespace DannyGoodacre.Identity;
 
 public static class ServiceCollectionExtensions
 {
-    extension(IServiceCollection services)
+    public static IdentityBuilder AddIdentity<TContext>(
+        this IServiceCollection services,
+        IConfiguration? configuration = null,
+        Action<IdentityOptions>? configureOptions = null)
+        where TContext : IdentityContext
     {
-        public IServiceCollection AddIdentity<TContext>(IConfiguration? configuration = null,
-                                                        Action<IdentityOptions>? configureOptions = null)
-            where TContext : IdentityContext
+        services.Configure<IdentityOptions>(options =>
         {
-            services.Configure<IdentityOptions>(options =>
-            {
-                configuration?.GetSection("Identity").Bind(options);
+            configuration?.GetSection("Identity").Bind(options);
+            configureOptions?.Invoke(options);
+        });
 
-                configureOptions?.Invoke(options);
+        services.AddSingleton<IIdentityPermissionRegistry, IdentityPermissionRegistry>();
+        services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
+        services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+
+        services.AddScoped<SecurityStampValidatorService>();
+        services.AddScoped<IClaimService, ClaimService>();
+        services.AddScoped<ICookieService, CookieService>();
+        services.AddScoped<IPasswordHashingService, PasswordHashingService>();
+
+        services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            .AddCookie(options =>
+            {
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    return Task.CompletedTask;
+                };
             });
 
-            services.AddSingleton<IIdentityPermissionRegistry, IdentityPermissionRegistry>();
+        services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+            .Configure<IOptions<IdentityOptions>>((cookieAuthOptions, identityOptions) =>
+            {
+                CookieOptions cookieSettings = identityOptions.Value.Cookie;
 
-            services.AddSingleton<IAuthorizationPolicyProvider, DynamicPermissionPolicyProvider>();
+                cookieAuthOptions.Cookie.Name = cookieSettings.Name;
+                cookieAuthOptions.Cookie.HttpOnly = cookieSettings.HttpOnly;
+                cookieAuthOptions.Cookie.SecurePolicy = cookieSettings.SecurePolicy;
+                cookieAuthOptions.Cookie.SameSite = cookieSettings.SameSite;
+                cookieAuthOptions.LoginPath = cookieSettings.LoginPath;
+                cookieAuthOptions.ExpireTimeSpan = cookieSettings.ExpireTimeSpan;
+                cookieAuthOptions.SlidingExpiration = cookieSettings.SlidingExpiration;
 
-            services.AddSingleton<IAuthorizationHandler, PermissionHandler>();
+                cookieAuthOptions.EventsType = typeof(SecurityStampValidatorService);
+            });
 
-            services.AddScoped<SecurityStampValidatorService>();
+        services.AddData<TContext>();
 
-            services.AddScoped<IClaimService, ClaimService>();
-
-            services.AddScoped<ICookieService, CookieService>();
-
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.Events.OnRedirectToLogin = context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-
-                        return Task.CompletedTask;
-                    };
-
-                    options.Events.OnRedirectToAccessDenied = context =>
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-
-                        return Task.CompletedTask;
-                    };
-                });
-
-            services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
-                .Configure<IOptions<IdentityOptions>>((cookieAuthOptions, identityOptions) =>
-                {
-                    CookieOptions cookieSettings = identityOptions.Value.Cookie;
-
-                    cookieAuthOptions.Cookie.Name = cookieSettings.Name;
-                    cookieAuthOptions.Cookie.HttpOnly = cookieSettings.HttpOnly;
-                    cookieAuthOptions.Cookie.SecurePolicy = cookieSettings.SecurePolicy;
-                    cookieAuthOptions.Cookie.SameSite = cookieSettings.SameSite;
-                    cookieAuthOptions.LoginPath = cookieSettings.LoginPath;
-                    cookieAuthOptions.ExpireTimeSpan = cookieSettings.ExpireTimeSpan;
-                    cookieAuthOptions.SlidingExpiration = cookieSettings.SlidingExpiration;
-
-                    cookieAuthOptions.EventsType = typeof(SecurityStampValidatorService);
-                });
-
-            services.AddData<TContext>();
-
-            services.AddApplication();
-
-            return services;
-        }
+        return new IdentityBuilder(services);
     }
 }
