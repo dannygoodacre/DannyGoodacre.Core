@@ -37,7 +37,7 @@ internal static class SessionEndpoints
                                                                   HttpContext httpContext,
                                                                   CancellationToken cancellationToken) =>
             {
-                User? user = await userRepository.GetWithTrackingAsync(request.Username, cancellationToken);
+                User? user = await userRepository.GetAsync(request.Username, cancellationToken);
 
                 if (user is null || !hashingService.Verify(request.Password, user.PasswordHash))
                 {

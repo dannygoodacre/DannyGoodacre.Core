@@ -69,14 +69,24 @@ internal static class AdminEndpoints
                     PublicId = Guid.NewGuid(),
                     Name = request.Name,
                     Claims = request.ClaimIds.Select(claimId => new RoleClaim
-                    {
-                        ClaimId = claimIdMap[claimId]
-                    }).ToList()
+                        {
+                            ClaimId = claimIdMap[claimId]
+                        })
+                        .ToList()
                 });
 
                 return Results.NoContent();
             })
             .RequireAuthorization($"Permission:{BuiltInPermissions.RolesCreate}");
+
+            group.MapGet("roles", async Task<IResult> (IRoleRepository roleRepository,
+                                                       CancellationToken cancellationToken) =>
+            {
+                var roles = await roleRepository.GetAllAsync(cancellationToken);
+
+                return Results.Ok(roles.Select(x => x.ToResponse()));
+            })
+            .RequireAuthorization($"Permission:{BuiltInPermissions.RolesRead}");
 
             group.MapGet("roles/{id:guid}", async Task<IResult> (IRoleRepository roleRepository,
                                                                  [FromRoute] Guid id,

@@ -5,7 +5,7 @@ public interface IIdentityPermissionRegistry
     IReadOnlyCollection<string> AllPermissions { get; }
 }
 
-public sealed class IdentityPermissionRegistry : IIdentityPermissionRegistry
+internal sealed class IdentityPermissionRegistry : IIdentityPermissionRegistry
 {
     public const string PermissionClaimType = "Permission";
 
@@ -15,9 +15,7 @@ public sealed class IdentityPermissionRegistry : IIdentityPermissionRegistry
     {
         _allPermissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            BuiltInPermissions.ClaimsCreate,
             BuiltInPermissions.ClaimsRead,
-            BuiltInPermissions.ClaimsDelete,
             BuiltInPermissions.RolesCreate,
             BuiltInPermissions.RolesRead,
             BuiltInPermissions.RolesDelete,

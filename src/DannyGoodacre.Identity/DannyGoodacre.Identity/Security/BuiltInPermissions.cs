@@ -2,11 +2,7 @@ namespace DannyGoodacre.Identity.Security;
 
 public static class BuiltInPermissions
 {
-    public const string ClaimsCreate = "Claims.Create";
-
     public const string ClaimsRead = "Claims.Read";
-
-    public const string ClaimsDelete = "Claims.Delete";
 
     public const string RolesCreate = "Roles.Create";
 

@@ -4,7 +4,7 @@ using Microsoft.OpenApi;
 
 namespace Test;
 
-public class Program
+public sealed class Program
 {
     public async static Task Main(string[] args)
     {
@@ -17,7 +17,10 @@ public class Program
 
         builder.Services.AddEntityFrameworkUnits<ApplicationContext>();
 
-        builder.Services.AddIdentity<ApplicationContext>(builder.Configuration);
+        builder.Services
+            .AddIdentity<ApplicationContext>(builder.Configuration)
+            .AddPermissions(typeof(BlackjackPermissions))
+            .AddRoles(BlackjackRoles.Mappings);
 
         builder.Services.AddEndpointsApiExplorer();
 

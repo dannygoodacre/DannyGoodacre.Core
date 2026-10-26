@@ -1,10 +1,7 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace DannyGoodacre.Identity.Domain.Entities;
 
 public class Claim
 {
-    [Key]
     public int Id { get; set; }
 
     public Guid PublicId { get; set; }
@@ -12,4 +9,6 @@ public class Claim
     public required string Type { get; set; }
 
     public required string Value { get; set; }
+
+    public bool IsDisabled { get; set; }
 }

@@ -8,12 +8,12 @@ internal static class ClaimExtensions
     extension(Claim claim)
     {
         public ClaimResponse ToResponse()
-            => new(claim.PublicId, claim.Type, claim.Value);
+            => new(claim.PublicId, claim.Type, claim.Value, claim.IsDisabled);
     }
 
     extension(RoleClaim claim)
     {
         public ClaimResponse ToResponse()
-            => new(claim.Claim.PublicId, claim.Claim.Type, claim.Claim.Value);
+            => new(claim.Claim.PublicId, claim.Claim.Type, claim.Claim.Value, claim.Claim.IsDisabled);
     }
 }

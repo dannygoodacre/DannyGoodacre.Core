@@ -15,7 +15,7 @@ namespace Test.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.Claim", b =>
                 {
@@ -23,20 +23,28 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("PublicId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Type")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
                         .IsRequired()
+                        .HasMaxLength(512)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Claims");
+                    b.HasIndex("Type", "Value")
+                        .IsUnique();
+
+                    b.ToTable("Claims", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.Role", b =>
@@ -45,8 +53,12 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsDisabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PublicId")
@@ -54,28 +66,28 @@ namespace Test.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.RoleClaim", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("RoleId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ClaimId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
+                    b.HasKey("RoleId", "ClaimId");
 
                     b.HasIndex("ClaimId");
 
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("RoleClaims");
+                    b.ToTable("RoleClaims", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.User", b =>
@@ -85,7 +97,9 @@ namespace Test.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsApproved")
@@ -96,6 +110,7 @@ namespace Test.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasMaxLength(1024)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("PublicId")
@@ -103,57 +118,53 @@ namespace Test.Migrations
 
                     b.Property<string>("SecurityStamp")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Username")
                         .IsRequired()
+                        .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserClaim", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ClaimId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "ClaimId");
 
                     b.HasIndex("ClaimId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserClaims");
+                    b.ToTable("UserClaims", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserRole", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("UserId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("RoleId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId", "RoleId");
 
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserRole");
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.RoleClaim", b =>
@@ -164,15 +175,13 @@ namespace Test.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.Role", "Role")
+                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.Role", null)
                         .WithMany("Claims")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Claim");
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserClaim", b =>
@@ -183,15 +192,13 @@ namespace Test.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.User", "User")
+                    b.HasOne("DannyGoodacre.Identity.Domain.Entities.User", null)
                         .WithMany("Claims")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Claim");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DannyGoodacre.Identity.Domain.Entities.UserRole", b =>
@@ -204,7 +211,9 @@ namespace Test.Migrations
 
                     b.HasOne("DannyGoodacre.Identity.Domain.Entities.User", null)
                         .WithMany("Roles")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Role");
                 });

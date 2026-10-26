@@ -14,4 +14,12 @@ public class IdentityContext(DbContextOptions options) : DbContext(options)
     public DbSet<UserClaim> UserClaims { get; set; }
 
     public DbSet<RoleClaim> RoleClaims { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Required: Automatically applies UserRoleConfiguration, RoleClaimConfiguration, etc.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityContext).Assembly);
+    }
 }

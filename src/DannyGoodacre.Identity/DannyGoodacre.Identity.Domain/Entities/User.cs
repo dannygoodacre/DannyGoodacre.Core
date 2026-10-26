@@ -1,10 +1,7 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace DannyGoodacre.Identity.Domain.Entities;
 
 public sealed class User
 {
-    [Key]
     public int Id { get; init; }
 
     public required Guid PublicId { get; set; }

@@ -20,20 +20,12 @@ public class UserRepository(IdentityContext context) : IUserRepository
 
     public Task<User?> GetAsync(Guid publicId, CancellationToken cancellationToken = default)
         => context.Users
+            .Include(x => x.Claims)
             .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
 
     public Task<User?> GetAsync(string username, CancellationToken cancellationToken = default)
         => context.Users
-            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
-
-    public Task<User?> GetWithTrackingAsync(Guid publicId, CancellationToken cancellationToken = default)
-        => context.Users
-            .AsTracking()
-            .FirstOrDefaultAsync(x => x.PublicId == publicId, cancellationToken);
-
-    public Task<User?> GetWithTrackingAsync(string username, CancellationToken cancellationToken = default)
-        => context.Users
-            .AsTracking()
+            .Include(x => x.Claims)
             .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
 
     public void Remove(User user)

@@ -7,6 +7,6 @@ internal static class RoleExtensions
 {
     extension(Role role)
     {
-        public RoleResponse ToResponse() => new(role.PublicId, role.Name, role.Claims.Select(x => x.ToResponse()).ToList());
+        public RoleResponse ToResponse() => new(role.PublicId, role.Name, role.Claims.Select(x => x.ToResponse()).ToList(), role.IsDisabled);
     }
 }

@@ -45,7 +45,7 @@ internal static class UserEndpoints
                                                       Guid id,
                                                       CancellationToken cancellationToken) =>
             {
-                User? user = await repository.GetWithTrackingAsync(id, cancellationToken);
+                User? user = await repository.GetAsync(id, cancellationToken);
 
                 if (user is null)
                 {
