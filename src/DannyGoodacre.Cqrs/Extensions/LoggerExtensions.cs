@@ -23,7 +23,7 @@ internal static partial class LoggerExtensions
     [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed during 'AfterSaveAsync'.")]
     public static partial void LogCommandFailedDuringAfterSave(this ILogger logger, string command, Exception exception);
 
-    [LoggerMessage(LogLevel.Error, "Command '{Command}' failed validation: {ValidationState}")]
+    [LoggerMessage(LogLevel.Warning, "Command '{Command}' failed validation: {ValidationState}")]
     public static partial void LogCommandFailedValidation(this ILogger logger, string command, ValidationState validationState);
 
     [LoggerMessage(LogLevel.Critical, "Command '{Command}' failed while persisting changes.")]

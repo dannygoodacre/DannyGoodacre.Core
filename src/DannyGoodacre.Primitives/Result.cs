@@ -18,9 +18,15 @@ public record Canceled : IResult;
 
 public record Conflict(string Message) : IResult;
 
-public record DomainError(string Message) : IResult;
+public record DomainError(string Message) : IResult
+{
+    public override string ToString() => $"DomainError: {Message}";
+}
 
-public record InternalError(Error Error) : IResult;
+public record InternalError(Error Error) : IResult
+{
+    public override string ToString() => $"InternalError: {Error}";
+}
 
 public record Invalid(ValidationState ValidationState) : IResult;
 

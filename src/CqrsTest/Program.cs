@@ -19,6 +19,8 @@ class Program
         // Add Console Logging
         services.AddLogging(builder => builder.AddConsole());
 
+        services.AddScoped<IStateUnit, StateUnit>();
+
         services.AddScoped<IUserRepository, UserRepository>();
 
         // Scan assemblies and register handlers with decorators automatically
@@ -36,7 +38,7 @@ class Program
         Console.WriteLine($"Resolved Handler Type: {handler.GetType().Name}\n");
 
         // 3. Execute Command
-        var command = new CreateUserCommand("DannyGoodacre", "danny@example.com");
+        var command = new CreateUserCommand("", "");
 
         var result = await handler.HandleAsync(command);
 
