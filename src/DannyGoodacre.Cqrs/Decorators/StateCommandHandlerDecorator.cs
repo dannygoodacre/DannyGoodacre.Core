@@ -8,7 +8,8 @@ public interface IStateCommand;
 public sealed class StateCommandHandlerDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     IStateUnit stateUnit,
-    ILogger<TCommand> logger) : ICommandHandler<TCommand>
+    ILogger<TCommand> logger,
+    IPostCommitHandler<TCommand>? postCommitHook = null) : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
     public async Task<IResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
@@ -20,21 +21,45 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
             return result;
         }
 
+        string commandName = typeof(TCommand).Name;
+
         try
         {
             await stateUnit.SaveChangesAsync(cancellationToken);
-
-            return result;
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledWhilePersistingChanges(typeof(TCommand).Name);
+            logger.LogCommandCanceledWhilePersistingChanges(commandName);
 
             return new Canceled();
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedWhilePersistingChanges(typeof(TCommand).Name, ex);
+            logger.LogCommandFailedWhilePersistingChanges(commandName, ex);
+
+            return new InternalError(ex);
+        }
+
+        if (postCommitHook is null)
+        {
+            return result;
+        }
+
+        try
+        {
+            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogCommandCanceledDuringAfterSave(commandName);
+
+            return new Canceled();
+        }
+        catch (Exception ex)
+        {
+            logger.LogCommandFailedDuringAfterSave(commandName, ex);
 
             return new InternalError(ex);
         }
@@ -44,9 +69,10 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
 public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     IStateUnit stateUnit,
-    ILogger<TCommand> logger) : ICommandHandler<TCommand, TResult>
+    ILogger<TCommand> logger,
+    IPostCommitHook<TCommand, TResult>? postCommitHook = null) : ICommandHandler<TCommand, TResult>
     where TCommand : ICommand
-    where TResult : IResult
+    where TResult : notnull
 {
     public async Task<IResult<TResult>> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
     {
@@ -57,21 +83,45 @@ public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
             return result;
         }
 
+        string commandName = typeof(TCommand).Name;
+
         try
         {
             await stateUnit.SaveChangesAsync(cancellationToken);
-
-            return result;
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledWhilePersistingChanges(typeof(TCommand).Name);
+            logger.LogCommandCanceledWhilePersistingChanges(commandName);
 
             return new Canceled<TResult>();
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedWhilePersistingChanges(typeof(TCommand).Name, ex);
+            logger.LogCommandFailedWhilePersistingChanges(commandName, ex);
+
+            return new InternalError<TResult>(ex);
+        }
+
+        if (postCommitHook is null)
+        {
+            return result;
+        }
+
+        try
+        {
+            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+
+            return result;
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogCommandCanceledDuringAfterSave(commandName);
+
+            return new Canceled<TResult>();
+        }
+        catch (Exception ex)
+        {
+            logger.LogCommandFailedDuringAfterSave(commandName, ex);
 
             return new InternalError<TResult>(ex);
         }

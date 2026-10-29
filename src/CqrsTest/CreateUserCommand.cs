@@ -1,34 +1,30 @@
-using System.ComponentModel;
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Primitives;
 
 namespace CqrsTest;
 
-// 1. The Command
 public sealed record CreateUserCommand(string Username, string Email)
     : ICommand, IStateCommand;
 
-// public sealed class CreateUserCommandValidator : ICommandValidator<CreateUserCommand>
-// {
-//     public void Validate(CreateUserCommand command, ValidationState validationState)
-//     {
-//         if (string.IsNullOrWhiteSpace(command.Username))
-//         {
-//             validationState.AddError(nameof(command.Username), "Must not be null, empty, or whitespace.");
-//         }
-//
-//         if (string.IsNullOrWhiteSpace(command.Email))
-//         {
-//             validationState.AddError(nameof(command.Email), "Must not be null, empty, or whitespace.");
-//         }
-//     }
-// }
-
-// 2. The Handler (Zero base classes, zero factory boilerplate)
-public sealed class CreateUserCommandHandler(IUserRepository userRepository)
-    : ICommandHandler<CreateUserCommand>
+public sealed class CreateUserHandler(IUserRepository userRepository)
+    : IValidator<CreateUserCommand>,
+      ICommandHandler<CreateUserCommand, Guid>,
+      IPostCommitHook<CreateUserCommand, Guid>
 {
-    public async Task<IResult> HandleAsync(
+    public void Validate(CreateUserCommand command, ValidationState validationState)
+    {
+        if (string.IsNullOrWhiteSpace(command.Username))
+        {
+            validationState.AddError(nameof(command.Username), "Must not be null, empty, or whitespace.");
+        }
+
+        if (string.IsNullOrWhiteSpace(command.Email))
+        {
+            validationState.AddError(nameof(command.Email), "Must not be null, empty, or whitespace.");
+        }
+    }
+
+    public async Task<IResult<Guid>> HandleAsync(
         CreateUserCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -36,12 +32,14 @@ public sealed class CreateUserCommandHandler(IUserRepository userRepository)
 
         userRepository.Add(user);
 
-        Error domainError = new("User with ID 42 was not found.");
+        return new Success<Guid>(user.PublicId);
+    }
 
-        return new InternalError(domainError);
+    public Task AfterSaveAsync(CreateUserCommand command, IResult<Guid> result, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("Post commit called");
 
-        // return new Success<Guid>(user.PublicId);
-        return new Success();
+        return Task.CompletedTask;
     }
 }
 

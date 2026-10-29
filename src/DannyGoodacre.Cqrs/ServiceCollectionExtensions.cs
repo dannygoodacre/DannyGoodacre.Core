@@ -26,12 +26,16 @@ public static class ServiceCollectionExtensions
         services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(StateCommandHandlerDecorator<,>));
 
         // Middle: Validation (runs before state, aborts if invalid)
-        services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(ValidationCommandHandlerDecorator<>));
-        services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(ValidationCommandHandlerDecorator<,>));
+        services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(CommandValidationDecorator<>));
+        services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(CommandValidationDecorator<>));
+        services.DecorateOpenGeneric(typeof(IQueryHandler<,>), typeof(QueryValidationDecorator<,>));
 
         // Outer-most: Logging (catches exceptions from ALL inner layers, including DB saves)
-        services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(LoggingCommandHandlerDecorator<>));
-        services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(LoggingCommandHandlerDecorator<,>));
+        services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(CommandLoggingDecorator<>));
+        services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(CommandLoggingDecorator<,>));
+        services.DecorateOpenGeneric(typeof(IQueryHandler<,>), typeof(QueryLoggingDecorator<,>));
+
+        services.RegisterPostCommitHooks(assemblies);
 
         return services;
     }
@@ -126,11 +130,25 @@ public static class ServiceCollectionExtensions
             .SelectMany(a => a.GetTypes())
             .Where(t => t is { IsClass: true, IsAbstract: false })
             .SelectMany(t => t.GetInterfaces(), (impl, iface) => new { Impl = impl, Iface = iface })
-            .Where(x => x.Iface.IsGenericType && x.Iface.GetGenericTypeDefinition() == typeof(ICommandValidator<>));
+            .Where(x => x.Iface.IsGenericType && x.Iface.GetGenericTypeDefinition() == typeof(IValidator<>));
 
         foreach (var reg in validatorTypes)
         {
             // Register validator as Scoped or Transient
+            services.AddScoped(reg.Iface, reg.Impl);
+        }
+    }
+
+    private static void RegisterPostCommitHooks(this IServiceCollection services, Assembly[] assemblies)
+    {
+        var hookImplementations = assemblies
+            .SelectMany(a => a.GetTypes())
+            .Where(t => t is { IsClass: true, IsAbstract: false })
+            .SelectMany(t => t.GetInterfaces(), (impl, iface) => new { Impl = impl, Iface = iface })
+            .Where(x => x.Iface.IsGenericType && x.Iface.GetGenericTypeDefinition() == typeof(IPostCommitHook<,>));
+
+        foreach (var reg in hookImplementations)
+        {
             services.AddScoped(reg.Iface, reg.Impl);
         }
     }

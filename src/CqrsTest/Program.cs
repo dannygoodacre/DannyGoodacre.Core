@@ -9,11 +9,6 @@ class Program
 {
     async static Task Main(string[] args)
     {
-        Console.WriteLine("==================================================");
-        Console.WriteLine("  CQRS Automated Registration & Decorator Test");
-        Console.WriteLine("==================================================\n");
-
-        // 1. Setup Dependency Injection Container
         var services = new ServiceCollection();
 
         // Add Console Logging
@@ -31,14 +26,10 @@ class Program
         // 2. Create Scope and Resolve Handler
         using var scope = serviceProvider.CreateScope();
 
-        Console.WriteLine("Resolving ICommandHandler<CreateUserCommand, Guid>...");
-
-        var handler = scope.ServiceProvider.GetRequiredService<ICommandHandler<CreateUserCommand>>();
-
-        Console.WriteLine($"Resolved Handler Type: {handler.GetType().Name}\n");
+        var handler = scope.ServiceProvider.GetRequiredService<ICommandHandler<CreateUserCommand, Guid>>();
 
         // 3. Execute Command
-        var command = new CreateUserCommand("", "");
+        var command = new CreateUserCommand("username", "email@email.com");
 
         var result = await handler.HandleAsync(command);
 
