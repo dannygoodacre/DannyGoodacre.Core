@@ -1,6 +1,6 @@
 namespace DannyGoodacre.Cqrs;
 
 /// <summary>
-/// A command.
+/// Defines a command request.
 /// </summary>
 public interface ICommand : IRequest;

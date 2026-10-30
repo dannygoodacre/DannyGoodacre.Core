@@ -6,7 +6,7 @@ namespace DannyGoodacre.Cqrs;
 public interface IStateUnit
 {
     /// <summary>
-    /// Persist all changes made during this operation to the application state.
+    /// Persists all changes made during this operation to the application state.
     /// </summary>
     /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
     /// <returns>The number of state entries written.</returns>
