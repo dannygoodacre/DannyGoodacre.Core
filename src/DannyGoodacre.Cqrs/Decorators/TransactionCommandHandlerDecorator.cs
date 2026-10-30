@@ -8,8 +8,8 @@ public interface ITransactedCommand;
 public sealed class TransactionCommandHandlerDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     ITransactionUnit transactionUnit,
-    ILogger<TCommand> logger)
-    : ICommandHandler<TCommand>
+    ILogger<TCommand> logger,
+    IPostCommitHook<TCommand>? postCommitHook = null) : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
     public async Task<IResult> HandleAsync(
@@ -55,6 +55,26 @@ public sealed class TransactionCommandHandlerDecorator<TCommand>(
             return new InternalError(ex);
         }
 
+        if (postCommitHook is null)
+        {
+            return result;
+        }
+
+        try
+        {
+            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogCommandCanceledDuringAfterSave(commandName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCommandFailedDuringAfterSave(commandName, ex);
+
+            return new InternalError(ex);
+        }
+
         return result;
     }
 }
@@ -62,8 +82,8 @@ public sealed class TransactionCommandHandlerDecorator<TCommand>(
 public sealed class TransactionCommandHandlerDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     ITransactionUnit transactionUnit,
-    ILogger<TCommand> logger)
-    : ICommandHandler<TCommand, TResult>
+    ILogger<TCommand> logger,
+    IPostCommitHook<TCommand, TResult>? postCommitHook = null) : ICommandHandler<TCommand, TResult>
     where TCommand : ICommand
     where TResult: IResult
 {
@@ -108,29 +128,25 @@ public sealed class TransactionCommandHandlerDecorator<TCommand, TResult>(
             return new InternalError<TResult>(ex);
         }
 
-        // if (result.IsFailure || postCommitHandler is null)
-        // {
-        //     return result;
-        // }
-        //
-        // try
-        // {
-        //     await postCommitHandler.AfterSaveAsync(command, result, cancellationToken);
-        //
-        //     return result;
-        // }
-        // catch (OperationCanceledException)
-        // {
-        //     logger.LogCommandCanceledDuringAfterSave(commandName);
-        //
-        //     return new Canceled();
-        // }
-        // catch (Exception ex)
-        // {
-        //     logger.LogCommandFailedDuringAfterSave(commandName, ex);
-        //
-        //     return new InternalError(ex);
-        // }
+        if (postCommitHook is null)
+        {
+            return result;
+        }
+
+        try
+        {
+            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogCommandCanceledDuringAfterSave(commandName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogCommandFailedDuringAfterSave(commandName, ex);
+
+            return new InternalError<TResult>(ex);
+        }
 
         return result;
     }

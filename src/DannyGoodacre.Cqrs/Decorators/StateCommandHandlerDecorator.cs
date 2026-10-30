@@ -9,7 +9,7 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     IStateUnit stateUnit,
     ILogger<TCommand> logger,
-    IPostCommitHandler<TCommand>? postCommitHook = null) : ICommandHandler<TCommand>
+    IPostCommitHook<TCommand>? postCommitHook = null) : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
     public async Task<IResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
@@ -48,14 +48,10 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
         try
         {
             await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
-
-            return result;
         }
         catch (OperationCanceledException)
         {
             logger.LogCommandCanceledDuringAfterSave(commandName);
-
-            return new Canceled();
         }
         catch (Exception ex)
         {
@@ -63,6 +59,8 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
 
             return new InternalError(ex);
         }
+
+        return result;
     }
 }
 
@@ -110,14 +108,10 @@ public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
         try
         {
             await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
-
-            return result;
         }
         catch (OperationCanceledException)
         {
             logger.LogCommandCanceledDuringAfterSave(commandName);
-
-            return new Canceled<TResult>();
         }
         catch (Exception ex)
         {
@@ -125,5 +119,7 @@ public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
 
             return new InternalError<TResult>(ex);
         }
+
+        return result;
     }
 }
