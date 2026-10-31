@@ -27,7 +27,7 @@ internal abstract class ValidationDecoratorBase<TRequest>(
             return await next(cancellationToken);
         }
 
-        logger.LogCommandFailedValidation(typeof(TRequest).Name, validationState);
+        logger.LogRequestValidationFailed(typeof(TRequest).Name, validationState);
 
         return new Invalid(validationState);
     }
@@ -58,7 +58,7 @@ internal abstract class ValidationDecoratorBase<TRequest, TResult>(
             return await next(cancellationToken);
         }
 
-        logger.LogCommandFailedValidation(typeof(TRequest).Name, validationState);
+        logger.LogRequestValidationFailed(typeof(TRequest).Name, validationState);
 
         return new Invalid<TResult>(validationState);
     }

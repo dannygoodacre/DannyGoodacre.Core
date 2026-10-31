@@ -1,14 +1,20 @@
 namespace DannyGoodacre.Cqrs;
 
 /// <summary>
-/// Defines an abstraction for persisting accumulated changes to the application state.
+/// Defines a unit of work contract for persisting accumulated state changes to the underlying data store.
 /// </summary>
 public interface IStateUnit
 {
     /// <summary>
-    /// Persists all changes made during this operation to the application state.
+    /// Asynchronously flushes and persists all pending state changes tracked within the current scope
+    /// to the underlying data store.
     /// </summary>
-    /// <param name="cancellationToken">A <see cref="CancellationToken"/> to observe while performing the operation.</param>
-    /// <returns>The number of state entries written.</returns>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests while persisting state changes.
+    /// </param>
+    /// <returns>
+    /// A task representing the asynchronous save operation. The task result contains the total number
+    /// of state entries written to the store.
+    /// </returns>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

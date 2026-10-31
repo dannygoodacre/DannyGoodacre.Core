@@ -11,5 +11,5 @@ internal sealed class QueryLoggingDecorator<TQuery, TResponse>(
     where TResponse : notnull
 {
     public Task<IResult<TResponse>> HandleAsync(TQuery query, CancellationToken cancellationToken = default)
-        => ExecuteWithLoggingAsync(query, ct => inner.HandleAsync(query, ct), cancellationToken);
+        => ExecuteWithLoggingAsync(ct => inner.HandleAsync(query, ct), cancellationToken);
 }

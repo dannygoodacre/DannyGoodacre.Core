@@ -7,7 +7,6 @@ internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
     where TRequest : IRequest
 {
     protected async Task<IResult> ExecuteWithLoggingAsync(
-        TRequest request,
         Func<CancellationToken, Task<IResult>> next,
         CancellationToken cancellationToken)
     {
@@ -15,11 +14,11 @@ internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
 
         try
         {
-            logger.LogInformation("Processing {RequestName}", requestName);
+            logger.LogRequestStarted(requestName);
 
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogWarning("{RequestName} was canceled before execution", requestName);
+                logger.LogRequestCanceledPreExecution(requestName);
 
                 return new Canceled();
             }
@@ -28,24 +27,24 @@ internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
 
             if (result.IsFailure)
             {
-                logger.LogWarning("{RequestName} completed with failure result: {Result}", requestName, result);
+                logger.LogRequestFailed(requestName, result);
             }
             else
             {
-                logger.LogInformation("{RequestName} completed successfully", requestName);
+                logger.LogRequestSucceeded(requestName);
             }
 
             return result;
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("{RequestName} was canceled during execution", requestName);
+            logger.LogRequestCanceledMidExecution(requestName);
 
             return new Canceled();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "{RequestName} threw an unhandled exception", requestName);
+            logger.LogRequestFaulted(requestName, ex);
 
             return new InternalError(ex);
         }
@@ -57,7 +56,6 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
     where TResult : notnull
 {
     protected async Task<IResult<TResult>> ExecuteWithLoggingAsync(
-        TRequest request,
         Func<CancellationToken, Task<IResult<TResult>>> next,
         CancellationToken cancellationToken)
     {
@@ -65,11 +63,11 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
 
         try
         {
-            logger.LogInformation("Processing {RequestName}", requestName);
+            logger.LogRequestStarted(requestName);
 
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogWarning("{RequestName} was canceled before execution", requestName);
+                logger.LogRequestCanceledPreExecution(requestName);
 
                 return new Canceled<TResult>();
             }
@@ -78,24 +76,24 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
 
             if (result.IsFailure)
             {
-                logger.LogWarning("{RequestName} completed with failure result: {Result}", requestName, result);
+                logger.LogRequestFailed(requestName, result);
             }
             else
             {
-                logger.LogInformation("{RequestName} completed successfully", requestName);
+                logger.LogRequestSucceeded(requestName);
             }
 
             return result;
         }
         catch (OperationCanceledException)
         {
-            logger.LogWarning("{RequestName} was canceled during execution", requestName);
+            logger.LogRequestCanceledMidExecution(requestName);
 
             return new Canceled<TResult>();
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "{RequestName} threw an unhandled exception", requestName);
+            logger.LogRequestFaulted(requestName, ex);
 
             return new InternalError<TResult>(ex);
         }

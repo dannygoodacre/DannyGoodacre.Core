@@ -5,7 +5,7 @@ namespace DannyGoodacre.Cqrs;
 
 public interface IStateCommand;
 
-public sealed class StateCommandHandlerDecorator<TCommand>(
+internal sealed class StateCommandHandlerDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     IStateUnit stateUnit,
     ILogger<TCommand> logger,
@@ -29,13 +29,13 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledWhilePersistingChanges(commandName);
+            logger.LogSaveChangesCanceled(commandName);
 
             return new Canceled();
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedWhilePersistingChanges(commandName, ex);
+            logger.LogSaveChangesFaulted(commandName, ex);
 
             return new InternalError(ex);
         }
@@ -45,17 +45,24 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
             return result;
         }
 
+        if (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogPostCommitHookCanceledPreExecution(commandName);
+
+            return result;
+        }
+
         try
         {
-            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+            await postCommitHook.ExecuteAsync(command, result, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledDuringAfterSave(commandName);
+            logger.LogPostCommitHookCanceledMidExecution(commandName);
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedDuringAfterSave(commandName, ex);
+            logger.LogPostCommitFaulted(commandName, ex);
 
             return new InternalError(ex);
         }
@@ -64,7 +71,7 @@ public sealed class StateCommandHandlerDecorator<TCommand>(
     }
 }
 
-public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
+internal sealed class StateCommandHandlerDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     IStateUnit stateUnit,
     ILogger<TCommand> logger,
@@ -89,13 +96,13 @@ public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledWhilePersistingChanges(commandName);
+            logger.LogSaveChangesCanceled(commandName);
 
             return new Canceled<TResult>();
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedWhilePersistingChanges(commandName, ex);
+            logger.LogSaveChangesFaulted(commandName, ex);
 
             return new InternalError<TResult>(ex);
         }
@@ -105,17 +112,24 @@ public sealed class StateCommandHandlerDecorator<TCommand, TResult>(
             return result;
         }
 
+        if (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogPostCommitHookCanceledPreExecution(commandName);
+
+            return result;
+        }
+
         try
         {
-            await postCommitHook.AfterSaveAsync(command, result, cancellationToken);
+            await postCommitHook.AfterCommitAsync(command, result, cancellationToken);
         }
         catch (OperationCanceledException)
         {
-            logger.LogCommandCanceledDuringAfterSave(commandName);
+            logger.LogPostCommitHookCanceledMidExecution(commandName);
         }
         catch (Exception ex)
         {
-            logger.LogCommandFailedDuringAfterSave(commandName, ex);
+            logger.LogPostCommitFaulted(commandName, ex);
 
             return new InternalError<TResult>(ex);
         }

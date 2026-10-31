@@ -10,7 +10,7 @@ internal sealed class CommandLoggingDecorator<TCommand>(
     where TCommand : ICommand
 {
     public Task<IResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
-        => ExecuteWithLoggingAsync(command, ct => inner.HandleAsync(command, ct), cancellationToken);
+        => ExecuteWithLoggingAsync(ct => inner.HandleAsync(command, ct), cancellationToken);
 }
 
 internal sealed class CommandLoggingDecorator<TCommand, TResponse>(
@@ -21,5 +21,5 @@ internal sealed class CommandLoggingDecorator<TCommand, TResponse>(
     where TResponse : notnull
 {
     public Task<IResult<TResponse>> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
-        => ExecuteWithLoggingAsync(command, ct => inner.HandleAsync(command, ct), cancellationToken);
+        => ExecuteWithLoggingAsync(ct => inner.HandleAsync(command, ct), cancellationToken);
 }

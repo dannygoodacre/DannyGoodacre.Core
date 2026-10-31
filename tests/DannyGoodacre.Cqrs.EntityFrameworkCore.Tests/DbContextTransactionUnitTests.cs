@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;

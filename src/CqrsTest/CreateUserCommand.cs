@@ -35,7 +35,7 @@ public sealed class CreateUserHandler(IUserRepository userRepository)
         return new Success<Guid>(user.PublicId);
     }
 
-    public Task AfterSaveAsync(CreateUserCommand command, IResult<Guid> result, CancellationToken cancellationToken)
+    public Task AfterCommitAsync(CreateUserCommand command, IResult<Guid> result, CancellationToken cancellationToken)
     {
         Console.WriteLine("Post commit called");
 

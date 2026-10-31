@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace DannyGoodacre.Cqrs.EntityFrameworkCore;
 
 /// <summary>
-/// State persistence and transaction management using Entity Framework Core.
+/// Provides state persistence and transaction management using Entity Framework Core.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the underlying <see cref="DbContext"/>.</typeparam>
 /// <param name="context">The database context instance to manage.</param>
@@ -18,11 +18,13 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
 
     /// <inheritdoc/>
     /// <remarks>
-    /// Uses EF Core's <see cref="IExecutionStrategy"/> to provide execution resilience.
-    /// If an existing transaction is detected, the operation runs within it without creating a nested transaction.
-    /// On failure or rollback, the <see cref="DbContext.ChangeTracker"/> is cleared to discard stale entities.
+    /// Integrates EF Core's <see cref="IExecutionStrategy"/> to support execution resilience and retries.
+    /// If an ambient transaction is active, the operation executes within it without nesting.
+    /// On failure or exception, <see cref="DbContext.ChangeTracker"/> is cleared to discard stale state.
     /// </remarks>
-    public async Task<TResultWrapper> ExecuteInTransactionAsync<TResultWrapper>(Func<CancellationToken, Task<TResultWrapper>> operation, CancellationToken cancellationToken = default)
+    public async Task<TResultWrapper> ExecuteInTransactionAsync<TResultWrapper>(
+        Func<CancellationToken, Task<TResultWrapper>> operation,
+        CancellationToken cancellationToken = default)
         where TResultWrapper : IResult
     {
         if (context.Database.CurrentTransaction is not null)
@@ -34,9 +36,10 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
 
         return await strategy.ExecuteAsync(
             state: (context, operation),
-            operation: async (_, state, innerCancellationToken) =>
+            operation: async (dbContext, state, innerCancellationToken) =>
             {
-                await using IDbContextTransaction transaction = await state.context.Database.BeginTransactionAsync(innerCancellationToken);
+                await using IDbContextTransaction transaction =
+                    await dbContext.Database.BeginTransactionAsync(innerCancellationToken);
 
                 try
                 {
@@ -49,7 +52,6 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
                     else
                     {
                         await transaction.RollbackAsync(innerCancellationToken);
-
                         state.context.ChangeTracker.Clear();
                     }
 
@@ -58,7 +60,6 @@ public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransac
                 catch
                 {
                     state.context.ChangeTracker.Clear();
-
                     throw;
                 }
             },
