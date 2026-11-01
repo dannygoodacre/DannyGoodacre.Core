@@ -14,7 +14,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Using Include="Xunit"/>
+        <Using Include="Xunit" />
+        <Using Include="Moq" />
+        <Using Include="Microsoft.Extensions.Logging" />
+        <Using Include="DannyGoodacre.Testing" />
+        <Using Include="DannyGoodacre.Cqrs.Testing" />
+        <Using Include="DannyGoodacre.Primitives" />
     </ItemGroup>
 
     <ItemGroup>

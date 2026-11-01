@@ -9,7 +9,7 @@ public static class ServiceCollectionExtensions
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers <see cref="DbContextTransactionUnit{TDbContext}"/> and forwards its
+        /// Registers <see cref="DbContextTransaction{TDbContext}"/> and forwards its
         /// <see cref="IStateUnit"/> and <see cref="ITransactionUnit"/> service resolution
         /// to the same scoped instance.
         /// </summary>
@@ -22,13 +22,13 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddEntityFrameworkUnits<TDbContext>()
             where TDbContext : DbContext
         {
-            services.AddScoped<DbContextTransactionUnit<TDbContext>>();
+            services.AddScoped<DbContextTransaction<TDbContext>>();
 
             services.AddScoped<IStateUnit>(
-                sp => sp.GetRequiredService<DbContextTransactionUnit<TDbContext>>());
+                sp => sp.GetRequiredService<DbContextTransaction<TDbContext>>());
 
             services.AddScoped<ITransactionUnit>(
-                sp => sp.GetRequiredService<DbContextTransactionUnit<TDbContext>>());
+                sp => sp.GetRequiredService<DbContextTransaction<TDbContext>>());
 
             return services;
         }

@@ -1,41 +1,131 @@
 namespace DannyGoodacre.Primitives.Tests;
 
-[TestFixture]
-public class ErrorTests : TestBase
+public sealed class ErrorTests
 {
-    [Test]
-    public void ImplicitString()
+    [Fact]
+    public void Constructor_WithMessage_SetsMessageAndDefaultCodeAndNullException()
     {
-        // Arrange
-        const string testErrorMessage = "Test Error Message";
-
         // Act
-        Error result = testErrorMessage;
+        var error = new Error("Something went wrong");
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Is.InstanceOf<Error>());
-
-            Assert.That(result.Message, Is.EqualTo(testErrorMessage));
-        }
+        Assert.Equal("Something went wrong", error.Message);
+        Assert.Equal("General", error.Code);
+        Assert.Null(error.Exception);
     }
 
-    [Test]
-    public void ImplicitException()
+    [Fact]
+    public void Constructor_WithMessageAndCode_SetsMessageAndCode()
     {
-        // Arrange
-        var testException = new Exception("Test Exception Message");
-
         // Act
-        Error result = testException;
+        var error = new Error("User not found", "USER_NOT_FOUND");
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(result, Is.InstanceOf<Error>());
+        Assert.Equal("User not found", error.Message);
+        Assert.Equal("USER_NOT_FOUND", error.Code);
+        Assert.Null(error.Exception);
+    }
 
-            Assert.That(result.Message, Is.EqualTo(testException.Message));
-        }
+    [Fact]
+    public void Constructor_WithException_SetsMessageCodeFromTypeAndExceptionInstance()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Invalid state transition");
+
+        // Act
+        var error = new Error(exception);
+
+        // Assert
+        Assert.Equal("Invalid state transition", error.Message);
+        Assert.Equal(nameof(InvalidOperationException), error.Code);
+        Assert.Same(exception, error.Exception);
+    }
+
+    [Fact]
+    public void Constructor_WithExceptionAndCustomCode_SetsMessageAndCustomCode()
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Invalid state transition");
+
+        // Act
+        var error = new Error(exception, "CUSTOM_STATE_ERROR");
+
+        // Assert
+        Assert.Equal("Invalid state transition", error.Message);
+        Assert.Equal("CUSTOM_STATE_ERROR", error.Code);
+        Assert.Same(exception, error.Exception);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_WithNullOrWhitespaceMessage_SetsDefaultFallbackMessage(string? message)
+    {
+        // Act
+        var error = new Error(message!);
+
+        // Assert
+        Assert.Equal("An unspecified error occurred.", error.Message);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_WithNullOrWhitespaceCode_SetsDefaultGeneralCode(string? code)
+    {
+        // Act
+        var error = new Error("Error message", code!);
+
+        // Assert
+        Assert.Equal("General", error.Code);
+    }
+
+    [Fact]
+    public void ImplicitConversion_FromString_CreatesErrorWithDefaultCode()
+    {
+        // Act
+        Error error = "Conversion test message";
+
+        // Assert
+        Assert.Equal("Conversion test message", error.Message);
+        Assert.Equal("General", error.Code);
+        Assert.Null(error.Exception);
+    }
+
+    [Fact]
+    public void ImplicitConversion_FromException_CreatesErrorWithExceptionTypeAsCode()
+    {
+        // Arrange
+        var exception = new ArgumentNullException("paramName");
+
+        // Act
+        Error error = exception;
+
+        // Assert
+        Assert.Equal(exception.Message, error.Message);
+        Assert.Equal(nameof(ArgumentNullException), error.Code);
+        Assert.Same(exception, error.Exception);
+    }
+
+    [Fact]
+    public void ToString_WhenCodeIsGeneral_ReturnsMessageOnly()
+    {
+        // Act
+        var error = new Error("Simple error message");
+
+        // Assert
+        Assert.Equal("Simple error message", error.ToString());
+    }
+
+    [Fact]
+    public void ToString_WhenCodeIsNotGeneral_ReturnsFormattedCodeAndMessage()
+    {
+        // Act
+        var error = new Error("Access denied", "AUTH_001");
+
+        // Assert
+        Assert.Equal("[AUTH_001] Access denied", error.ToString());
     }
 }

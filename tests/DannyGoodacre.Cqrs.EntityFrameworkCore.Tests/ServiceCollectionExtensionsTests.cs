@@ -3,47 +3,57 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DannyGoodacre.Cqrs.EntityFrameworkCore.Tests;
 
-public sealed class TestDbContextFoo(DbContextOptions<TestDbContextFoo> options) : DbContext(options);
+public sealed class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options);
 
-[TestFixture]
 public sealed class ServiceCollectionExtensionsTests
 {
-    [Test]
-    public void AddEntityFrameworkUnits()
+    [Fact]
+    public void AddEntityFrameworkUnits_RegistersUnitsAndPreservesScopedLifetime()
     {
         // Arrange
         var services = new ServiceCollection();
 
-        services.AddDbContext<TestDbContextFoo>(options => options.UseInMemoryDatabase("TestDb"));
+        services.AddDbContext<TestDbContext>(options => options.UseInMemoryDatabase("TestDb"));
 
         // Act
-        services.AddEntityFrameworkUnits<TestDbContextFoo>();
+        services.AddEntityFrameworkUnits<TestDbContext>();
 
-        // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
 
-        DbContextTransactionUnit<TestDbContextFoo>? dbContext = provider.GetService<DbContextTransactionUnit<TestDbContextFoo>>();
+        // Assert 1: Concrete implementation
+        var concreteUnit = provider.GetService<DbContextTransaction<TestDbContext>>();
+        Assert.NotNull(concreteUnit);
 
-        Assert.That(dbContext, Is.Not.Null);
+        // Assert 2: Interfaces resolvable
+        var stateUnit = provider.GetService<IStateUnit>();
+        Assert.NotNull(stateUnit);
 
-        IStateUnit? stateUnit = provider.GetService<IStateUnit>();
+        var transactionUnit = provider.GetService<ITransactionUnit>();
+        Assert.NotNull(transactionUnit);
 
-        Assert.That(stateUnit, Is.Not.Null);
+        // Assert 3: Same scope returns identical instances
+        using (var scope1 = provider.CreateScope())
+        {
+            var stateUnit1 = scope1.ServiceProvider.GetRequiredService<IStateUnit>();
+            var stateUnit2 = scope1.ServiceProvider.GetRequiredService<IStateUnit>();
 
-        ITransactionUnit? transactionUnit = provider.GetService<ITransactionUnit>();
+            Assert.Same(stateUnit1, stateUnit2);
 
-        Assert.That(transactionUnit, Is.Not.Null);
+            var transactionUnit1 = scope1.ServiceProvider.GetRequiredService<ITransactionUnit>();
+            var transactionUnit2 = scope1.ServiceProvider.GetRequiredService<ITransactionUnit>();
 
-        using IServiceScope scope = provider.CreateScope();
+            Assert.Same(transactionUnit1, transactionUnit2);
 
-        IStateUnit stateUnit1 = scope.ServiceProvider.GetRequiredService<IStateUnit>();
-        IStateUnit stateUnit2 = scope.ServiceProvider.GetRequiredService<IStateUnit>();
+            Assert.Same(stateUnit1, transactionUnit1);
+        }
 
-        Assert.That(stateUnit1, Is.SameAs(stateUnit2));
+        // Assert 4: Different scopes return distinct instances
+        using var scope2 = provider.CreateScope();
+        using var scope3 = provider.CreateScope();
 
-        ITransactionUnit transactionUnit1 = scope.ServiceProvider.GetRequiredService<ITransactionUnit>();
-        ITransactionUnit transactionUnit2 = scope.ServiceProvider.GetRequiredService<ITransactionUnit>();
+        var scope2StateUnit = scope2.ServiceProvider.GetRequiredService<IStateUnit>();
+        var scope3StateUnit = scope3.ServiceProvider.GetRequiredService<IStateUnit>();
 
-        Assert.That(transactionUnit1, Is.SameAs(transactionUnit2));
+        Assert.NotSame(scope2StateUnit, scope3StateUnit);
     }
 }

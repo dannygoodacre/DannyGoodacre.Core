@@ -9,7 +9,7 @@ namespace DannyGoodacre.Cqrs.EntityFrameworkCore;
 /// </summary>
 /// <typeparam name="TDbContext">The type of the underlying <see cref="DbContext"/>.</typeparam>
 /// <param name="context">The database context instance to manage.</param>
-public class DbContextTransactionUnit<TDbContext>(TDbContext context) : ITransactionUnit
+public class DbContextTransaction<TDbContext>(TDbContext context) : ITransactionUnit
     where TDbContext : DbContext
 {
     /// <inheritdoc/>

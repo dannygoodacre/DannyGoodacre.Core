@@ -1,10 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using DannyGoodacre.Primitives;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 
 namespace DannyGoodacre.Cqrs.Tests;
 

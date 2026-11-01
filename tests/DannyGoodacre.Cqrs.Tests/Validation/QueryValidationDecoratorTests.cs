@@ -1,8 +1,3 @@
-using DannyGoodacre.Cqrs.Testing;
-using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Moq;
-
 namespace DannyGoodacre.Cqrs.Tests;
 
 public sealed class QueryValidationDecoratorTests
