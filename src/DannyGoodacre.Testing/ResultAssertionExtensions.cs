@@ -28,14 +28,38 @@ public static class ResultAssertionExtensions
 
         /// <summary>
         /// Asserts that the result represents a <see cref="Conflict"/> or <see cref="Conflict{T}"/> outcome
+        /// and returns the error message.
+        /// </summary>
+        /// <returns>The conflict message.</returns>
+        public string ShouldBeConflict()
+        {
+            var conflict = Assert.IsType<Conflict>(result, exactMatch: false);
+
+            return conflict.Message;
+        }
+
+        /// <summary>
+        /// Asserts that the result represents a <see cref="Conflict"/> or <see cref="Conflict{T}"/> outcome
         /// with the specified error message.
         /// </summary>
         /// <param name="expectedMessage">The expected conflict error message.</param>
         public void ShouldBeConflict(string expectedMessage)
         {
-            var conflict = Assert.IsType<Conflict>(result, exactMatch: false);
+            string actualMessage = result.ShouldBeConflict();
 
-            Assert.Equal(expectedMessage, conflict.Message);
+            Assert.Equal(expectedMessage, actualMessage);
+        }
+
+        /// <summary>
+        /// Asserts that the result represents a <see cref="DomainError"/> or <see cref="DomainError{T}"/>
+        /// outcome and returns the error message.
+        /// </summary>
+        /// <returns>The domain error message.</returns>
+        public string ShouldBeDomainError()
+        {
+            var domainError = Assert.IsType<DomainError>(result, exactMatch: false);
+
+            return domainError.Message;
         }
 
         /// <summary>
@@ -45,9 +69,21 @@ public static class ResultAssertionExtensions
         /// <param name="expectedMessage">The expected domain error message.</param>
         public void ShouldBeDomainError(string expectedMessage)
         {
-            var domainError = Assert.IsType<DomainError>(result, exactMatch: false);
+            string actualMessage = result.ShouldBeDomainError();
 
-            Assert.Equal(expectedMessage, domainError.Message);
+            Assert.Equal(expectedMessage, actualMessage);
+        }
+
+        /// <summary>
+        /// Asserts that the result represents an <see cref="InternalError"/> or <see cref="InternalError{T}"/>
+        /// outcome and returns the underlying <see cref="Error"/> details.
+        /// </summary>
+        /// <returns>The internal error details.</returns>
+        public Error ShouldBeInternalError()
+        {
+            var internalError = Assert.IsType<InternalError>(result, exactMatch: false);
+
+            return internalError.Error;
         }
 
         /// <summary>
@@ -57,21 +93,45 @@ public static class ResultAssertionExtensions
         /// <param name="expectedError">The expected <see cref="Error"/> struct value.</param>
         public void ShouldBeInternalError(Error expectedError)
         {
-            var internalError = Assert.IsType<InternalError>(result, exactMatch: false);
+            Error actualError = result.ShouldBeInternalError();
 
-            Assert.Equal(expectedError, internalError.Error);
+            Assert.Equal(expectedError, actualError);
         }
 
         /// <summary>
-        /// Asserts that the result represents an <see cref="Invalid"/> or <see cref="Invalid{T}"/> outcome
-        /// matching the specified validation state.
+        /// Asserts that the result represents an <see cref="InternalError"/> or <see cref="InternalError{T}"/>
+        /// outcome containing an exception matching <paramref name="expectedException"/>.
+        /// </summary>
+        /// <param name="expectedException">The expected exception instance.</param>
+        public void ShouldBeInternalError(Exception expectedException)
+        {
+            Error actualError = result.ShouldBeInternalError();
+
+            Assert.Equal(expectedException, actualError.Exception);
+        }
+
+        /// <summary>
+        /// Asserts that the result represents an <see cref="Invalid"/> outcome
+        /// (or <see cref="Invalid{T}"/>) and returns the underlying <see cref="ValidationState"/>.
+        /// </summary>
+        /// <returns>The validation state containing validation errors.</returns>
+        public ValidationState ShouldBeInvalid()
+        {
+            var invalid = Assert.IsType<Invalid>(result, exactMatch: false);
+
+            return invalid.ValidationState;
+        }
+
+        /// <summary>
+        /// Asserts that the result represents an <see cref="Invalid"/> outcome
+        /// and matches the specified expected validation state.
         /// </summary>
         /// <param name="expectedValidationState">The expected validation state to match against.</param>
         public void ShouldBeInvalid(ValidationState expectedValidationState)
         {
-            var invalid = Assert.IsType<Invalid>(result, exactMatch: false);
+            ValidationState actualState = result.ShouldBeInvalid();
 
-            invalid.ValidationState.ShouldMatch(expectedValidationState);
+            actualState.ShouldMatch(expectedValidationState);
         }
 
         /// <summary>

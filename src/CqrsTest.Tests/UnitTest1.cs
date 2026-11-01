@@ -1,13 +1,14 @@
 ﻿using DannyGoodacre.Cqrs.Testing;
 using DannyGoodacre.Primitives;
 using DannyGoodacre.Testing;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace CqrsTest.Tests;
 
 public class UnitTest1 : IDisposable
 {
-    private readonly StateCommandHandlerTestContext<CreateUserHandler> _context = new();
+    private readonly StateCommandTestContext<CreateUserCommand> _context = new();
 
     private readonly CreateUserHandler _handler;
 
@@ -21,7 +22,7 @@ public class UnitTest1 : IDisposable
     {
         _userRepositoryMock = _mockRepository.Create<IUserRepository>();
 
-        _handler = new CreateUserHandler(_userRepositoryMock.Object);
+        _handler = new CreateUserHandler(_userRepositoryMock.Object, _context.Logger);
     }
 
     [Fact]
@@ -38,6 +39,8 @@ public class UnitTest1 : IDisposable
 
         // Assert
         result.ShouldBeSuccess();
+
+        _context.LogCollector.ShouldHaveLogged(5000, LogLevel.Information);
     }
 
     public void Dispose()

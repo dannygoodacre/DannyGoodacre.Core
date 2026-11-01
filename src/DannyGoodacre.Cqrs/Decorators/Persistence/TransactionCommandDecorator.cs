@@ -3,9 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public interface ITransactedCommand;
-
-internal sealed class TransactionCommandHandlerDecorator<TCommand>(
+internal sealed class TransactionCommandDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,
@@ -16,7 +14,7 @@ internal sealed class TransactionCommandHandlerDecorator<TCommand>(
         TCommand command,
         CancellationToken cancellationToken = default)
     {
-        if (command is not ITransactedCommand)
+        if (command is not ITransactedStateCommand)
         {
             return await inner.HandleAsync(command, cancellationToken);
         }
@@ -78,7 +76,7 @@ internal sealed class TransactionCommandHandlerDecorator<TCommand>(
     }
 }
 
-internal sealed class TransactionCommandHandlerDecorator<TCommand, TResult>(
+internal sealed class TransactionCommandDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,
@@ -88,7 +86,7 @@ internal sealed class TransactionCommandHandlerDecorator<TCommand, TResult>(
 {
     public async Task<IResult<TResult>> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
     {
-        if (command is not ITransactedCommand)
+        if (command is not ITransactedStateCommand)
         {
             return await inner.HandleAsync(command, cancellationToken);
         }

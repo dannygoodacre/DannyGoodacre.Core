@@ -22,8 +22,8 @@ public static class ServiceCollectionExtensions
             services.AddHandlers(IsCommandHandlerInterface, assemblies);
             services.AddHandlers(IsQueryHandlerInterface, assemblies);
 
-            services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(StateCommandHandlerDecorator<>));
-            services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(StateCommandHandlerDecorator<,>));
+            services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(StateCommandDecorator<>));
+            services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(StateCommandDecorator<,>));
 
             services.DecorateOpenGeneric(typeof(ICommandHandler<>), typeof(CommandValidationDecorator<>));
             services.DecorateOpenGeneric(typeof(ICommandHandler<,>), typeof(CommandValidationDecorator<,>));
@@ -132,7 +132,7 @@ public static class ServiceCollectionExtensions
             var invalidRequests = assemblies
                 .SelectMany(a => a.GetTypes())
                 .Where(t => t is { IsClass: true, IsAbstract: false })
-                .Where(t => IsQueryRequest(t) && (typeof(IStateCommand).IsAssignableFrom(t) || typeof(ITransactedCommand).IsAssignableFrom(t)))
+                .Where(t => IsQueryRequest(t) && (typeof(IStateCommand).IsAssignableFrom(t) || typeof(ITransactedStateCommand).IsAssignableFrom(t)))
                 .ToList();
 
             if (invalidRequests.Count > 0)

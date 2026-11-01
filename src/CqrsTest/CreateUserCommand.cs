@@ -1,12 +1,12 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Primitives;
+using Microsoft.Extensions.Logging;
 
 namespace CqrsTest;
 
-public sealed record CreateUserCommand(string Username, string Email)
-    : ICommand, IStateCommand;
+public sealed record CreateUserCommand(string Username, string Email) : IStateCommand;
 
-public sealed class CreateUserHandler(IUserRepository userRepository)
+public sealed class CreateUserHandler(IUserRepository userRepository, ILogger<CreateUserCommand> logger)
     : IValidator<CreateUserCommand>,
       ICommandHandler<CreateUserCommand, Guid>,
       IPostCommitHook<CreateUserCommand, Guid>
@@ -31,6 +31,8 @@ public sealed class CreateUserHandler(IUserRepository userRepository)
         var user = User.Create(command.Username, command.Email);
 
         userRepository.Add(user);
+
+        logger.LogInformation(5000, "Foobar");
 
         return new Success<Guid>(user.PublicId);
     }

@@ -27,6 +27,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Testing"/>
+        <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Tests"/>
     </ItemGroup>
 
 </Project>

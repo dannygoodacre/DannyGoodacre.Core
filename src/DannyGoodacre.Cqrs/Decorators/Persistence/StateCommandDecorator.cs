@@ -3,9 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-public interface IStateCommand;
-
-internal sealed class StateCommandHandlerDecorator<TCommand>(
+internal sealed class StateCommandDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     IStateUnit stateUnit,
     ILogger<TCommand> logger,
@@ -16,7 +14,7 @@ internal sealed class StateCommandHandlerDecorator<TCommand>(
     {
         var result = await inner.HandleAsync(command, cancellationToken);
 
-        if (result.IsFailure || command is not IStateCommand || command is ITransactedCommand)
+        if (result.IsFailure || command is not IStateCommand || command is ITransactedStateCommand)
         {
             return result;
         }
@@ -71,7 +69,7 @@ internal sealed class StateCommandHandlerDecorator<TCommand>(
     }
 }
 
-internal sealed class StateCommandHandlerDecorator<TCommand, TResult>(
+internal sealed class StateCommandDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     IStateUnit stateUnit,
     ILogger<TCommand> logger,
@@ -83,7 +81,7 @@ internal sealed class StateCommandHandlerDecorator<TCommand, TResult>(
     {
         var result = await inner.HandleAsync(command, cancellationToken);
 
-        if (result.IsFailure || command is not IStateCommand || command is ITransactedCommand)
+        if (result.IsFailure || command is not IStateCommand || command is ITransactedStateCommand)
         {
             return result;
         }

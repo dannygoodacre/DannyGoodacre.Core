@@ -6,11 +6,11 @@ namespace DannyGoodacre.Cqrs.Testing;
 /// <summary>
 /// Test context for building and testing void-returning transacted command handler pipelines.
 /// </summary>
-public class TransactionCommandHandlerTestContext<TCommand>
-    : StateCommandHandlerTestContextCore<TCommand, ICommandHandler<TCommand>, ITransactionUnit>
+public class TransactionCommandTestContext<TCommand>(MockBehavior mockBehavior = MockBehavior.Default)
+    : StateCommandTestContextCore<TCommand, ICommandHandler<TCommand>, ITransactionUnit>(mockBehavior)
     where TCommand : class, ICommand
 {
-    public Mock<IPostCommitHook<TCommand>> PostCommitHookMock { get; } = new(MockBehavior.Strict);
+    public Mock<IPostCommitHook<TCommand>> PostCommitHookMock { get; } = new(mockBehavior);
 
     public Mock<ITransactionUnit> TransactionUnitMock => StateUnitMock;
 
@@ -33,7 +33,7 @@ public class TransactionCommandHandlerTestContext<TCommand>
 
     public ICommandHandler<TCommand> CreatePipeline(bool includePostCommitHook = false)
     {
-        return new TransactionCommandHandlerDecorator<TCommand>(
+        return new TransactionCommandDecorator<TCommand>(
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,
@@ -44,12 +44,12 @@ public class TransactionCommandHandlerTestContext<TCommand>
 /// <summary>
 /// Test context for building and testing value-returning transacted command handler pipelines.
 /// </summary>
-public class TransactionCommandHandlerTestContext<TCommand, TResult>
-    : StateCommandHandlerTestContextCore<TCommand, ICommandHandler<TCommand, TResult>, ITransactionUnit>
+public class TransactionCommandTestContext<TCommand, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
+    : StateCommandTestContextCore<TCommand, ICommandHandler<TCommand, TResult>, ITransactionUnit>(mockBehavior)
     where TCommand : class, ICommand
     where TResult : notnull
 {
-    public Mock<IPostCommitHook<TCommand, TResult>> PostCommitHookMock { get; } = new(MockBehavior.Strict);
+    public Mock<IPostCommitHook<TCommand, TResult>> PostCommitHookMock { get; } = new(mockBehavior);
 
     public Mock<ITransactionUnit> TransactionUnitMock => StateUnitMock;
 
@@ -72,7 +72,7 @@ public class TransactionCommandHandlerTestContext<TCommand, TResult>
 
     public ICommandHandler<TCommand, TResult> CreatePipeline(bool includePostCommitHook = false)
     {
-        return new TransactionCommandHandlerDecorator<TCommand, TResult>(
+        return new TransactionCommandDecorator<TCommand, TResult>(
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,

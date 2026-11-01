@@ -6,14 +6,13 @@ namespace DannyGoodacre.Cqrs.Testing;
 /// Base test context supplying an in-memory <see cref="FakeLogger"/>
 /// and <see cref="FakeLogCollector"/> for a specified logging category.
 /// </summary>
-public class HandlerTestContext<TCategory>
-    where TCategory : class
+public class TestContext<TCategory> where TCategory : class
 {
     public FakeLogCollector LogCollector { get; } = new();
 
     public FakeLogger<TCategory> Logger { get; }
 
-    public HandlerTestContext()
+    public TestContext()
     {
         Logger = new FakeLogger<TCategory>(LogCollector);
     }
