@@ -1,0 +1,19 @@
+using Microsoft.Extensions.Logging.Testing;
+
+namespace DannyGoodacre.Cqrs.Testing;
+
+/// <summary>
+/// Base test context supplying an in-memory <see cref="FakeLogger"/>
+/// and <see cref="FakeLogCollector"/> for a specified logging category.
+/// </summary>
+public class TestContext<TCategory> where TCategory : class
+{
+    public FakeLogCollector LogCollector { get; } = new();
+
+    public FakeLogger<TCategory> Logger { get; }
+
+    public TestContext()
+    {
+        Logger = new FakeLogger<TCategory>(LogCollector);
+    }
+}
