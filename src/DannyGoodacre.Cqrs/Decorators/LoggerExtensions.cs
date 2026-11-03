@@ -35,9 +35,6 @@ internal static partial class LoggerExtensions
     public static partial void LogSaveChangesFaulted(this ILogger logger, string requestName, Exception ex);
 
     // Post-commit hooks
-    [LoggerMessage(EventId = (int)CqrsLogEvent.PostCommitHookCanceledPreExecution, Level = LogLevel.Warning, Message = "'{RequestName}' canceled before its post commit hook")]
-    public static partial void LogPostCommitHookCanceledPreExecution(this ILogger logger, string requestName);
-
     [LoggerMessage(EventId = (int)CqrsLogEvent.PostCommitHookCanceledMidExecution, Level = LogLevel.Warning, Message = "'{RequestName}' canceled during its post commit hook")]
     public static partial void LogPostCommitHookCanceledMidExecution(this ILogger logger, string requestName);
 

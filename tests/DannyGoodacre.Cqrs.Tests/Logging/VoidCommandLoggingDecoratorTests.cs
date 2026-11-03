@@ -89,7 +89,32 @@ public sealed class VoidCommandLoggingDecoratorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenInnerHandlerThrowsOperationCanceled_LogsMidExecutionCancellationAndReturnsCanceled()
+    public async Task HandleAsync_WhenCallerCancelsDuringExecution_LogsMidExecutionCancellationAndReturnsCanceled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        var command = new TestCommand();
+
+        _context.InnerMock
+            .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
+            .Callback(() => cts.Cancel())
+            .ThrowsAsync(new OperationCanceledException());
+
+        var pipeline = _context.CreatePipeline();
+
+        // Act
+        IResult result = await pipeline.HandleAsync(command, cts.Token);
+
+        // Assert
+        result.ShouldBeCanceled();
+
+        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
+        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestCanceledMidExecution, LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenInnerHandlerThrowsOperationCanceledWithoutCallerCancellation_LogsFaultAndReturnsInternalError()
     {
         // Arrange
         var command = new TestCommand();
@@ -104,10 +129,10 @@ public sealed class VoidCommandLoggingDecoratorTests
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBeCanceled();
+        result.ShouldBeInternalError();
 
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
-        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestCanceledMidExecution, LogLevel.Warning);
+        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestFaulted, LogLevel.Error);
     }
 
     [Fact]

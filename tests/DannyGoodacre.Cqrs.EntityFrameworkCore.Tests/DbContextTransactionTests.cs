@@ -93,7 +93,7 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
 
         await using (UnitTestDbContext unitTestContext = CreateDbContext())
         {
-            await using IDbContextTransaction transaction = await unitTestContext.Database.BeginTransactionAsync();
+            await using IDbContextTransaction transaction = await unitTestContext.Database.BeginTransactionAsync(TestContext.Current.CancellationToken);
 
             var transactionUnit = new DbContextTransaction<UnitTestDbContext>(unitTestContext);
 
@@ -106,9 +106,9 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 return Result.Success();
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(TestContext.Current.CancellationToken);
         }
 
         // Assert
@@ -146,7 +146,7 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 return Result<string>.Success(testResponse);
-            });
+            }, TestContext.Current.CancellationToken);
         }
 
         // Assert
@@ -181,7 +181,7 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 return Result.DomainError(testErrorMessage);
-            });
+            }, TestContext.Current.CancellationToken);
 
             // Assert ChangeTracker is cleared on failure
             Assert.Empty(unitTestContext.ChangeTracker.Entries());
@@ -219,7 +219,7 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
                 await transactionUnit.SaveChangesAsync(cancellationToken);
 
                 throw new InvalidOperationException(testExceptionMessage);
-            });
+            }, TestContext.Current.CancellationToken);
         });
 
         Assert.Equal(testExceptionMessage, exception.Message);

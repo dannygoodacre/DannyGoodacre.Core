@@ -5,22 +5,27 @@ namespace DannyGoodacre.Cqrs;
 
 internal abstract class ValidationDecoratorBase<TRequest>(
     ILogger logger,
-    IValidator<TRequest>? validator = null)
+    IEnumerable<IValidator<TRequest>> validators)
     where TRequest : IRequest
 {
+    private readonly IValidator<TRequest>[] _validators = [.. validators];
+
     protected async Task<IResult> ExecuteWithValidationAsync(
         TRequest request,
         Func<CancellationToken, Task<IResult>> next,
         CancellationToken cancellationToken)
     {
-        if (validator is null)
+        if (_validators.Length == 0)
         {
             return await next(cancellationToken);
         }
 
         var validationState = new ValidationState();
 
-        validator.Validate(request, validationState);
+        foreach (IValidator<TRequest> validator in _validators)
+        {
+            validator.Validate(request, validationState);
+        }
 
         if (!validationState.HasErrors)
         {
@@ -35,23 +40,28 @@ internal abstract class ValidationDecoratorBase<TRequest>(
 
 internal abstract class ValidationDecoratorBase<TRequest, TResult>(
     ILogger logger,
-    IValidator<TRequest>? validator = null)
+    IEnumerable<IValidator<TRequest>> validators)
     where TRequest : IRequest
     where TResult : notnull
 {
+    private readonly IValidator<TRequest>[] _validators = [.. validators];
+
     protected async Task<IResult<TResult>> ExecuteWithValidationAsync(
         TRequest request,
         Func<CancellationToken, Task<IResult<TResult>>> next,
         CancellationToken cancellationToken)
     {
-        if (validator is null)
+        if (_validators.Length == 0)
         {
             return await next(cancellationToken);
         }
 
         var validationState = new ValidationState();
 
-        validator.Validate(request, validationState);
+        foreach (IValidator<TRequest> validator in _validators)
+        {
+            validator.Validate(request, validationState);
+        }
 
         if (!validationState.HasErrors)
         {

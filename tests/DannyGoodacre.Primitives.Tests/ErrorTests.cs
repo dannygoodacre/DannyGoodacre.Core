@@ -128,4 +128,32 @@ public sealed class ErrorTests
         // Assert
         Assert.Equal("[AUTH_001] Access denied", error.ToString());
     }
+
+    [Fact]
+    public void Default_ReturnsFallbackMessageAndCode()
+    {
+        // Act
+        Error error = default;
+
+        // Assert
+        Assert.Equal("An unspecified error occurred.", error.Message);
+        Assert.Equal("General", error.Code);
+        Assert.Equal("An unspecified error occurred.", error.ToString());
+    }
+
+    [Fact]
+    public void Default_EqualsErrorWithFallbackValues()
+    {
+        // Act & Assert
+        Assert.Equal(new Error(""), default(Error));
+        Assert.Equal(new Error("").GetHashCode(), default(Error).GetHashCode());
+    }
+
+    [Fact]
+    public void Constructor_WithNullException_ThrowsArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new Error((Exception)null!));
+        Assert.Throws<ArgumentNullException>(() => new Error((Exception)null!, "CODE"));
+    }
 }

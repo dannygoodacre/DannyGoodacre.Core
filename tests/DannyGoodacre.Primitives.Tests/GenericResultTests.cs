@@ -155,4 +155,39 @@ public sealed class GenericResultTests
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFailure);
     }
+
+    [Fact]
+    public void DomainError_ToString_UsesTheSameFormatAsNonGeneric()
+    {
+        // Act
+        IResult<string> result = Result<string>.DomainError("Invalid business rule");
+
+        // Assert
+        Assert.Equal("DomainError: Invalid business rule", result.ToString());
+    }
+
+    [Fact]
+    public void InternalError_ToString_UsesTheSameFormatAsNonGeneric()
+    {
+        // Arrange
+        var error = new Error("Database error");
+
+        // Act
+        IResult<string> result = Result<string>.InternalError(error);
+
+        // Assert
+        Assert.Equal($"InternalError: {error}", result.ToString());
+    }
+
+    [Fact]
+    public void Factories_ReturnInterfaces_SoIsSuccessIsAvailableWithVar()
+    {
+        // Act
+        var success = Result<int>.Success(1);
+        var failure = Result<int>.NotFound();
+
+        // Assert
+        Assert.True(success.IsSuccess);
+        Assert.True(failure.IsFailure);
+    }
 }

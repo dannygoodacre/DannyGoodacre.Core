@@ -1,13 +1,13 @@
 # Commands and queries
 
 This document tells you how to select a request marker and how to write each type of request.
-It also shows xUnit tests for each pipeline.
+The examples come from the example project. [EXAMPLES.md](EXAMPLES.md) describes it.
 
 ## Select a marker interface
 
 | Marker | Saves data | Transaction | Post-commit hook | Use for |
 | --- | --- | --- | --- | --- |
-| `ICommand` | No | No | Does not run | Actions with no database change, for example a call to an external API. |
+| `ICommand` | No | No | Not allowed | Actions with no database change, for example a call to an external API. |
 | `IStateCommand` | Yes. The pipeline calls `SaveChangesAsync`. | No new transaction. Uses the outer transaction if one is open. | Runs after the save | One change to one aggregate. |
 | `ITransactedStateCommand` | Yes. The pipeline saves before the commit. | Yes. One explicit transaction. | Runs after the commit | Workflows that run many child commands and queries as one unit. |
 | `IQuery<T>` | No | No | Not available | Read operations that return data. |
@@ -33,70 +33,39 @@ Use these rules:
 
 `TResult` must not be nullable. To show that data is missing, return `NotFound`. Do not return `null`.
 
-## Shared domain model
+`AddCqrsHandlers` finds all handlers in the assemblies that you give it. You do not register handlers yourself.
 
-The examples in this document use this order processing model.
+## Validators
+
+A validator implements `IValidator<TRequest>`. The pipeline runs it before the handler, and before any transaction or database call.
+If the validator adds an error, the pipeline returns `Invalid` and stops. [ARCHITECTURE.md](ARCHITECTURE.md#validation-short-circuit) gives the steps.
+
+Know these facts about validators:
+
+- `AddCqrsHandlers` finds and registers them. A request can have more than one validator. The pipeline runs all of them and collects all errors in one `ValidationState`.
+- `Validate` is synchronous. Use it for input rules, for example required fields and formats.
+- Put rules that need the database in the handler. Return `Conflict` or `DomainError` for these rules.
+- A validator can use other validators. They are registered as scoped services.
+
+The onboarding validator reuses the rules of the child command.
+From [`Onboarding/OnboardCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Onboarding/OnboardCustomerCommand.cs):
 
 ```csharp
-namespace Shop.Orders;
-
-public enum OrderStatus
+public sealed class OnboardCustomerCommandValidator(IValidator<RegisterCustomerCommand> customerValidator)
+    : IValidator<OnboardCustomerCommand>
 {
-    Placed,
-    Canceled
-}
+    public void Validate(OnboardCustomerCommand request, ValidationState validationState)
+    {
+        // Reuse the rules of the child command, so the outer command fails before the transaction starts.
+        customerValidator.Validate(new RegisterCustomerCommand(request.Name, request.Email), validationState);
 
-public sealed class Product
-{
-    public required string Sku { get; init; }
-
-    public required decimal UnitPrice { get; init; }
-
-    public int StockLevel { get; set; }
-}
-
-public sealed class Order(Guid id, Guid customerId, string productSku, int quantity, decimal total)
-{
-    public Guid Id { get; private set; } = id;
-
-    public Guid CustomerId { get; private set; } = customerId;
-
-    public string ProductSku { get; private set; } = productSku;
-
-    public int Quantity { get; private set; } = quantity;
-
-    public decimal Total { get; private set; } = total;
-
-    public OrderStatus Status { get; set; } = OrderStatus.Placed;
-}
-
-public sealed record OrderSummary(Guid Id, Guid CustomerId, string ProductSku, int Quantity, decimal Total, OrderStatus Status);
-
-public interface IProductRepository
-{
-    Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default);
-}
-
-public interface IOrderRepository
-{
-    void Add(Order order);
-
-    Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-
-    Task<OrderSummary?> FindSummaryAsync(Guid id, CancellationToken cancellationToken = default);
-}
-
-public interface IEmailSender
-{
-    Task SendOrderConfirmationAsync(Guid customerId, Guid orderId, CancellationToken cancellationToken = default);
-
-    Task SendOrderCancellationAsync(Guid orderId, CancellationToken cancellationToken = default);
-
-    Task SendPasswordResetAsync(string email, CancellationToken cancellationToken = default);
+        if (string.IsNullOrWhiteSpace(request.PlanCode))
+        {
+            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+        }
+    }
 }
 ```
-
-[PERSISTENCE.md](PERSISTENCE.md) shows EF Core implementations of the repositories.
 
 ## ICommand
 
@@ -109,40 +78,15 @@ The pipeline for an `ICommand`:
 - Runs the handler.
 - Does not call `SaveChangesAsync`.
 - Does not open a transaction.
-- Does not run post-commit hooks.
+- Does not run post-commit hooks. `AddCqrsHandlers` throws at startup if a hook targets a plain `ICommand`.
+
+The handler is the same as for other commands. Only the marker is different:
 
 ```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-
-namespace Shop.Accounts;
-
-public sealed record SendPasswordResetEmailCommand(string Email) : ICommand;
-
-public sealed class SendPasswordResetEmailCommandValidator : IValidator<SendPasswordResetEmailCommand>
-{
-    public void Validate(SendPasswordResetEmailCommand request, ValidationState validationState)
-    {
-        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
-        {
-            validationState.AddError(nameof(request.Email), "A valid email address is required.");
-        }
-    }
-}
-
-public sealed class SendPasswordResetEmailCommandHandler(IEmailSender emailSender)
-    : ICommandHandler<SendPasswordResetEmailCommand>
-{
-    public async Task<IResult> HandleAsync(
-        SendPasswordResetEmailCommand command,
-        CancellationToken cancellationToken = default)
-    {
-        await emailSender.SendPasswordResetAsync(command.Email, cancellationToken);
-
-        return Result.Success();
-    }
-}
+public sealed record ResendWelcomeEmailCommand(string Email, string Name) : ICommand;
 ```
+
+The example project has no plain `ICommand`. Its requests all save data or read data.
 
 ## IStateCommand
 
@@ -154,75 +98,73 @@ The state decorator does these steps:
 1. It calls the handler.
 2. If the result is a failure, it returns the result. It does not save.
 3. It calls `IStateUnit.SaveChangesAsync`.
-4. If the save fails, it returns `InternalError` or `Canceled`. It does not run the hook.
-5. It runs the post-commit hook, if there is one.
+4. If the save fails, it returns `InternalError` or `Canceled`. It does not run the hooks.
+5. It runs the post-commit hooks. If a transaction is open, it defers them to the outermost commit.
 6. It returns the handler result.
 
 Do not call `SaveChangesAsync` in an `IStateCommand` handler.
 
-### Command with a return value
-
-[README.md](../README.md#quick-start) shows `PlaceOrderCommand`. The command returns the new order ID.
-
-### Command with no return value
-
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-
-namespace Shop.Orders;
-
-public sealed record CancelOrderCommand(Guid OrderId) : IStateCommand;
-
-public sealed class CancelOrderCommandValidator : IValidator<CancelOrderCommand>
-{
-    public void Validate(CancelOrderCommand request, ValidationState validationState)
-    {
-        if (request.OrderId == Guid.Empty)
-        {
-            validationState.AddError(nameof(request.OrderId), "Order ID is required.");
-        }
-    }
-}
-
-public sealed class CancelOrderCommandHandler(IOrderRepository orderRepository)
-    : ICommandHandler<CancelOrderCommand>
-{
-    public async Task<IResult> HandleAsync(CancelOrderCommand command, CancellationToken cancellationToken = default)
-    {
-        Order? order = await orderRepository.GetByIdAsync(command.OrderId, cancellationToken);
-
-        if (order is null)
-        {
-            return Result.NotFound();
-        }
-
-        if (order.Status == OrderStatus.Canceled)
-        {
-            return Result.DomainError("The order is already canceled.");
-        }
-
-        order.Status = OrderStatus.Canceled;
-
-        return Result.Success();
-    }
-}
-
-public sealed class SendOrderCancellationHook(IEmailSender emailSender)
-    : IPostCommitHook<CancelOrderCommand>
-{
-    public Task ExecuteAsync(CancelOrderCommand command, IResult result, CancellationToken cancellationToken = default)
-        => emailSender.SendOrderCancellationAsync(command.OrderId, cancellationToken);
-}
-```
+The example is `RegisterCustomerCommand`. [README.md](../README.md#quick-start) shows the command, its validator, and its handler.
+The source is [`Customers/RegisterCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Customers/RegisterCustomerCommand.cs).
 
 ### Entity keys
 
 The handler creates its result before the pipeline saves the data.
-Thus, a key that the database generates during the save is not in the result.
+Thus, a key that the database generates during the save is not available to the handler.
 
-Generate keys in the handler. Use `Guid.CreateVersion7()` or a similar client-side generator.
-Then the handler knows the key and can return it in `Success<T>`.
+The example entities have two keys:
+
+| Key | Type | Created by | Used by |
+| --- | --- | --- | --- |
+| `Id` | `int` | The database, during the insert | The persistence layer only: primary keys and foreign keys. |
+| `PublicId` | `Guid` | The command handler, with `Guid.NewGuid()` | Callers: command results and query parameters. |
+
+The handler sets `PublicId` and returns it in `Success<T>`. Queries always identify an entity by its `PublicId`.
+
+A later step in the same transaction can read the database-generated `Id`. The child save has already inserted the row.
+[The onboarding example](#example-customer-onboarding) does this to link the subscription to the customer.
+
+## IQuery<T>
+
+`IQuery<T>` marks a read-only request that returns a value of type `T`.
+
+The pipeline for a query:
+
+- Logs the request.
+- Runs the validator, if there is one.
+- Runs the handler.
+- Does not save data or open transactions.
+
+A query handler must not change state. Read data with `AsNoTracking()` and project it to a result type with `Select()`.
+
+From [`Customers/GetCustomerQuery.cs`](../../DannyGoodacre.Cqrs.Examples/Customers/GetCustomerQuery.cs):
+
+```csharp
+public sealed record CustomerDetails(Guid PublicId, string Name, string Email, string? PlanCode);
+
+// A read-only query. The pipeline logs and validates it, but never saves data.
+// Queries identify a customer by the public ID. The database ID never leaves the persistence layer.
+public sealed record GetCustomerQuery(Guid PublicId) : IQuery<CustomerDetails>;
+
+public sealed class GetCustomerQueryHandler(ICustomerRepository customerRepository)
+    : IQueryHandler<GetCustomerQuery, CustomerDetails>
+{
+    public async Task<IResult<CustomerDetails>> HandleAsync(
+        GetCustomerQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        CustomerDetails? customer = await customerRepository.FindDetailsAsync(query.PublicId, cancellationToken);
+
+        return customer is null
+            ? Result<CustomerDetails>.NotFound()
+            : Result<CustomerDetails>.Success(customer);
+    }
+}
+```
+
+The query uses the public ID. The database ID never leaves the persistence layer.
+The file also contains `GetCustomerQueryValidator`. It returns `Invalid` for an empty public ID.
+[PERSISTENCE.md](PERSISTENCE.md#repositories) shows the `FindDetailsAsync` projection.
 
 ## ITransactedStateCommand
 
@@ -236,130 +178,72 @@ The transaction decorator does these steps:
 2. Inside the transaction, it calls the handler.
 3. If the result is a failure, it returns the result. The transaction unit rolls back.
 4. If the result is a success, it calls `SaveChangesAsync`. The transaction unit commits.
-5. After the commit, it runs the post-commit hook, if there is one.
+5. After the commit, it runs the deferred hooks of child commands, then its own post-commit hooks.
 6. It returns the handler result.
 
 ### Example: customer onboarding
 
-The workflow creates a customer, reads an email template, and schedules a welcome email.
-The three steps save data as one unit.
+`OnboardCustomerCommand` calls one child command and one child query. Then it reads the customer's database ID and adds a subscription.
+From [`Onboarding/OnboardCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Onboarding/OnboardCustomerCommand.cs):
 
 ```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
+// A transacted state command. All steps run in one database transaction.
+// If a step fails, the transaction rolls back the changes from all steps.
+public sealed record OnboardCustomerCommand(string Name, string Email, string PlanCode) : ITransactedStateCommand;
 
-namespace Shop.Customers;
-
-// Data access contracts.
-public sealed record Customer(Guid Id, string Name, string Email);
-
-public sealed record ScheduledEmail(Guid Id, Guid CustomerId, string Body);
-
-public interface ICustomerRepository
+public sealed class OnboardCustomerCommandHandler(
+    ICommandHandler<RegisterCustomerCommand, Guid> registerCustomerHandler,
+    IQueryHandler<GetPlanQuery, PlanDetails> getPlanHandler,
+    ICustomerRepository customerRepository,
+    ISubscriptionRepository subscriptionRepository,
+    TimeProvider timeProvider)
+    : ICommandHandler<OnboardCustomerCommand, Guid>
 {
-    void Add(Customer customer);
-}
-
-public interface IEmailTemplateRepository
-{
-    Task<string?> FindWelcomeTemplateAsync(string languageCode, CancellationToken cancellationToken = default);
-}
-
-public interface IScheduledEmailRepository
-{
-    void Add(ScheduledEmail email);
-}
-
-// Child requests.
-public sealed record CreateCustomerCommand(string Name, string Email) : IStateCommand;
-
-public sealed record GetWelcomeEmailTemplateQuery(string LanguageCode) : IQuery<string>;
-
-public sealed record ScheduleEmailCommand(Guid CustomerId, string EmailBody) : IStateCommand;
-
-// Orchestrator request.
-public sealed record OnboardCustomerCommand(string Name, string Email, string LanguageCode) : ITransactedStateCommand;
-
-// Child handlers.
-public sealed class CreateCustomerCommandHandler(ICustomerRepository customerRepository)
-    : ICommandHandler<CreateCustomerCommand, Guid>
-{
-    public Task<IResult<Guid>> HandleAsync(CreateCustomerCommand command, CancellationToken cancellationToken = default)
-    {
-        var customer = new Customer(Guid.CreateVersion7(), command.Name, command.Email);
-
-        customerRepository.Add(customer);
-
-        return Task.FromResult<IResult<Guid>>(Result<Guid>.Success(customer.Id));
-    }
-}
-
-public sealed class GetWelcomeEmailTemplateQueryHandler(IEmailTemplateRepository templateRepository)
-    : IQueryHandler<GetWelcomeEmailTemplateQuery, string>
-{
-    public async Task<IResult<string>> HandleAsync(
-        GetWelcomeEmailTemplateQuery query,
+    public async Task<IResult<Guid>> HandleAsync(
+        OnboardCustomerCommand command,
         CancellationToken cancellationToken = default)
     {
-        string? template = await templateRepository.FindWelcomeTemplateAsync(query.LanguageCode, cancellationToken);
+        // Step 1: a child state command. Its SaveChangesAsync call writes the customer
+        // inside this command's transaction. It does not start or commit a transaction.
+        IResult<Guid> registerResult = await registerCustomerHandler.HandleAsync(
+            new RegisterCustomerCommand(command.Name, command.Email), cancellationToken);
 
-        return template is null
-            ? Result<string>.NotFound()
-            : Result<string>.Success(template);
-    }
-}
-
-public sealed class ScheduleEmailCommandHandler(IScheduledEmailRepository scheduledEmailRepository)
-    : ICommandHandler<ScheduleEmailCommand>
-{
-    public Task<IResult> HandleAsync(ScheduleEmailCommand command, CancellationToken cancellationToken = default)
-    {
-        scheduledEmailRepository.Add(new ScheduledEmail(Guid.CreateVersion7(), command.CustomerId, command.EmailBody));
-
-        return Task.FromResult<IResult>(Result.Success());
-    }
-}
-
-// Orchestrator handler.
-public sealed class OnboardCustomerCommandHandler(
-    ICommandHandler<CreateCustomerCommand, Guid> createCustomerHandler,
-    IQueryHandler<GetWelcomeEmailTemplateQuery, string> getTemplateHandler,
-    ICommandHandler<ScheduleEmailCommand> scheduleEmailHandler)
-    : ICommandHandler<OnboardCustomerCommand>
-{
-    public async Task<IResult> HandleAsync(OnboardCustomerCommand command, CancellationToken cancellationToken = default)
-    {
-        IResult<Guid> createResult = await createCustomerHandler.HandleAsync(
-            new CreateCustomerCommand(command.Name, command.Email), cancellationToken);
-
-        if (createResult is not Success<Guid>(var customerId))
+        if (registerResult is not Success<Guid>(var customerPublicId))
         {
-            return createResult;
+            return registerResult;
         }
 
-        IResult<string> templateResult = await getTemplateHandler.HandleAsync(
-            new GetWelcomeEmailTemplateQuery(command.LanguageCode), cancellationToken);
+        // Step 2: a child query. If the plan does not exist, the transaction rolls back the new customer.
+        IResult<PlanDetails> planResult = await getPlanHandler.HandleAsync(
+            new GetPlanQuery(command.PlanCode), cancellationToken);
 
-        if (templateResult is not Success<string>(var template))
+        if (planResult is not Success<PlanDetails>(var plan))
         {
-            return templateResult;
+            return planResult.MapFailure<Guid>();
         }
 
-        IResult scheduleResult = await scheduleEmailHandler.HandleAsync(
-            new ScheduleEmailCommand(customerId, template), cancellationToken);
+        // Step 3: the save in step 1 inserted the customer row inside this transaction,
+        // so the database has already generated the customer's Id. Read it to link the subscription.
+        int customerId = await customerRepository.GetIdAsync(customerPublicId, cancellationToken);
 
-        if (scheduleResult.IsFailure)
+        // Step 4: a change made by this handler. The transaction decorator saves it before the commit.
+        subscriptionRepository.Add(new Subscription
         {
-            return scheduleResult;
-        }
+            PublicId = Guid.NewGuid(),
+            CustomerId = customerId,
+            PlanCode = plan.Code,
+            StartedOn = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime)
+        });
 
-        return Result.Success();
+        return Result<Guid>.Success(customerPublicId);
     }
 }
 ```
 
-The orchestrator returns the first failure result. The transaction decorator then rolls back the transaction.
-`IResult<T>` is also an `IResult`, so the orchestrator can return a child result directly.
+The handler returns the first failure:
+
+- The child command result has the same type, `IResult<Guid>`. The handler returns it directly.
+- The child query result is an `IResult<PlanDetails>`. `MapFailure<Guid>()` converts it to the same failure for `Guid`. See [RESULT-HANDLING.md](RESULT-HANDLING.md#send-a-child-result-to-the-caller).
 
 The container injects the full pipeline for each child handler.
 Thus, each child request is also logged and validated.
@@ -369,477 +253,30 @@ Thus, each child request is also logged and validated.
 A child `IStateCommand` does not create a nested transaction. These facts make this safe:
 
 1. **The state decorator does not open transactions.** It only calls `IStateUnit.SaveChangesAsync`.
-2. **One scope, one unit, one connection.** `IStateUnit` and `ITransactionUnit` resolve to the same scoped instance. That instance uses one `DbContext`. The outer transaction is open on that `DbContext`.
+2. **One scope, one unit, one connection.** `IStateUnit` and `ITransactionUnit` resolve to the same scoped `DbContextTransaction<TDbContext>`. That instance uses one `DbContext`. The outer transaction is open on that `DbContext`.
 3. **EF Core uses the current transaction.** When a transaction is open, `SaveChangesAsync` writes inside it. It does not start or commit its own transaction.
 4. **The save writes, but does not commit.** The rows go to the database inside the outer transaction. The database applies its constraints. Later steps can read the rows.
 5. **Only the outermost unit commits.** The transaction decorator commits after all steps succeed. If a step fails, the rollback also removes the rows from the earlier child saves.
 
 If a child command is also an `ITransactedStateCommand`, its transaction decorator calls `ExecuteInTransactionAsync` again.
-`DbContextTransactionUnit` sees the open transaction and does not start a second one. See [PERSISTENCE.md](PERSISTENCE.md#nested-transactions).
+`DbContextTransaction<TDbContext>` sees the open transaction and does not start a second one. See [PERSISTENCE.md](PERSISTENCE.md#nested-transactions).
 
-> **Warning:** A post-commit hook on a child `IStateCommand` runs after the child save. In a transaction, this occurs before the outer commit. If the outer transaction rolls back later, the hook has already run. Attach post-commit hooks to the outermost command only.
+The example tests prove this behavior on SQLite:
 
-## IQuery<T>
+| Test | Proof |
+| --- | --- |
+| `HandleAsync_WhenAllStepsSucceed_CommitsOneTransactionAndThenSendsEmail` | One transaction starts and one commits, although the child command calls `SaveChangesAsync`. |
+| `HandleAsync_WhenPlanDoesNotExist_RollsBackTheSavedCustomer` | The child command sends `INSERT INTO "Customers"`. After the rollback, the table is empty. |
 
-`IQuery<T>` marks a read-only request that returns a value of type `T`.
+[TESTING.md](TESTING.md#transacted-command-tests) shows the tests.
 
-The pipeline for a query:
-
-- Logs the request.
-- Runs the validator, if there is one.
-- Runs the handler.
-- Does not save data or open transactions.
-
-A query handler must not change state. Read data with no change tracking.
-
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-
-namespace Shop.Orders;
-
-public sealed record GetOrderByIdQuery(Guid OrderId) : IQuery<OrderSummary>;
-
-public sealed class GetOrderByIdQueryValidator : IValidator<GetOrderByIdQuery>
-{
-    public void Validate(GetOrderByIdQuery request, ValidationState validationState)
-    {
-        if (request.OrderId == Guid.Empty)
-        {
-            validationState.AddError(nameof(request.OrderId), "Order ID is required.");
-        }
-    }
-}
-
-public sealed class GetOrderByIdQueryHandler(IOrderRepository orderRepository)
-    : IQueryHandler<GetOrderByIdQuery, OrderSummary>
-{
-    public async Task<IResult<OrderSummary>> HandleAsync(
-        GetOrderByIdQuery query,
-        CancellationToken cancellationToken = default)
-    {
-        OrderSummary? summary = await orderRepository.FindSummaryAsync(query.OrderId, cancellationToken);
-
-        return summary is null
-            ? Result<OrderSummary>.NotFound()
-            : Result<OrderSummary>.Success(summary);
-    }
-}
-```
-
-## IPostCommitHook
-
-A post-commit hook runs a side effect after a state command saves its data.
-Use hooks for actions outside the database, for example emails, messages, or cache updates.
-
-| Command handler | Hook interface | Hook method |
-| --- | --- | --- |
-| `ICommandHandler<TCommand>` | `IPostCommitHook<TCommand>` | `ExecuteAsync(TCommand, IResult, CancellationToken)` |
-| `ICommandHandler<TCommand, TResult>` | `IPostCommitHook<TCommand, TResult>` | `AfterCommitAsync(TCommand, IResult<TResult>, CancellationToken)` |
-
-`AddCqrsHandlers` finds and registers hooks for you. You do not register them manually.
-
-### How the pipeline delays the hook
-
-The hook is a dependency of the persistence decorator, not of the handler.
-The decorator calls the hook only at the end of the persistence step:
-
-- **`IStateCommand`:** The state decorator calls the hook after `SaveChangesAsync` completes.
-- **`ITransactedStateCommand`:** The transaction decorator calls the hook after `ExecuteInTransactionAsync` returns a success. At that time, the transaction is committed.
-
-The hook does not run in these conditions:
-
-- The validator finds errors.
-- The handler returns a failure result.
-- `SaveChangesAsync` or the transaction throws an exception, or is canceled.
-- The command is a plain `ICommand`.
-- `IStateCommand` only: the cancellation token is canceled after the save and before the hook starts. The pipeline logs event 3001 and returns the success result.
-
-### Hook failures
-
-The data is already saved when the hook runs.
-If the hook is canceled, the pipeline returns the handler result. If the hook throws a different exception, the pipeline returns `InternalError`.
-[ARCHITECTURE.md](ARCHITECTURE.md#exception-and-cancellation-handling) lists the log events.
-
-> **Warning:** An `InternalError` from a hook does not mean that the save failed. The data is committed. Do not send the command again because of this result. Make hooks safe to fail, or catch and record their exceptions.
-
-### Hook rules
-
-- Register one hook for each command type. The pipeline resolves one hook. If you register more than one, the container uses the last registration.
-- Keep the hook short. The caller waits for the hook to complete.
-- For work that must not be lost, write an outbox record in the handler. Send the message from the outbox in a separate process.
-
-## Tests
-
-The tests use xUnit, Moq, and `DannyGoodacre.Testing`.
-`DannyGoodacre.Testing` supplies the `ShouldBeSuccess`, `ShouldBeInvalid`, `ShouldBeNotFound`, and `ShouldBeDomainError` assertions.
-
-The pipeline tests build a real service container with `AddCqrsHandlers`.
-They test the handler and all decorators together.
-
-### Command pipeline tests
-
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Shop.Orders;
-using Xunit;
-
-namespace Shop.Tests.Orders;
-
-public sealed class PlaceOrderPipelineTests
-{
-    private readonly Mock<IProductRepository> _productRepositoryMock = new(MockBehavior.Strict);
-
-    private readonly Mock<IOrderRepository> _orderRepositoryMock = new(MockBehavior.Strict);
-
-    private readonly Mock<IEmailSender> _emailSenderMock = new(MockBehavior.Strict);
-
-    private readonly Mock<ITransactionUnit> _transactionUnitMock = new(MockBehavior.Strict);
-
-    private ICommandHandler<PlaceOrderCommand, Guid> BuildPipeline()
-    {
-        var services = new ServiceCollection();
-
-        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        services.AddSingleton(_productRepositoryMock.Object);
-        services.AddSingleton(_orderRepositoryMock.Object);
-        services.AddSingleton(_emailSenderMock.Object);
-        services.AddSingleton(_transactionUnitMock.Object);
-        services.AddSingleton<IStateUnit>(_transactionUnitMock.Object);
-
-        services.AddCqrsHandlers(typeof(PlaceOrderCommand).Assembly);
-
-        IServiceScope scope = services.BuildServiceProvider().CreateScope();
-
-        return scope.ServiceProvider.GetRequiredService<ICommandHandler<PlaceOrderCommand, Guid>>();
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenStockIsAvailable_SavesOrderAndSendsConfirmation()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var command = new PlaceOrderCommand(Guid.NewGuid(), "SKU-100", 2);
-
-        var product = new Product { Sku = "SKU-100", UnitPrice = 12.50m, StockLevel = 5 };
-
-        _productRepositoryMock
-            .Setup(x => x.GetBySkuAsync(command.ProductSku, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(product);
-
-        _orderRepositoryMock
-            .Setup(x => x.Add(It.Is<Order>(o => o.CustomerId == command.CustomerId && o.Total == 25.00m)));
-
-        _transactionUnitMock
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
-        _emailSenderMock
-            .Setup(x => x.SendOrderConfirmationAsync(command.CustomerId, It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        Guid orderId = result.ShouldBeSuccess();
-
-        Assert.NotEqual(Guid.Empty, orderId);
-        Assert.Equal(3, product.StockLevel);
-
-        _transactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-
-        _emailSenderMock.Verify(
-            x => x.SendOrderConfirmationAsync(command.CustomerId, orderId, It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenStockIsInsufficient_ReturnsDomainErrorAndDoesNotSave()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var command = new PlaceOrderCommand(Guid.NewGuid(), "SKU-100", 10);
-
-        _productRepositoryMock
-            .Setup(x => x.GetBySkuAsync(command.ProductSku, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Product { Sku = "SKU-100", UnitPrice = 12.50m, StockLevel = 5 });
-
-        // Act
-        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBeDomainError("Insufficient stock.");
-
-        _orderRepositoryMock.Verify(x => x.Add(It.IsAny<Order>()), Times.Never);
-
-        _transactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-
-        _emailSenderMock.Verify(
-            x => x.SendOrderConfirmationAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenValidationFails_ShortCircuitsBeforeHandlerSaveAndHook()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var command = new PlaceOrderCommand(Guid.Empty, "", 0);
-
-        // Act
-        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        ValidationState validationState = result.ShouldBeInvalid();
-
-        Assert.Equal(3, validationState.Errors.Count);
-        Assert.Contains(nameof(PlaceOrderCommand.CustomerId), validationState.Errors.Keys);
-        Assert.Contains(nameof(PlaceOrderCommand.ProductSku), validationState.Errors.Keys);
-        Assert.Contains(nameof(PlaceOrderCommand.Quantity), validationState.Errors.Keys);
-
-        _productRepositoryMock.Verify(
-            x => x.GetBySkuAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-
-        _transactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-}
-```
-
-A `Strict` mock throws an exception if the pipeline calls a member with no setup.
-The logging decorator converts this exception to `InternalError`. The result assertion then fails.
-Thus, the failure tests also prove that no unexpected database calls occur.
-
-### Query pipeline tests
-
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Shop.Orders;
-using Xunit;
-
-namespace Shop.Tests.Orders;
-
-public sealed class GetOrderByIdPipelineTests
-{
-    private readonly Mock<IOrderRepository> _orderRepositoryMock = new(MockBehavior.Strict);
-
-    private IQueryHandler<GetOrderByIdQuery, OrderSummary> BuildPipeline()
-    {
-        var services = new ServiceCollection();
-
-        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        services.AddSingleton(_orderRepositoryMock.Object);
-
-        services.AddCqrsHandlers(typeof(GetOrderByIdQuery).Assembly);
-
-        IServiceScope scope = services.BuildServiceProvider().CreateScope();
-
-        return scope.ServiceProvider.GetRequiredService<IQueryHandler<GetOrderByIdQuery, OrderSummary>>();
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenOrderExists_ReturnsSummary()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var expected = new OrderSummary(Guid.NewGuid(), Guid.NewGuid(), "SKU-100", 2, 25.00m, OrderStatus.Placed);
-
-        _orderRepositoryMock
-            .Setup(x => x.FindSummaryAsync(expected.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expected);
-
-        // Act
-        IResult<OrderSummary> result = await pipeline.HandleAsync(new GetOrderByIdQuery(expected.Id), CancellationToken.None);
-
-        // Assert
-        OrderSummary summary = result.ShouldBeSuccess();
-
-        Assert.Equal(expected, summary);
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenOrderDoesNotExist_ReturnsNotFound()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var orderId = Guid.NewGuid();
-
-        _orderRepositoryMock
-            .Setup(x => x.FindSummaryAsync(orderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((OrderSummary?)null);
-
-        // Act
-        IResult<OrderSummary> result = await pipeline.HandleAsync(new GetOrderByIdQuery(orderId), CancellationToken.None);
-
-        // Assert
-        result.ShouldBeNotFound();
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenOrderIdIsEmpty_ShortCircuitsWithoutCallingRepository()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        // Act
-        IResult<OrderSummary> result = await pipeline.HandleAsync(new GetOrderByIdQuery(Guid.Empty), CancellationToken.None);
-
-        // Assert
-        ValidationState validationState = result.ShouldBeInvalid();
-
-        Assert.Single(validationState.Errors);
-        Assert.Contains(nameof(GetOrderByIdQuery.OrderId), validationState.Errors.Keys);
-
-        _orderRepositoryMock.Verify(
-            x => x.FindSummaryAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-    }
-}
-```
-
-The query container does not register `IStateUnit` or `ITransactionUnit`.
-Query pipelines do not use them.
-
-### Transacted command pipeline tests
-
-The mock transaction unit runs the operation delegate directly.
-The tests prove the call sequence. They do not prove the database rollback.
-Use an integration test with a real database to prove the rollback.
-
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-using DannyGoodacre.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using Shop.Customers;
-using Xunit;
-
-namespace Shop.Tests.Customers;
-
-public sealed class OnboardCustomerPipelineTests
-{
-    private readonly Mock<ICustomerRepository> _customerRepositoryMock = new(MockBehavior.Strict);
-
-    private readonly Mock<IEmailTemplateRepository> _templateRepositoryMock = new(MockBehavior.Strict);
-
-    private readonly Mock<IScheduledEmailRepository> _scheduledEmailRepositoryMock = new(MockBehavior.Strict);
-
-    private readonly Mock<ITransactionUnit> _transactionUnitMock = new(MockBehavior.Strict);
-
-    public OnboardCustomerPipelineTests()
-    {
-        _transactionUnitMock
-            .Setup(x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<IResult>>>(),
-                It.IsAny<CancellationToken>()))
-            .Returns((Func<CancellationToken, Task<IResult>> operation, CancellationToken ct) => operation(ct));
-
-        _transactionUnitMock
-            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
-    }
-
-    private ICommandHandler<OnboardCustomerCommand> BuildPipeline()
-    {
-        var services = new ServiceCollection();
-
-        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        services.AddSingleton(_customerRepositoryMock.Object);
-        services.AddSingleton(_templateRepositoryMock.Object);
-        services.AddSingleton(_scheduledEmailRepositoryMock.Object);
-        services.AddSingleton(_transactionUnitMock.Object);
-        services.AddSingleton<IStateUnit>(_transactionUnitMock.Object);
-
-        services.AddCqrsHandlers(typeof(OnboardCustomerCommand).Assembly);
-
-        IServiceScope scope = services.BuildServiceProvider().CreateScope();
-
-        return scope.ServiceProvider.GetRequiredService<ICommandHandler<OnboardCustomerCommand>>();
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenAllStepsSucceed_RunsAllStepsInOneTransaction()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var command = new OnboardCustomerCommand("Jane Doe", "jane@example.com", "en-GB");
-
-        _customerRepositoryMock.Setup(x => x.Add(It.Is<Customer>(c => c.Email == command.Email)));
-
-        _templateRepositoryMock
-            .Setup(x => x.FindWelcomeTemplateAsync("en-GB", It.IsAny<CancellationToken>()))
-            .ReturnsAsync("Welcome to the shop.");
-
-        _scheduledEmailRepositoryMock.Setup(x => x.Add(It.Is<ScheduledEmail>(e => e.Body == "Welcome to the shop.")));
-
-        // Act
-        IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBeSuccess();
-
-        _transactionUnitMock.Verify(
-            x => x.ExecuteInTransactionAsync(
-                It.IsAny<Func<CancellationToken, Task<IResult>>>(),
-                It.IsAny<CancellationToken>()),
-            Times.Once);
-
-        // Two child state command saves and one final save, all in one transaction.
-        _transactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(3));
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenTemplateIsMissing_ReturnsNotFoundAndStopsBeforeLastStep()
-    {
-        // Arrange
-        var pipeline = BuildPipeline();
-
-        var command = new OnboardCustomerCommand("Jane Doe", "jane@example.com", "xx-XX");
-
-        _customerRepositoryMock.Setup(x => x.Add(It.IsAny<Customer>()));
-
-        _templateRepositoryMock
-            .Setup(x => x.FindWelcomeTemplateAsync("xx-XX", It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
-
-        // Act
-        IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
-
-        // Assert
-        result.ShouldBeNotFound();
-
-        _scheduledEmailRepositoryMock.Verify(x => x.Add(It.IsAny<ScheduledEmail>()), Times.Never);
-
-        // Only the child customer save runs. The transaction unit rolls it back.
-        _transactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-    }
-}
-```
+A post-commit hook on a child `IStateCommand` waits for the outermost commit. If the transaction rolls back, the hook does not run. See [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md#hooks-on-child-commands).
 
 ## Related documents
 
-- [ARCHITECTURE.md](ARCHITECTURE.md)
-- [PERSISTENCE.md](PERSISTENCE.md)
+- [EXAMPLES.md](EXAMPLES.md)
+- [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md)
 - [RESULT-HANDLING.md](RESULT-HANDLING.md)
+- [PERSISTENCE.md](PERSISTENCE.md)
+- [TESTING.md](TESTING.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)

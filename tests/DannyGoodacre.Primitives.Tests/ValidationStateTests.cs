@@ -119,4 +119,49 @@ public sealed class ValidationStateTests
         // Assert
         Assert.Equal(expected, result);
     }
+
+    [Fact]
+    public void Errors_IsCaseInsensitiveForLookups()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Email", "Email is required.");
+
+        // Act & Assert
+        Assert.True(state.Errors.ContainsKey("email"));
+        Assert.Equal("Email is required.", Assert.Single(state.Errors["EMAIL"]));
+    }
+
+    [Fact]
+    public void Errors_DoesNotExposeTheInternalLists()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Name", "Name is required.");
+
+        // Act
+        IReadOnlyList<string> errors = state.Errors["Name"];
+
+        // Assert
+        Assert.IsNotType<List<string>>(errors, exactMatch: false);
+    }
+
+    [Fact]
+    public void Errors_AfterAddError_ShowsTheNewError()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Name", "Name is required.");
+
+        _ = state.Errors;
+
+        // Act
+        state.AddError("Age", "Must be positive.");
+
+        // Assert
+        Assert.Equal(2, state.Errors.Count);
+    }
 }

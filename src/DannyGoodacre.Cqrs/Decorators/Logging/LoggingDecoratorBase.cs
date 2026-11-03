@@ -36,7 +36,7 @@ internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
 
             return result;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             logger.LogRequestCanceledMidExecution(requestName);
 
@@ -85,7 +85,7 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
 
             return result;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             logger.LogRequestCanceledMidExecution(requestName);
 

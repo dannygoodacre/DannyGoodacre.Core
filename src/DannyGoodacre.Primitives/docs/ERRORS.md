@@ -27,7 +27,9 @@ The constructors replace empty values:
 - If `message` is `null`, empty, or white space, `Message` is `"An unspecified error occurred."`.
 - If `code` is `null`, empty, or white space, `Code` is `"General"`.
 
-> **Warning:** `default(Error)` and `new Error()` do not use these constructors. Their `Message` and `Code` are `null`. Always use a constructor with parameters, a factory method, or an implicit conversion.
+`default(Error)` and `new Error()` do not run a constructor. They still return the same default `Message` and `Code`, and they equal `new Error("")`.
+
+The constructors that take an `Exception` throw `ArgumentNullException` if the exception is `null`.
 
 ### Implicit conversions
 

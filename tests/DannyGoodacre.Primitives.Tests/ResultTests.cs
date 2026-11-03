@@ -160,4 +160,16 @@ public sealed class ResultTests
         Assert.False(result.IsSuccess);
         Assert.True(result.IsFailure);
     }
+
+    [Fact]
+    public void Factories_ReturnInterfaces_SoIsSuccessIsAvailableWithVar()
+    {
+        // Act
+        var success = Result.Success();
+        var failure = Result.DomainError("Invalid business rule");
+
+        // Assert
+        Assert.True(success.IsSuccess);
+        Assert.True(failure.IsFailure);
+    }
 }

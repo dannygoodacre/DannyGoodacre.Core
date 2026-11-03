@@ -16,7 +16,7 @@ public static class ResultExtensions
         /// Thrown when attempting to map a successful result (<see cref="ISuccessResult"/>).
         /// </exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// Thrown when <paramref name="result"/> is an unrecognized failure implementation.
+        /// Thrown when the result is an unrecognized failure implementation.
         /// </exception>
         public IResult<TOut> MapFailure<TOut>()
             => result switch

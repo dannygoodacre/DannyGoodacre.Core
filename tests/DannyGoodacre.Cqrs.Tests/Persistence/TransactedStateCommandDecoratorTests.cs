@@ -67,7 +67,32 @@ public sealed class TransactedStateCommandDecoratorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenTransactionExecutionThrowsOperationCanceled_LogsAndReturnsCanceled()
+    public async Task HandleAsync_WhenTransactionExecutionIsCanceledByCaller_LogsAndReturnsCanceled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        await cts.CancelAsync();
+
+        var command = new TransactedStateCommand();
+
+        _transactedStateCommandContext.TransactionUnitMock
+            .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult<Guid>>>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        var pipeline = _transactedStateCommandContext.CreatePipeline();
+
+        // Act
+        IResult<Guid> result = await pipeline.HandleAsync(command, cts.Token);
+
+        // Assert
+        result.ShouldBeCanceled();
+
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenTransactionExecutionThrowsOperationCanceledWithoutCallerCancellation_LogsFaultAndReturnsInternalError()
     {
         // Arrange
         var command = new TransactedStateCommand();
@@ -82,9 +107,9 @@ public sealed class TransactedStateCommandDecoratorTests
         IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBeCanceled();
+        result.ShouldBeInternalError();
 
-        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionFaulted, LogLevel.Error);
     }
 
     [Fact]
@@ -183,7 +208,7 @@ public sealed class TransactedStateCommandDecoratorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenHookThrowsUnhandledException_LogsFaultAndReturnsInternalError()
+    public async Task HandleAsync_WhenHookThrowsUnhandledException_LogsFaultAndReturnsOriginalResult()
     {
         // Arrange
         var command = new TransactedStateCommand();
@@ -216,7 +241,8 @@ public sealed class TransactedStateCommandDecoratorTests
         IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBeInternalError(hookException);
+        // The data is committed, so a hook failure does not change the result.
+        result.ShouldBeSuccess();
 
         var faultLog = _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitFaulted, LogLevel.Error);
 

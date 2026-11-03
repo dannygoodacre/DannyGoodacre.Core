@@ -1,7 +1,7 @@
 # Persistence
 
 This document tells you how to connect the pipeline to a database.
-It describes `IStateUnit`, `ITransactionUnit`, and `DbContextTransactionUnit` for Entity Framework Core.
+It describes `IStateUnit`, `ITransactionUnit`, and `DbContextTransaction<TDbContext>` for Entity Framework Core.
 It also describes EF Core execution strategy retries.
 
 ## Contracts
@@ -48,103 +48,127 @@ Inside the operation, it calls the handler and then `SaveChangesAsync`.
 The operation is a delegate, not a value. Thus, the unit can run the operation again after a transient fault.
 See [Execution strategy retries](#execution-strategy-retries).
 
-## DbContextTransactionUnit
+## DbContextTransaction
 
-`DbContextTransactionUnit` implements `IStateUnit` and `ITransactionUnit` for EF Core.
+`DbContextTransaction<TDbContext>` implements `IStateUnit` and `ITransactionUnit` for EF Core.
 It uses one `DbContext` for the save and for the transaction.
+The class is in the `DannyGoodacre.Cqrs.EntityFrameworkCore` package.
+
+```shell
+dotnet add package DannyGoodacre.Cqrs.EntityFrameworkCore
+```
 
 It has these behaviors:
 
 - `SaveChangesAsync` calls `DbContext.SaveChangesAsync`.
 - `ExecuteInTransactionAsync` opens a transaction on the `DbContext`, runs the operation, and commits if the result is a success.
 - If a transaction is already open, it does not open a second transaction. See [Nested transactions](#nested-transactions).
-- If the result is a failure, or if the operation throws an exception, it rolls back the transaction.
-- After a rollback, it clears `DbContext.ChangeTracker`.
+- If the result is a failure, it rolls back the transaction and clears `DbContext.ChangeTracker`.
+- If the operation throws an exception, it clears `DbContext.ChangeTracker` and throws the exception again. The transaction is not committed, so the database rolls it back when the transaction is disposed.
 
 ### Registration
 
-Register one scoped instance. Resolve both interfaces to that instance.
+`AddEntityFrameworkUnits<TDbContext>()` registers one scoped `DbContextTransaction<TDbContext>`.
+It resolves `IStateUnit` and `ITransactionUnit` to that instance.
+
+The example project calls it in `AddCustomerOnboarding`. [README.md](../README.md#4-register-the-services) shows the full method.
+The caller supplies the database configuration. From [`Program.cs`](../../DannyGoodacre.Cqrs.Examples/Program.cs):
 
 ```csharp
-using DannyGoodacre.Cqrs;
-using Microsoft.EntityFrameworkCore;
+services.AddSingleton(_ =>
+{
+    var connection = new SqliteConnection("Data Source=:memory:");
+    connection.Open();
+    return connection;
+});
 
-builder.Services.AddDbContext<ShopDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("Shop"),
-        sql => sql.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null)));
-
-builder.Services.AddScoped<ITransactionUnit>(sp =>
-    new DbContextTransactionUnit(sp.GetRequiredService<ShopDbContext>()));
-
-builder.Services.AddScoped<IStateUnit>(sp => sp.GetRequiredService<ITransactionUnit>());
-
-builder.Services.AddCqrsHandlers(typeof(PlaceOrderCommand).Assembly);
+services.AddCustomerOnboarding((provider, options) =>
+    options.UseSqlite(provider.GetRequiredService<SqliteConnection>()));
 ```
 
-> **Warning:** Do not register two separate instances for `IStateUnit` and `ITransactionUnit`. Child state commands must save on the same `DbContext` that holds the transaction.
+An in-memory SQLite database exists while its connection is open.
+The container owns the connection as a singleton and disposes it with the service provider. Each scope creates a new `DbContext` on that connection.
+
+For a server database, configure the provider and its retry strategy in the same place. For example, with SQL Server:
+
+```csharp
+services.AddCustomerOnboarding((_, options) => options.UseSqlServer(
+    configuration.GetConnectionString("Customers"),
+    sql => sql.EnableRetryOnFailure()));
+```
+
+Read the connection string from configuration. Do not write it in the source code.
+
+> **Warning:** If you register the units yourself, do not register two separate instances for `IStateUnit` and `ITransactionUnit`. Child state commands must save on the same `DbContext` that holds the transaction.
 
 > **Note:** The pipeline resolves `IStateUnit` and `ITransactionUnit` for all command handlers, also for plain `ICommand` handlers. Register both interfaces in each application that sends commands.
 
-### Repositories
+### The example database
 
-The handlers in these documents use repositories. The repositories add and read entities on the scoped `DbContext`.
-They do not call `SaveChangesAsync`. The pipeline calls it.
+From [`Persistence/ExamplesDbContext.cs`](../../DannyGoodacre.Cqrs.Examples/Persistence/ExamplesDbContext.cs):
 
 ```csharp
-using Microsoft.EntityFrameworkCore;
-using Shop.Orders;
-
-namespace Shop.Infrastructure;
-
-public sealed class ShopDbContext(DbContextOptions<ShopDbContext> options) : DbContext(options)
+modelBuilder.Entity<Customer>(customer =>
 {
-    public DbSet<Order> Orders => Set<Order>();
+    customer.HasKey(c => c.Id);
+    customer.Property(c => c.Id).ValueGeneratedOnAdd();
+    customer.HasIndex(c => c.PublicId).IsUnique();
+    customer.HasIndex(c => c.Email).IsUnique();
+});
+```
 
-    public DbSet<Product> Products => Set<Product>();
+`Id` is an integer primary key. `ValueGeneratedOnAdd` tells EF Core that the database generates it during the insert.
+`PublicId` has a unique index. The handler generates it with `Guid.NewGuid()`, so the handler can return it. See [Entity keys](COMMANDS-AND-QUERIES.md#entity-keys).
+Subscriptions use the same two keys. The subscription's foreign key, `CustomerId`, refers to the customer's integer `Id`.
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Product>().HasKey(p => p.Sku);
+The model also seeds two plans, `BASIC` and `PREMIUM`, with `HasData`. `EnsureCreatedAsync` creates the tables and the seed rows.
 
-        modelBuilder.Entity<Order>().HasKey(o => o.Id);
-        modelBuilder.Entity<Order>().Property(o => o.Id).ValueGeneratedNever();
-        modelBuilder.Entity<Order>().Property(o => o.Total).HasPrecision(18, 2);
-    }
-}
+### Repositories
 
-public sealed class EfProductRepository(ShopDbContext dbContext) : IProductRepository
+The example handlers use repositories. The repositories add and read entities on the scoped `DbContext`.
+They do not call `SaveChangesAsync`. The pipeline calls it.
+
+From [`Persistence/Repositories.cs`](../../DannyGoodacre.Cqrs.Examples/Persistence/Repositories.cs):
+
+```csharp
+public sealed class CustomerRepository(ExamplesDbContext dbContext) : ICustomerRepository
 {
-    public Task<Product?> GetBySkuAsync(string sku, CancellationToken cancellationToken = default)
-        => dbContext.Products.SingleOrDefaultAsync(p => p.Sku == sku, cancellationToken);
-}
+    public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
+        => dbContext.Customers.AnyAsync(c => c.Email == email, cancellationToken);
 
-public sealed class EfOrderRepository(ShopDbContext dbContext) : IOrderRepository
-{
-    public void Add(Order order) => dbContext.Orders.Add(order);
+    public void Add(Customer customer)
+        => dbContext.Customers.Add(customer);
 
-    public Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => dbContext.Orders.SingleOrDefaultAsync(o => o.Id == id, cancellationToken);
+    // The customer must exist. A missing row is a fault, so SingleAsync throws.
+    public Task<int> GetIdAsync(Guid publicId, CancellationToken cancellationToken = default)
+        => dbContext.Customers
+            .Where(c => c.PublicId == publicId)
+            .Select(c => c.Id)
+            .SingleAsync(cancellationToken);
 
-    public Task<OrderSummary?> FindSummaryAsync(Guid id, CancellationToken cancellationToken = default)
-        => dbContext.Orders
+    public Task<CustomerDetails?> FindDetailsAsync(Guid publicId, CancellationToken cancellationToken = default)
+        => dbContext.Customers
             .AsNoTracking()
-            .Where(o => o.Id == id)
-            .Select(o => new OrderSummary(o.Id, o.CustomerId, o.ProductSku, o.Quantity, o.Total, o.Status))
+            .Where(c => c.PublicId == publicId)
+            .Select(c => new CustomerDetails(
+                c.PublicId,
+                c.Name,
+                c.Email,
+                dbContext.Subscriptions
+                    .Where(s => s.CustomerId == c.Id)
+                    .Select(s => s.PlanCode)
+                    .FirstOrDefault()))
             .SingleOrDefaultAsync(cancellationToken);
 }
 ```
 
-`ValueGeneratedNever` tells EF Core that the application sets the key.
-The handler generates the key with `Guid.CreateVersion7()`. Thus, the key is in the handler result.
+`Add` only tracks the entity. `FindDetailsAsync` uses `AsNoTracking()` and projects to the result type with `Select()`.
+`GetIdAsync` converts a public ID to the database ID. The onboarding handler uses it after the child command has saved the customer.
 
 ## Nested transactions
 
 A database connection can have only one active transaction in EF Core.
-`DbContextTransactionUnit` prevents a second transaction in these steps:
+`DbContextTransaction<TDbContext>` prevents a second transaction in these steps:
 
 1. The outermost `ITransactedStateCommand` calls `ExecuteInTransactionAsync`. No transaction is open, so the unit opens one.
 2. A child `IStateCommand` calls only `SaveChangesAsync`. It does not call `ExecuteInTransactionAsync`.
@@ -152,17 +176,20 @@ A database connection can have only one active transaction in EF Core.
 4. A child `ITransactedStateCommand` calls `ExecuteInTransactionAsync`. The unit sees the open transaction. It runs the operation inside that transaction and does not start a new one.
 5. The outermost call commits or rolls back all changes.
 
+The example test `HandleAsync_WhenAllStepsSucceed_CommitsOneTransactionAndThenSendsEmail` counts the transactions with an EF Core interceptor.
+Onboarding calls `SaveChangesAsync` two times, but only one transaction starts and commits. See [TESTING.md](TESTING.md#transacted-command-tests).
+
 ## Failure and rollback
 
-| Event | Action of `DbContextTransactionUnit` | Pipeline result |
+| Event | Action of `DbContextTransaction<TDbContext>` | Pipeline result |
 | --- | --- | --- |
 | Handler returns a failure result | Rolls back. Clears the change tracker. | The handler result |
-| Handler throws an exception | Rolls back. Clears the change tracker. Throws again. | `InternalError` |
-| `SaveChangesAsync` throws an exception | Rolls back. Clears the change tracker. Throws again. | `InternalError` |
-| The operation is canceled | Rolls back. Clears the change tracker. Throws again. | `Canceled` |
+| Handler throws an exception | Does not commit. Clears the change tracker. Throws again. | `InternalError` |
+| `SaveChangesAsync` throws an exception | Does not commit. Clears the change tracker. Throws again. | `InternalError` |
+| The operation is canceled | Does not commit. Clears the change tracker. Throws again. | `Canceled` |
 | All steps succeed | Commits. | The handler result |
 
-The unit clears `DbContext.ChangeTracker` after a rollback. The reason is that the tracker still holds the entities from the failed steps.
+The unit clears `DbContext.ChangeTracker` after a failure. The reason is that the tracker still holds the entities from the failed steps.
 If the scope uses the `DbContext` again, those entities are not saved by accident.
 
 ## Execution strategy retries
@@ -192,73 +219,21 @@ The handler of an `ITransactedStateCommand` can run more than one time for one r
 
 ### Custom implementation
 
-To use a different data store, implement `ITransactionUnit` yourself.
-This example shows the full contract for EF Core. It includes execution strategy support.
+To use a different data store, or to change the behavior of the EF Core unit, implement `ITransactionUnit` yourself.
+Use [`DbContextTransaction.cs`](../../DannyGoodacre.Cqrs.EntityFrameworkCore/DbContextTransaction.cs) as the reference. It is about 60 lines.
 
-```csharp
-using DannyGoodacre.Cqrs;
-using DannyGoodacre.Primitives;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+Your implementation must do these things:
 
-namespace Shop.Infrastructure;
-
-public sealed class ShopTransactionUnit(ShopDbContext dbContext) : ITransactionUnit
-{
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => dbContext.SaveChangesAsync(cancellationToken);
-
-    public Task<TResultWrapper> ExecuteInTransactionAsync<TResultWrapper>(
-        Func<CancellationToken, Task<TResultWrapper>> operation,
-        CancellationToken cancellationToken = default)
-        where TResultWrapper : IResult
-    {
-        // A transaction is already open. Join it. Do not start a second one.
-        if (dbContext.Database.CurrentTransaction is not null)
-        {
-            return operation(cancellationToken);
-        }
-
-        IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
-
-        return strategy.ExecuteAsync(
-            async ct =>
-            {
-                await using IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(ct);
-
-                try
-                {
-                    TResultWrapper result = await operation(ct);
-
-                    if (result.IsSuccess)
-                    {
-                        await transaction.CommitAsync(ct);
-                    }
-                    else
-                    {
-                        await transaction.RollbackAsync(CancellationToken.None);
-                        dbContext.ChangeTracker.Clear();
-                    }
-
-                    return result;
-                }
-                catch
-                {
-                    await transaction.RollbackAsync(CancellationToken.None);
-                    dbContext.ChangeTracker.Clear();
-
-                    throw;
-                }
-            },
-            cancellationToken);
-    }
-}
-```
-
-The rollback uses `CancellationToken.None`. The rollback must complete, also when the request is canceled.
+1. If a transaction is already open, run the operation inside it. Do not start a second transaction.
+2. Otherwise, start a transaction inside the execution strategy of the data store, if it has one.
+3. Commit if the result is a success. Roll back if the result is a failure.
+4. If the operation throws an exception, do not commit. Clear the tracked changes and throw the exception again.
+5. Register one scoped instance for both `IStateUnit` and `ITransactionUnit`, in the same way as `AddEntityFrameworkUnits<TDbContext>()`.
 
 ## Related documents
 
+- [EXAMPLES.md](EXAMPLES.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md)
 - [RESULT-HANDLING.md](RESULT-HANDLING.md)
+- [TESTING.md](TESTING.md)

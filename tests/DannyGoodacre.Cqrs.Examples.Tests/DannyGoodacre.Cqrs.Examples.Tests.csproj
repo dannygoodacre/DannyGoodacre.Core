@@ -17,6 +17,8 @@
     <ItemGroup>
         <Using Include="Xunit"/>
         <Using Include="Moq"/>
+        <Using Include="DannyGoodacre.Primitives"/>
+        <Using Include="DannyGoodacre.Testing"/>
     </ItemGroup>
 
     <ItemGroup>

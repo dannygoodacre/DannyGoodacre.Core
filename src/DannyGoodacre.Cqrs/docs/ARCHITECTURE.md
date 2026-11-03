@@ -23,8 +23,8 @@ flowchart LR
 | --- |-----------------------------------| --- | --- |
 | 1 | `CommandLoggingDecorator`         | All commands | Logs the start and the outcome. Converts exceptions to `InternalError` and cancellations to `Canceled`. |
 | 2 | `CommandValidationDecorator`      | Commands with an `IValidator<T>` | Runs the validator. Returns `Invalid` if there are errors. |
-| 3 | `TransactedStateCommandDecorator` | `ITransactedStateCommand` | Opens a transaction, runs the handler, saves, and commits. Runs the post-commit hook after the commit. |
-| 4 | `StateCommandDecorator`           | `IStateCommand` | Calls `SaveChangesAsync` after a successful handler. Runs the post-commit hook after the save. |
+| 3 | `TransactedStateCommandDecorator` | `ITransactedStateCommand` | Opens a transaction, runs the handler, saves, and commits. Runs the post-commit hooks after the commit. |
+| 4 | `StateCommandDecorator`           | `IStateCommand` | Calls `SaveChangesAsync` after a successful handler. Runs the post-commit hooks after the save, or after the outermost commit if a transaction is open. |
 | 5 | Handler                           | All commands | Runs the domain logic. Returns an `IResult`. |
 
 All decorators wrap all command handlers. Each decorator checks the command type at run time.
@@ -69,7 +69,9 @@ Each registration replaces the previous one with a factory. The factory creates 
 The factories are compiled at startup with `ActivatorUtilities.CreateFactory`.
 The container does not use reflection when it resolves a handler for a request.
 
-> **Warning:** Call `AddCqrsHandlers` one time only. The method wraps all `ICommandHandler` and `IQueryHandler` registrations in the service collection. A second call wraps the handlers again.
+Each call to `AddCqrsHandlers` wraps only the handlers that the call registers. You can call it more than one time, for example one time for each module.
+A validator or hook that two calls find is registered one time only.
+A handler that you register yourself, outside `AddCqrsHandlers`, does not get the pipeline.
 
 ### Why the order is important
 
@@ -84,9 +86,9 @@ The validation decorator runs before the transaction decorator, the state decora
 
 The decorator does these steps:
 
-1. It gets the `IValidator<T>` for the request from the container. If there is no validator, it calls the next step.
+1. It gets all `IValidator<T>` services for the request from the container. If there are none, it calls the next step.
 2. It creates a new, empty `ValidationState`.
-3. It calls `Validate(request, validationState)`. The validator adds errors with `AddError`.
+3. It calls `Validate(request, validationState)` on each validator. The validators add errors with `AddError`.
 4. It reads `validationState.HasErrors`.
 5. If `HasErrors` is `false`, it calls the next step.
 6. If `HasErrors` is `true`, it logs event `RequestValidationFailed` (1007). Then it returns `Invalid` or `Invalid<T>` with the `ValidationState`.
@@ -100,24 +102,29 @@ In step 6, the decorator does not call the next step. Thus:
 
 The logging decorator then receives the `Invalid` result. It logs `RequestFailed` (1004).
 
+The example tests prove this with an EF Core interceptor. An invalid request sends no SQL command and starts no transaction.
+See `HandleAsync_WhenValidationFails_ShortCircuitsBeforeTheTransaction` in [TESTING.md](TESTING.md#other-transacted-tests).
+
 `IValidator<T>.Validate` is synchronous. Use validators for input rules only, for example required fields and value ranges.
 Put rules that need the database in the handler. Return `Conflict` or `DomainError` from the handler for these rules.
 
 ## Exception and cancellation handling
 
-The pipeline does not throw exceptions to the caller. The decorators convert exceptions to results:
+The pipeline does not throw exceptions to the caller. The decorators convert exceptions to results.
+An `OperationCanceledException` becomes `Canceled` only if the caller's token is canceled.
+Otherwise, for example after an `HttpClient` timeout, it is an unexpected fault and becomes `InternalError`.
 
 | Source | Exception | Result | Log event |
 | --- | --- | --- | --- |
 | Caller token is canceled before the pipeline starts | None | `Canceled` | `RequestCanceledPreExecution` (1003) |
-| Handler or inner decorator | `OperationCanceledException` | `Canceled` | `RequestCanceledMidExecution` (1005) |
+| Handler or inner decorator | `OperationCanceledException`, caller's token canceled | `Canceled` | `RequestCanceledMidExecution` (1005) |
 | Handler or inner decorator | Other exception | `InternalError` | `RequestFaulted` (1006) |
-| `SaveChangesAsync` | `OperationCanceledException` | `Canceled` | `SaveChangesCanceled` (2001) |
+| `SaveChangesAsync` | `OperationCanceledException`, caller's token canceled | `Canceled` | `SaveChangesCanceled` (2001) |
 | `SaveChangesAsync` | Other exception | `InternalError` | `SaveChangesFaulted` (2002) |
-| Transaction | `OperationCanceledException` | `Canceled` | `TransactionCanceled` (4001) |
+| Transaction | `OperationCanceledException`, caller's token canceled | `Canceled` | `TransactionCanceled` (4001) |
 | Transaction | Other exception | `InternalError` | `TransactionFaulted` (4002) |
 | Post-commit hook | `OperationCanceledException` | Original success result | `PostCommitHookCanceledMidExecution` (3002) |
-| Post-commit hook | Other exception | `InternalError` | `PostCommitFaulted` (3003) |
+| Post-commit hook | Other exception | Original success result | `PostCommitFaulted` (3003) |
 
 ## Logging
 
@@ -135,7 +142,6 @@ The message uses the short name of the request type.
 | 1007 | `RequestValidationFailed` | Warning | The validator adds one or more errors. The log contains the `ValidationState`. |
 | 2001 | `SaveChangesCanceled` | Warning | `SaveChangesAsync` is canceled. |
 | 2002 | `SaveChangesFaulted` | Error | `SaveChangesAsync` throws an exception. |
-| 3001 | `PostCommitHookCanceledPreExecution` | Warning | The token is canceled after the save and before the hook. |
 | 3002 | `PostCommitHookCanceledMidExecution` | Warning | The hook is canceled. |
 | 3003 | `PostCommitFaulted` | Error | The hook throws an exception. |
 | 4001 | `TransactionCanceled` | Warning | The transaction is canceled. |
@@ -161,11 +167,13 @@ Then they share one `DbContext` and one transaction.
 2. **The marker interface sets the behavior.** The request type tells the pipeline what to do. The handler does not tell the pipeline.
 3. **Results, not exceptions.** Handlers return `IResult` values for all expected outcomes. Exceptions are only for unexpected faults.
 4. **Queries are read-only.** `AddCqrsHandlers` stops at startup if a query also has a state command marker.
-5. **Side effects occur after the save.** External calls, such as emails, go in post-commit hooks. They do not run if the save fails.
+5. **Side effects occur after the save.** External calls, such as emails, go in post-commit hooks. They do not run if the save fails. See [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md).
 6. **One transaction for each request.** A transaction opens only at the outermost `ITransactedStateCommand`. Child commands use the same transaction.
 
 ## Related documents
 
 - [COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md)
+- [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md)
 - [PERSISTENCE.md](PERSISTENCE.md)
 - [RESULT-HANDLING.md](RESULT-HANDLING.md)
+- [TESTING.md](TESTING.md)

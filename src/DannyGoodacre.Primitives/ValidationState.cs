@@ -10,13 +10,23 @@ public sealed class ValidationState
 {
     private Dictionary<string, List<string>>? _errors;
 
+    private IReadOnlyDictionary<string, IReadOnlyList<string>>? _errorsView;
+
     /// <summary>
-    /// A view of the current validation errors.
+    /// A read-only view of the current validation errors. Key lookups are not case-sensitive.
     /// </summary>
+    /// <remarks>
+    /// The view is created on first read and kept until the next <see cref="AddError"/> call.
+    /// The lists are read-only wrappers, so a caller cannot change the internal state.
+    /// </remarks>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors
-        => _errors is not null
-            ? _errors.ToDictionary(kvp => kvp.Key, IReadOnlyList<string> (kvp) => kvp.Value)
-            : ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty;
+        => _errorsView ??= _errors is null
+            ? ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty
+            : new ReadOnlyDictionary<string, IReadOnlyList<string>>(
+                _errors.ToDictionary(
+                    kvp => kvp.Key,
+                    IReadOnlyList<string> (kvp) => kvp.Value.AsReadOnly(),
+                    StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
     /// Indicates whether any validation errors have been recorded.
@@ -29,6 +39,8 @@ public sealed class ValidationState
     public void AddError(string property, string error)
     {
         _errors ??= new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        _errorsView = null;
 
         ref List<string>? list = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
             _errors,

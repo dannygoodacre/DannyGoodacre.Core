@@ -17,22 +17,17 @@ It tells you how to create results, read results, and convert failures between v
 
 `IsSuccess` is `true` when the result implements `ISuccessResult`. `IsFailure` is the opposite of `IsSuccess`.
 
-The two properties are default interface members of `IResult`.
-C# shows these members only through a variable of an interface type.
-A variable of a concrete type, for example `DomainError`, does not show them.
+The two properties are default interface members of `IResult`. C# shows them through a variable of an interface type.
+The factory methods return `IResult` or `IResult<T>`, so the properties are available, also with `var`:
 
 ```csharp
-IResult result = Result.DomainError("The basket is empty.");
+var result = Result.DomainError("The basket is empty.");
 
-bool failed = result.IsFailure; // Compiles.
-
-var domainError = Result.DomainError("The basket is empty.");
-
-// bool failedToo = domainError.IsFailure; // Does not compile: error CS1061.
-bool failedToo = ((IResult)domainError).IsFailure; // Compiles.
+bool failed = result.IsFailure;
 ```
 
-Declare result variables and return types as `IResult` or `IResult<T>`. Do not use `var` with a factory method if you need these properties.
+If you create a result with a constructor, for example `new DomainError("...")`, the variable has the concrete type.
+Then cast it to `IResult` to read the properties.
 
 ## Outcome types
 
@@ -65,10 +60,12 @@ All outcome types are records. Each generic type derives from its non-generic ty
 
 Use the factory methods on the static `Result` and `Result<T>` classes.
 
-| `Result` method | Returns | `Result<T>` method | Returns |
+Each `Result` method returns `IResult`, and each `Result<T>` method returns `IResult<T>`. The table shows the type of the object that each method creates.
+
+| `Result` method | Creates | `Result<T>` method | Creates |
 | --- | --- | --- | --- |
 | `Success()` | `Success` | `Success(T value)` | `Success<T>` |
-| `Success<T>(T value)` | `Success<T>` | | |
+| `Success<T>(T value)` | `Success<T>` (returns `IResult<T>`) | | |
 | `DomainError(string message)` | `DomainError` | `DomainError(string message)` | `DomainError<T>` |
 | `NotFound()` | `NotFound` | `NotFound()` | `NotFound<T>` |
 | `Conflict(string message)` | `Conflict` | `Conflict(string message)` | `Conflict<T>` |
@@ -189,7 +186,7 @@ public sealed class OrderFactory(CustomerLookup customerLookup)
             return customerResult.MapFailure<Order>();
         }
 
-        return Result.Success(new Order(Guid.CreateVersion7(), customer.Id, total));
+        return Result.Success(new Order(Guid.NewGuid(), customer.Id, total));
     }
 }
 ```
@@ -213,11 +210,9 @@ To return a typed result from a method that returns non-generic `IResult`, you d
 
 | Type | `ToString()` output |
 | --- | --- |
-| `DomainError` | `DomainError: <Message>` |
-| `InternalError` | `InternalError: <Error>` |
+| `DomainError` and `DomainError<T>` | `DomainError: <Message>` |
+| `InternalError` and `InternalError<T>` | `InternalError: <Error>` |
 | Other types | The default record format, for example `NotFound { }` |
-
-> **Note:** `DomainError<T>` and `InternalError<T>` use the default record format. They do not use the format of the base type. See the bug list in the repository.
 
 ## Equality
 

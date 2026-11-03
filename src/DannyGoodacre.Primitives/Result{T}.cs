@@ -26,21 +26,21 @@ public sealed record Invalid<T>(ValidationState ValidationState) : Invalid(Valid
 /// <typeparam name="T">The payload type.</typeparam>
 public static class Result<T>
 {
-    public static Success<T> Success(T value) => new(value);
+    public static IResult<T> Success(T value) => new Success<T>(value);
 
-    public static Canceled<T> Canceled() => new();
+    public static IResult<T> Canceled() => new Canceled<T>();
 
-    public static Conflict<T> Conflict(string message) => new(message);
+    public static IResult<T> Conflict(string message) => new Conflict<T>(message);
 
-    public static DomainError<T> DomainError(string message) => new(message);
+    public static IResult<T> DomainError(string message) => new DomainError<T>(message);
 
-    public static NotFound<T> NotFound() => new();
+    public static IResult<T> NotFound() => new NotFound<T>();
 
-    public static InternalError<T> InternalError(Error error) => new(error);
+    public static IResult<T> InternalError(Error error) => new InternalError<T>(error);
 
-    public static InternalError<T> InternalError(string message) => new(new Error(message));
+    public static IResult<T> InternalError(string message) => new InternalError<T>(new Error(message));
 
-    public static InternalError<T> InternalError(Exception exception) => new(new Error(exception));
+    public static IResult<T> InternalError(Exception exception) => new InternalError<T>(new Error(exception));
 
-    public static Invalid<T> Invalid(ValidationState state) => new(state);
+    public static IResult<T> Invalid(ValidationState state) => new Invalid<T>(state);
 }

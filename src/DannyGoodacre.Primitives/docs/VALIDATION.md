@@ -11,7 +11,7 @@ Each property can have more than one error.
 | --- | --- |
 | `AddError(string property, string error)` | Adds an error message to a property. |
 | `HasErrors` | `true` if one or more errors exist. |
-| `Errors` | A read-only copy of the errors. The type is `IReadOnlyDictionary<string, IReadOnlyList<string>>`. |
+| `Errors` | A read-only view of the errors. The type is `IReadOnlyDictionary<string, IReadOnlyList<string>>`. Lookups are not case-sensitive. |
 | `Merge(ValidationState other)` | Adds all errors from `other` to this instance. |
 | `ToString()` | Returns the errors as text with one line for each error. |
 
@@ -46,10 +46,10 @@ if (validationState.HasErrors)
 
 Know these facts about `Errors`:
 
-- Each read of `Errors` creates a new dictionary. Read it one time and keep it in a local variable.
+- Key lookups are not case-sensitive. After `AddError("Email", ...)`, `Errors["email"]` returns the same list.
 - The keys keep the casing of the first `AddError` call for each property.
-
-> **Warning:** Key lookups on `Errors` are case-sensitive, but `AddError` is not. After `AddError("Email", ...)`, `Errors["email"]` throws `KeyNotFoundException`. Use the casing from the first call, or use `HasErrors` and enumerate the dictionary. See the bug list in the repository.
+- The view is created on the first read and kept until the next `AddError` call.
+- The lists are read-only. A caller cannot change the errors through `Errors`.
 
 ### Text output
 

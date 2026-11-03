@@ -6,8 +6,8 @@ namespace DannyGoodacre.Cqrs;
 internal sealed class QueryValidationDecorator<TQuery, TResult>(
     IQueryHandler<TQuery, TResult> inner,
     ILogger<TQuery> logger,
-    IValidator<TQuery>? validator = null)
-    : ValidationDecoratorBase<TQuery, TResult>(logger, validator), IQueryHandler<TQuery, TResult>
+    IEnumerable<IValidator<TQuery>> validators)
+    : ValidationDecoratorBase<TQuery, TResult>(logger, validators), IQueryHandler<TQuery, TResult>
     where TQuery : IQuery<TResult>
     where TResult : notnull
 {

@@ -18,6 +18,11 @@ public abstract class StateCommandTestContextCore<TCommand, TInnerHandler, TStat
     public Mock<TStateUnit> StateUnitMock { get; } = new(mockBehavior);
 
     /// <summary>
+    /// The scope that holds the post-commit hooks of child commands until the outermost commit.
+    /// </summary>
+    internal PostCommitScope PostCommitScope { get; } = new();
+
+    /// <summary>
     /// Configures <see cref="IStateUnit.SaveChangesAsync"/> to return a successful entry count.
     /// </summary>
     public void SetupSaveChangesAsync(int entriesWritten = 1)
@@ -37,7 +42,7 @@ public class StateCommandTestContext<TCommand>(MockBehavior mockBehavior = MockB
 
     public void SetupPostCommitHook(TCommand command, IResult expectedResult)
         => PostCommitHookMock
-            .Setup(x => x.ExecuteAsync(command, expectedResult, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AfterCommitAsync(command, expectedResult, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
     public ICommandHandler<TCommand> CreatePipeline(bool includePostCommitHook = false)
@@ -45,7 +50,8 @@ public class StateCommandTestContext<TCommand>(MockBehavior mockBehavior = MockB
             InnerMock.Object,
             StateUnitMock.Object,
             Logger,
-            includePostCommitHook ? PostCommitHookMock.Object : null);
+            PostCommitScope,
+            includePostCommitHook ? [PostCommitHookMock.Object] : []);
 }
 
 /// <summary>
@@ -68,5 +74,6 @@ public class StateCommandTestContext<TCommand, TResult>(MockBehavior mockBehavio
             InnerMock.Object,
             StateUnitMock.Object,
             Logger,
-            includePostCommitHook ? PostCommitHookMock.Object : null);
+            PostCommitScope,
+            includePostCommitHook ? [PostCommitHookMock.Object] : []);
 }

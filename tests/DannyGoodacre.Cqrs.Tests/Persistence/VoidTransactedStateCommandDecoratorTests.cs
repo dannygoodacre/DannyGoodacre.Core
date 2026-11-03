@@ -32,7 +32,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         context.TransactionUnitMock.Verify(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()), Times.Never);
 
-        context.PostCommitHookMock.Verify(x => x.ExecuteAsync(It.IsAny<Command>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
+        context.PostCommitHookMock.Verify(x => x.AfterCommitAsync(It.IsAny<Command>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -61,11 +61,36 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         _transactedStateCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(It.IsAny<TransactedStateCommand>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
+        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.AfterCommitAsync(It.IsAny<TransactedStateCommand>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task HandleAsync_WhenTransactionExecutionThrowsOperationCanceled_LogsAndReturnsCanceled()
+    public async Task HandleAsync_WhenTransactionExecutionIsCanceledByCaller_LogsAndReturnsCanceled()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+
+        await cts.CancelAsync();
+
+        var command = new TransactedStateCommand();
+
+        _transactedStateCommandContext.TransactionUnitMock
+            .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException(cts.Token));
+
+        var pipeline = _transactedStateCommandContext.CreatePipeline();
+
+        // Act
+        IResult result = await pipeline.HandleAsync(command, cts.Token);
+
+        // Assert
+        result.ShouldBeCanceled();
+
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenTransactionExecutionThrowsOperationCanceledWithoutCallerCancellation_LogsFaultAndReturnsInternalError()
     {
         // Arrange
         var command = new TransactedStateCommand();
@@ -80,9 +105,9 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBeCanceled();
+        result.ShouldBeInternalError();
 
-        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionFaulted, LogLevel.Error);
     }
 
     [Fact]
@@ -162,7 +187,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
             .ReturnsAsync(1);
 
         _transactedStateCommandContext.PostCommitHookMock
-            .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
         var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
@@ -177,7 +202,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenHookThrowsUnhandledException_LogsFaultAndReturnsInternalError()
+    public async Task HandleAsync_WhenHookThrowsUnhandledException_LogsFaultAndReturnsOriginalResult()
     {
         // Arrange
         var command = new TransactedStateCommand();
@@ -199,7 +224,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
             .ReturnsAsync(1);
 
         _transactedStateCommandContext.PostCommitHookMock
-            .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()))
             .ThrowsAsync(hookException);
 
         var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
@@ -208,7 +233,8 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
 
         // Assert
-        result.ShouldBeInternalError(hookException);
+        // The data is committed, so a hook failure does not change the result.
+        result.ShouldBeSuccess();
 
         var faultLog = _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitFaulted, LogLevel.Error);
 
@@ -236,7 +262,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
             .ReturnsAsync(1);
 
         _transactedStateCommandContext.PostCommitHookMock
-            .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
@@ -249,6 +275,6 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         _transactedStateCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
-        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
+        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

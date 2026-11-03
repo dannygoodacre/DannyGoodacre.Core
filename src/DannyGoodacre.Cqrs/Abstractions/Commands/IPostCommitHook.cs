@@ -15,7 +15,7 @@ public interface IPostCommitHook<in TCommand>
     /// <param name="command">The command that was executed.</param>
     /// <param name="result">The outcome returned by the command handler.</param>
     /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    Task ExecuteAsync(TCommand command, IResult result, CancellationToken cancellationToken = default);
+    Task AfterCommitAsync(TCommand command, IResult result, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

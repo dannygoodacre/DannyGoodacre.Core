@@ -33,13 +33,15 @@ public record Conflict(string Message) : IResult;
 public record DomainError(string Message) : IResult
 {
     /// <inheritdoc/>
-    public override string ToString() => $"DomainError: {Message}";
+    /// <remarks>Sealed, so that <see cref="DomainError{T}"/> uses the same format.</remarks>
+    public sealed override string ToString() => $"DomainError: {Message}";
 }
 
 public record InternalError(Error Error) : IResult
 {
     /// <inheritdoc/>
-    public override string ToString() => $"InternalError: {Error}";
+    /// <remarks>Sealed, so that <see cref="InternalError{T}"/> uses the same format.</remarks>
+    public sealed override string ToString() => $"InternalError: {Error}";
 }
 
 public record Invalid(ValidationState ValidationState) : IResult;
@@ -51,14 +53,14 @@ public record NotFound : IResult;
 /// </summary>
 public static class Result
 {
-    public static Success Success() => new();
-    public static Success<T> Success<T>(T value) => new(value);
-    public static Canceled Canceled() => new();
-    public static Conflict Conflict(string message) => new(message);
-    public static DomainError DomainError(string message) => new(message);
-    public static InternalError InternalError(Error error) => new(error);
-    public static InternalError InternalError(string message) => new(new Error(message));
-    public static InternalError InternalError(Exception exception) => new(new Error(exception));
-    public static Invalid Invalid(ValidationState state) => new(state);
-    public static NotFound NotFound() => new();
+    public static IResult Success() => new Success();
+    public static IResult<T> Success<T>(T value) => new Success<T>(value);
+    public static IResult Canceled() => new Canceled();
+    public static IResult Conflict(string message) => new Conflict(message);
+    public static IResult DomainError(string message) => new DomainError(message);
+    public static IResult InternalError(Error error) => new InternalError(error);
+    public static IResult InternalError(string message) => new InternalError(new Error(message));
+    public static IResult InternalError(Exception exception) => new InternalError(new Error(exception));
+    public static IResult Invalid(ValidationState state) => new Invalid(state);
+    public static IResult NotFound() => new NotFound();
 }

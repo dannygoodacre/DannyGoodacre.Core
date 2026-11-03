@@ -27,7 +27,7 @@ public class TransactedStateCommandTestContext<TCommand>(MockBehavior mockBehavi
     public void SetupPostCommitHook(TCommand command, IResult expectedResult)
     {
         PostCommitHookMock
-            .Setup(x => x.ExecuteAsync(command, expectedResult, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AfterCommitAsync(command, expectedResult, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 
@@ -37,7 +37,8 @@ public class TransactedStateCommandTestContext<TCommand>(MockBehavior mockBehavi
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,
-            includePostCommitHook ? PostCommitHookMock.Object : null);
+            PostCommitScope,
+            includePostCommitHook ? [PostCommitHookMock.Object] : []);
     }
 }
 
@@ -76,6 +77,7 @@ public class TransactedStateCommandTestContext<TCommand, TResult>(MockBehavior m
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,
-            includePostCommitHook ? PostCommitHookMock.Object : null);
+            PostCommitScope,
+            includePostCommitHook ? [PostCommitHookMock.Object] : []);
     }
 }

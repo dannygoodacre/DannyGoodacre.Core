@@ -14,7 +14,7 @@ public class CommandValidationTestContext<TCommand>(MockBehavior mockBehavior = 
         => new CommandValidationDecorator<TCommand>(
             InnerMock.Object,
             Logger,
-            includeValidator ? ValidatorMock.Object : null);
+            includeValidator ? [ValidatorMock.Object] : []);
 }
 
 public class CommandValidationTestContext<TCommand, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
@@ -30,7 +30,7 @@ public class CommandValidationTestContext<TCommand, TResult>(MockBehavior mockBe
         => new CommandValidationDecorator<TCommand, TResult>(
             InnerMock.Object,
             Logger,
-            includeValidator ? ValidatorMock.Object : null);
+            includeValidator ? [ValidatorMock.Object] : []);
 }
 
 public class QueryValidationTestContext<TQuery, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
@@ -46,5 +46,5 @@ public class QueryValidationTestContext<TQuery, TResult>(MockBehavior mockBehavi
         => new QueryValidationDecorator<TQuery, TResult>(
             InnerMock.Object,
             Logger,
-            includeValidator ? ValidatorMock.Object : null);
+            includeValidator ? [ValidatorMock.Object] : []);
 }

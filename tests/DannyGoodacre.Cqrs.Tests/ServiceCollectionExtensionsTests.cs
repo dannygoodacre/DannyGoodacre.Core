@@ -11,6 +11,8 @@ public sealed class ServiceCollectionExtensionsTests
 
     public sealed class TestQuery : IQuery<string>;
 
+    public sealed class PlainCommand : ICommand;
+
     public sealed class TestCommandHandler : ICommandHandler<TestStateCommand, string>
     {
         public Task<IResult<string>> HandleAsync(TestStateCommand command, CancellationToken cancellationToken = default)
@@ -114,7 +116,10 @@ public sealed class ServiceCollectionExtensionsTests
         object validationDecoratorObj = GetPrivateFieldValue(loggingDecorator, "inner");
         var validationDecorator = Assert.IsType<CommandValidationDecorator<TestStateCommand, string>>(validationDecoratorObj);
 
-        object stateDecoratorObj = GetPrivateFieldValue(validationDecorator, "inner");
+        object transactedDecoratorObj = GetPrivateFieldValue(validationDecorator, "inner");
+        var transactedDecorator = Assert.IsType<TransactedStateCommandDecorator<TestStateCommand, string>>(transactedDecoratorObj);
+
+        object stateDecoratorObj = GetPrivateFieldValue(transactedDecorator, "inner");
         var stateDecorator = Assert.IsType<StateCommandDecorator<TestStateCommand, string>>(stateDecoratorObj);
 
         object coreHandlerObj = GetPrivateFieldValue(stateDecorator, "inner");
@@ -142,6 +147,87 @@ public sealed class ServiceCollectionExtensionsTests
 
         object coreHandlerObj = GetPrivateFieldValue(validationDecorator, "inner");
         Assert.IsType<TestQueryHandler>(coreHandlerObj);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenQueryStructImplementsStateCommandMarker_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicStructAssembly"), AssemblyBuilderAccess.Run);
+
+        var typeBuilder = assemblyBuilder
+            .DefineDynamicModule("MainModule")
+            .DefineType("BadStructQuery", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.SequentialLayout, typeof(ValueType));
+
+        typeBuilder.AddInterfaceImplementation(typeof(IQuery<string>));
+
+        typeBuilder.AddInterfaceImplementation(typeof(IStateCommand));
+
+        typeBuilder.CreateType();
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assemblyBuilder));
+
+        Assert.Contains("BadStructQuery", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookTargetsPlainCommand_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicHookAssembly"), AssemblyBuilderAccess.Run);
+
+        Type hookInterface = typeof(IPostCommitHook<PlainCommand>);
+
+        MethodInfo interfaceMethod = hookInterface.GetMethod(nameof(IPostCommitHook<PlainCommand>.AfterCommitAsync))!;
+
+        var typeBuilder = assemblyBuilder
+            .DefineDynamicModule("MainModule")
+            .DefineType("PlainCommandHook", TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed);
+
+        typeBuilder.AddInterfaceImplementation(hookInterface);
+
+        MethodBuilder method = typeBuilder.DefineMethod(
+            interfaceMethod.Name,
+            MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+            typeof(Task),
+            [typeof(PlainCommand), typeof(IResult), typeof(CancellationToken)]);
+
+        ILGenerator il = method.GetILGenerator();
+        il.Emit(OpCodes.Call, typeof(Task).GetProperty(nameof(Task.CompletedTask))!.GetMethod!);
+        il.Emit(OpCodes.Ret);
+
+        typeBuilder.DefineMethodOverride(method, interfaceMethod);
+
+        typeBuilder.CreateType();
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assemblyBuilder));
+
+        Assert.Contains("PlainCommandHook", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenCalledTwice_DecoratesEachHandlerOneTime()
+    {
+        // Arrange
+        Assembly testAssembly = typeof(TestCommandHandler).Assembly;
+
+        _services.AddCqrsHandlers(testAssembly);
+        _services.AddCqrsHandlers(testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handler = provider.GetRequiredService<ICommandHandler<TestStateCommand, string>>();
+
+        // Assert
+        var loggingDecorator = Assert.IsType<CommandLoggingDecorator<TestStateCommand, string>>(handler);
+
+        Assert.IsType<CommandValidationDecorator<TestStateCommand, string>>(GetPrivateFieldValue(loggingDecorator, "inner"));
+
+        Assert.Single(provider.GetServices<IValidator<TestStateCommand>>());
+        Assert.Single(provider.GetServices<IPostCommitHook<TestStateCommand, string>>());
     }
 
     private static object GetPrivateFieldValue(object target, string fieldName)

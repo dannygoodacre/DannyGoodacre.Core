@@ -7,12 +7,13 @@ internal sealed class TransactedStateCommandDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,
-    IPostCommitHook<TCommand>? postCommitHook = null) : ICommandHandler<TCommand>
+    PostCommitScope postCommitScope,
+    IEnumerable<IPostCommitHook<TCommand>> postCommitHooks) : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
-    public async Task<IResult> HandleAsync(
-        TCommand command,
-        CancellationToken cancellationToken = default)
+    private readonly IPostCommitHook<TCommand>[] _postCommitHooks = [.. postCommitHooks];
+
+    public async Task<IResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         if (command is not ITransactedStateCommand)
         {
@@ -21,12 +22,21 @@ internal sealed class TransactedStateCommandDecorator<TCommand>(
 
         string commandName = typeof(TCommand).Name;
 
+        bool isOutermost = !postCommitScope.IsInTransaction;
+
         IResult result;
+
+        IReadOnlyList<Func<Task>> deferredHooks = [];
 
         try
         {
             result = await transactionUnit.ExecuteInTransactionAsync(async ct =>
             {
+                if (isOutermost)
+                {
+                    postCommitScope.Begin();
+                }
+
                 var innerResult = await inner.HandleAsync(command, ct);
 
                 if (innerResult.IsFailure)
@@ -39,7 +49,7 @@ internal sealed class TransactedStateCommandDecorator<TCommand>(
                 return innerResult;
             }, cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             logger.LogTransactionCanceled(commandName);
 
@@ -51,26 +61,30 @@ internal sealed class TransactedStateCommandDecorator<TCommand>(
 
             return new InternalError(ex);
         }
+        finally
+        {
+            if (isOutermost)
+            {
+                deferredHooks = postCommitScope.End();
+            }
+        }
 
-        if (result.IsFailure || postCommitHook is null)
+        if (result.IsFailure)
         {
             return result;
         }
 
-        try
+        foreach (Func<Task> runDeferredHooks in deferredHooks)
         {
-            await postCommitHook.ExecuteAsync(command, result, cancellationToken);
+            await runDeferredHooks();
         }
-        catch (OperationCanceledException)
-        {
-            logger.LogPostCommitHookCanceledMidExecution(commandName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogPostCommitFaulted(commandName, ex);
 
-            return new InternalError(ex);
-        }
+        await PostCommitHookRunner.RunOrDeferAsync(
+            postCommitScope,
+            _postCommitHooks,
+            (hook, ct) => hook.AfterCommitAsync(command, result, ct),
+            logger,
+            commandName);
 
         return result;
     }
@@ -80,10 +94,13 @@ internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,
-    IPostCommitHook<TCommand, TResult>? postCommitHook = null) : ICommandHandler<TCommand, TResult>
+    PostCommitScope postCommitScope,
+    IEnumerable<IPostCommitHook<TCommand, TResult>> postCommitHooks) : ICommandHandler<TCommand, TResult>
     where TCommand : ICommand
-    where TResult: notnull
+    where TResult : notnull
 {
+    private readonly IPostCommitHook<TCommand, TResult>[] _postCommitHooks = [.. postCommitHooks];
+
     public async Task<IResult<TResult>> HandleAsync(TCommand command, CancellationToken cancellationToken = default)
     {
         if (command is not ITransactedStateCommand)
@@ -93,12 +110,21 @@ internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
 
         string commandName = typeof(TCommand).Name;
 
+        bool isOutermost = !postCommitScope.IsInTransaction;
+
         IResult<TResult> result;
+
+        IReadOnlyList<Func<Task>> deferredHooks = [];
 
         try
         {
             result = await transactionUnit.ExecuteInTransactionAsync(async ct =>
             {
+                if (isOutermost)
+                {
+                    postCommitScope.Begin();
+                }
+
                 var innerResult = await inner.HandleAsync(command, ct);
 
                 if (innerResult.IsFailure)
@@ -111,7 +137,7 @@ internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
                 return innerResult;
             }, cancellationToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             logger.LogTransactionCanceled(commandName);
 
@@ -123,26 +149,30 @@ internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
 
             return new InternalError<TResult>(ex);
         }
+        finally
+        {
+            if (isOutermost)
+            {
+                deferredHooks = postCommitScope.End();
+            }
+        }
 
-        if (result.IsFailure || postCommitHook is null)
+        if (result.IsFailure)
         {
             return result;
         }
 
-        try
+        foreach (Func<Task> runDeferredHooks in deferredHooks)
         {
-            await postCommitHook.AfterCommitAsync(command, result, cancellationToken);
+            await runDeferredHooks();
         }
-        catch (OperationCanceledException)
-        {
-            logger.LogPostCommitHookCanceledMidExecution(commandName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogPostCommitFaulted(commandName, ex);
 
-            return new InternalError<TResult>(ex);
-        }
+        await PostCommitHookRunner.RunOrDeferAsync(
+            postCommitScope,
+            _postCommitHooks,
+            (hook, ct) => hook.AfterCommitAsync(command, result, ct),
+            logger,
+            commandName);
 
         return result;
     }

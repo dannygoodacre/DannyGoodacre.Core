@@ -19,7 +19,6 @@ public enum CqrsLogEvent
     SaveChangesFaulted = 2002,
 
     // Post-Commit Hooks (3000 - 3999)
-    PostCommitHookCanceledPreExecution = 3001,
     PostCommitHookCanceledMidExecution = 3002,
     PostCommitFaulted = 3003,
 
