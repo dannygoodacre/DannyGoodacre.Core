@@ -355,4 +355,40 @@ public sealed class StateCommandDecoratorTests
 
         _stateCommandContext.PostCommitHookMock.Verify(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task HandleAsync_WhenUnmanagedTransactionIsOpen_LogsWarningAndRunsHook()
+    {
+        // Arrange
+        var command = new StateCommand();
+
+        var successResult = Result<Guid>.Success(Guid.NewGuid());
+
+        _stateCommandContext.InnerMock
+            .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(successResult);
+
+        _stateCommandContext.SetupSaveChangesAsync();
+
+        // A transaction is open, but the pipeline did not start it.
+        _stateCommandContext.SetupHasActiveTransaction(true);
+
+        _stateCommandContext.PostCommitHookMock
+            .Setup(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var pipeline = _stateCommandContext.CreatePipeline(includePostCommitHook: true);
+
+        // Act
+        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBeSuccess();
+
+        _stateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitHookInUnmanagedTransaction, LogLevel.Warning);
+
+        _stateCommandContext.PostCommitHookMock.Verify(
+            x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

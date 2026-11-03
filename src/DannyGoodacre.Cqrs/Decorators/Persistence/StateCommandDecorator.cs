@@ -41,6 +41,11 @@ internal sealed class StateCommandDecorator<TCommand>(
             return new InternalError(ex);
         }
 
+        if (_postCommitHooks.Length > 0 && !postCommitScope.IsInTransaction && stateUnit.HasActiveTransaction)
+        {
+            logger.LogPostCommitHookInUnmanagedTransaction(commandName);
+        }
+
         await PostCommitHookRunner.RunOrDeferAsync(
             postCommitScope,
             _postCommitHooks,
@@ -89,6 +94,11 @@ internal sealed class StateCommandDecorator<TCommand, TResult>(
             logger.LogSaveChangesFaulted(commandName, ex);
 
             return new InternalError<TResult>(ex);
+        }
+
+        if (_postCommitHooks.Length > 0 && !postCommitScope.IsInTransaction && stateUnit.HasActiveTransaction)
+        {
+            logger.LogPostCommitHookInUnmanagedTransaction(commandName);
         }
 
         await PostCommitHookRunner.RunOrDeferAsync(

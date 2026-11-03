@@ -114,41 +114,6 @@ The pipeline does not throw exceptions to the caller. The decorators convert exc
 An `OperationCanceledException` becomes `Canceled` only if the caller's token is canceled.
 Otherwise, for example after an `HttpClient` timeout, it is an unexpected fault and becomes `InternalError`.
 
-| Source | Exception | Result | Log event |
-| --- | --- | --- | --- |
-| Caller token is canceled before the pipeline starts | None | `Canceled` | `RequestCanceledPreExecution` (1003) |
-| Handler or inner decorator | `OperationCanceledException`, caller's token canceled | `Canceled` | `RequestCanceledMidExecution` (1005) |
-| Handler or inner decorator | Other exception | `InternalError` | `RequestFaulted` (1006) |
-| `SaveChangesAsync` | `OperationCanceledException`, caller's token canceled | `Canceled` | `SaveChangesCanceled` (2001) |
-| `SaveChangesAsync` | Other exception | `InternalError` | `SaveChangesFaulted` (2002) |
-| Transaction | `OperationCanceledException`, caller's token canceled | `Canceled` | `TransactionCanceled` (4001) |
-| Transaction | Other exception | `InternalError` | `TransactionFaulted` (4002) |
-| Post-commit hook | `OperationCanceledException` | Original success result | `PostCommitHookCanceledMidExecution` (3002) |
-| Post-commit hook | Other exception | Original success result | `PostCommitFaulted` (3003) |
-
-## Logging
-
-The decorators log with `ILogger<TRequest>`. The category is the full name of the request type.
-The message uses the short name of the request type.
-
-| Event ID | Name | Level | When |
-| --- | --- | --- | --- |
-| 1001 | `RequestStarted` | Information | The request enters the pipeline. |
-| 1002 | `RequestSucceeded` | Information | The pipeline returns a success result. |
-| 1003 | `RequestCanceledPreExecution` | Warning | The token is canceled before the handler starts. |
-| 1004 | `RequestFailed` | Warning | The pipeline returns a failure result. The log contains the result. |
-| 1005 | `RequestCanceledMidExecution` | Warning | An `OperationCanceledException` occurs in the pipeline. |
-| 1006 | `RequestFaulted` | Error | An unhandled exception occurs in the pipeline. |
-| 1007 | `RequestValidationFailed` | Warning | The validator adds one or more errors. The log contains the `ValidationState`. |
-| 2001 | `SaveChangesCanceled` | Warning | `SaveChangesAsync` is canceled. |
-| 2002 | `SaveChangesFaulted` | Error | `SaveChangesAsync` throws an exception. |
-| 3002 | `PostCommitHookCanceledMidExecution` | Warning | The hook is canceled. |
-| 3003 | `PostCommitFaulted` | Error | The hook throws an exception. |
-| 4001 | `TransactionCanceled` | Warning | The transaction is canceled. |
-| 4002 | `TransactionFaulted` | Error | The transaction throws an exception. |
-
-Use the event IDs to filter logs and to make alerts. For example, alert on events 2002, 3003, and 4002.
-
 ## Service lifetimes
 
 | Service | Lifetime |
@@ -157,9 +122,11 @@ Use the event IDs to filter logs and to make alerts. For example, alert on event
 | Validators | Scoped |
 | Post-commit hooks | Scoped |
 | `IStateUnit` and `ITransactionUnit` | Scoped. You register these. |
+| `PostCommitScope` (internal) | Scoped. `AddCqrsHandlers` registers it. It holds the deferred hooks of child commands. |
 
-The handler, the state unit, and the transaction unit must share one scope.
-Then they share one `DbContext` and one transaction.
+The handler, the state unit, the transaction unit, and the post-commit scope must share one scope.
+Then they share one `DbContext`, one transaction, and one list of deferred hooks.
+Use one service scope for each unit of work. [TRADEOFFS.md](TRADEOFFS.md#the-pipeline-depends-on-one-scope-for-each-unit-of-work) lists the rules and what goes wrong if you break them.
 
 ## Design principles
 
@@ -174,6 +141,7 @@ Then they share one `DbContext` and one transaction.
 
 - [COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md)
 - [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md)
+- [TRADEOFFS.md](TRADEOFFS.md)
 - [PERSISTENCE.md](PERSISTENCE.md)
 - [RESULT-HANDLING.md](RESULT-HANDLING.md)
 - [TESTING.md](TESTING.md)

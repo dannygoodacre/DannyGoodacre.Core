@@ -17,4 +17,14 @@ public interface IStateUnit
     /// of state entries written to the store.
     /// </returns>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Indicates whether a database transaction is open on this unit.
+    /// </summary>
+    /// <remarks>
+    /// The pipeline uses this value to detect a transaction that it did not start, for example a transaction
+    /// that the application opened by hand. Post-commit hooks cannot wait for the commit of such a transaction.
+    /// The default implementation returns <see langword="false"/>, so existing implementations do not change.
+    /// </remarks>
+    bool HasActiveTransaction => false;
 }

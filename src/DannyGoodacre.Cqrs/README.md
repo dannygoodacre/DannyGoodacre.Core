@@ -16,6 +16,7 @@ Your handlers contain only domain logic.
 | [RESULT-HANDLING.md](docs/RESULT-HANDLING.md) | Results in the pipeline, child results, and HTTP mapping |
 | [PERSISTENCE.md](docs/PERSISTENCE.md) | `IStateUnit`, `ITransactionUnit`, `DbContextTransaction<TDbContext>`, and EF Core retries |
 | [TESTING.md](docs/TESTING.md) | Result assertions and xUnit pipeline tests on SQLite |
+| [TRADEOFFS.md](docs/TRADEOFFS.md) | Design decisions and their costs: hook delivery, scopes, and transactions |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline flow, decorator order, logging, and design principles |
 | [DannyGoodacre.Primitives](../DannyGoodacre.Primitives/README.md) | Reference for `IResult`, `IResult<T>`, `Error`, and `ValidationState` |
 
@@ -216,4 +217,5 @@ The first command runs the console demonstration. The second command runs the pi
 5. Read [PERSISTENCE.md](docs/PERSISTENCE.md) to connect the pipeline to EF Core.
 6. Read [TESTING.md](docs/TESTING.md) to test your handlers.
 7. Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) to learn the pipeline order.
-8. Read the [Primitives documentation](../DannyGoodacre.Primitives/README.md) for the full result type reference.
+8. Read [TRADEOFFS.md](docs/TRADEOFFS.md) to understand the design decisions and their costs.
+9. Read the [Primitives documentation](../DannyGoodacre.Primitives/README.md) for the full result type reference.

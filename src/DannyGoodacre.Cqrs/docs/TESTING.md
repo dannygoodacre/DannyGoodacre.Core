@@ -83,6 +83,7 @@ Know these facts about the host:
 
 - The email sender mock is strict. A hook failure does not change the result of a command, so a test that expects no email verifies it with `Times.Never`.
 - `configureServices` lets a test add services, for example an extra post-commit hook.
+- The host uses the real `DbContextTransaction<TDbContext>`, so `HasActiveTransaction` needs no setup. With a strict mock of `IStateUnit` or `ITransactionUnit`, set up `HasActiveTransaction`. The `DannyGoodacre.Cqrs.Testing` contexts set it to `false`, and `SetupHasActiveTransaction(true)` simulates a transaction that the pipeline did not start.
 - `databaseActivity.Reset()` removes the commands from `EnsureCreatedAsync`. Each test then sees only the commands of its own requests.
 - `CreateScope()` and `InScopeAsync()` create one scope for each request, as a web application does.
 

@@ -28,6 +28,10 @@ public sealed class PostCommitHookTests
     public PostCommitHookTests()
     {
         _transactionUnitMock
+            .Setup(x => x.HasActiveTransaction)
+            .Returns(false);
+
+        _transactionUnitMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Callback(() => _events.Add("save"))
             .ReturnsAsync(1);

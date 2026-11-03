@@ -17,6 +17,9 @@ public class DbContextTransaction<TDbContext>(TDbContext context) : ITransaction
         => context.SaveChangesAsync(cancellationToken);
 
     /// <inheritdoc/>
+    public bool HasActiveTransaction => context.Database.CurrentTransaction is not null;
+
+    /// <inheritdoc/>
     /// <remarks>
     /// Integrates EF Core's <see cref="IExecutionStrategy"/> to support execution resilience and retries.
     /// If an ambient transaction is active, the operation executes within it without nesting.

@@ -231,4 +231,25 @@ public sealed class DbContextTransactionTests : IAsyncLifetime
 
         Assert.Equal(_expectedEntities.Select(e => e.Name), assertionContext.TestEntities.Select(e => e.Name));
     }
+
+    [Fact]
+    public async Task HasActiveTransaction_ReflectsTheTransactionOnTheDbContext()
+    {
+        // Arrange
+        await using UnitTestDbContext context = CreateDbContext();
+
+        IStateUnit stateUnit = new DbContextTransaction<UnitTestDbContext>(context);
+
+        // Act & Assert
+        Assert.False(stateUnit.HasActiveTransaction);
+
+        await using (IDbContextTransaction transaction = await context.Database.BeginTransactionAsync(TestContext.Current.CancellationToken))
+        {
+            Assert.True(stateUnit.HasActiveTransaction);
+
+            await transaction.CommitAsync(TestContext.Current.CancellationToken);
+        }
+
+        Assert.False(stateUnit.HasActiveTransaction);
+    }
 }

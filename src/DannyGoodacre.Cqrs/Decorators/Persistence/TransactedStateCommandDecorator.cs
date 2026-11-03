@@ -74,6 +74,15 @@ internal sealed class TransactedStateCommandDecorator<TCommand>(
             return result;
         }
 
+        // After a pipeline commit, no transaction is open. If one is still open, the transaction unit joined
+        // a transaction that the pipeline did not start, so the real commit has not happened yet.
+        if (isOutermost
+            && (deferredHooks.Count > 0 || _postCommitHooks.Length > 0)
+            && transactionUnit.HasActiveTransaction)
+        {
+            logger.LogPostCommitHookInUnmanagedTransaction(commandName);
+        }
+
         foreach (Func<Task> runDeferredHooks in deferredHooks)
         {
             await runDeferredHooks();
@@ -160,6 +169,15 @@ internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
         if (result.IsFailure)
         {
             return result;
+        }
+
+        // After a pipeline commit, no transaction is open. If one is still open, the transaction unit joined
+        // a transaction that the pipeline did not start, so the real commit has not happened yet.
+        if (isOutermost
+            && (deferredHooks.Count > 0 || _postCommitHooks.Length > 0)
+            && transactionUnit.HasActiveTransaction)
+        {
+            logger.LogPostCommitHookInUnmanagedTransaction(commandName);
         }
 
         foreach (Func<Task> runDeferredHooks in deferredHooks)

@@ -287,4 +287,64 @@ public sealed class TransactedStateCommandDecoratorTests
 
         _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.AfterCommitAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task HandleAsync_WhenTransactionIsStillOpenAfterCommit_LogsUnmanagedTransactionWarning()
+    {
+        // Arrange
+        var command = new TransactedStateCommand();
+
+        var successResult = Result<Guid>.Success(Guid.NewGuid());
+
+        _transactedStateCommandContext.InnerMock
+            .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(successResult);
+
+        _transactedStateCommandContext.SetupExecuteInTransaction();
+        _transactedStateCommandContext.SetupSaveChangesAsync();
+
+        // The transaction unit joined a transaction that the application opened, so it is still open.
+        _transactedStateCommandContext.SetupHasActiveTransaction(true);
+
+        _transactedStateCommandContext.SetupPostCommitHook(command, successResult);
+
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
+
+        // Act
+        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBeSuccess();
+
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitHookInUnmanagedTransaction, LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenPipelineCommitsTheTransaction_DoesNotLogUnmanagedTransactionWarning()
+    {
+        // Arrange
+        var command = new TransactedStateCommand();
+
+        var successResult = Result<Guid>.Success(Guid.NewGuid());
+
+        _transactedStateCommandContext.InnerMock
+            .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(successResult);
+
+        _transactedStateCommandContext.SetupExecuteInTransaction();
+        _transactedStateCommandContext.SetupSaveChangesAsync();
+        _transactedStateCommandContext.SetupPostCommitHook(command, successResult);
+
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
+
+        // Act
+        IResult<Guid> result = await pipeline.HandleAsync(command, CancellationToken.None);
+
+        // Assert
+        result.ShouldBeSuccess();
+
+        Assert.DoesNotContain(
+            _transactedStateCommandContext.LogCollector.GetSnapshot(),
+            r => r.Id.Id == (int)CqrsLogEvent.PostCommitHookInUnmanagedTransaction);
+    }
 }

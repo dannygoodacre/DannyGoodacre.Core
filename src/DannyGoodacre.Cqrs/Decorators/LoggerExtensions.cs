@@ -41,6 +41,9 @@ internal static partial class LoggerExtensions
     [LoggerMessage(EventId = (int)CqrsLogEvent.PostCommitFaulted, Level = LogLevel.Error, Message = "'{RequestName}' threw an exception during its post commit hook")]
     public static partial void LogPostCommitFaulted(this ILogger logger, string requestName, Exception ex);
 
+    [LoggerMessage(EventId = (int)CqrsLogEvent.PostCommitHookInUnmanagedTransaction, Level = LogLevel.Warning, Message = "'{RequestName}' ran post-commit hooks inside a transaction that the pipeline did not start. The hooks ran before that transaction commits")]
+    public static partial void LogPostCommitHookInUnmanagedTransaction(this ILogger logger, string requestName);
+
     // Transactions
     [LoggerMessage(EventId = (int)CqrsLogEvent.TransactionCanceled, Level = LogLevel.Warning, Message = "'{RequestName}' canceled during transaction")]
     public static partial void LogTransactionCanceled(this ILogger logger, string requestName);

@@ -15,12 +15,31 @@ public abstract class StateCommandTestContextCore<TCommand, TInnerHandler, TStat
 {
     public Mock<TInnerHandler> InnerMock { get; } = new(mockBehavior);
 
-    public Mock<TStateUnit> StateUnitMock { get; } = new(mockBehavior);
+    public Mock<TStateUnit> StateUnitMock { get; } = CreateStateUnitMock(mockBehavior);
 
     /// <summary>
     /// The scope that holds the post-commit hooks of child commands until the outermost commit.
     /// </summary>
     internal PostCommitScope PostCommitScope { get; } = new();
+
+    /// <summary>
+    /// Configures <see cref="IStateUnit.HasActiveTransaction"/> to show whether a transaction that the pipeline
+    /// did not start is open. The default is <see langword="false"/>.
+    /// </summary>
+    public void SetupHasActiveTransaction(bool hasActiveTransaction)
+        => StateUnitMock
+            .Setup(x => x.HasActiveTransaction)
+            .Returns(hasActiveTransaction);
+
+    // A strict mock throws for a member with no setup, also for a default interface member.
+    private static Mock<TStateUnit> CreateStateUnitMock(MockBehavior mockBehavior)
+    {
+        var mock = new Mock<TStateUnit>(mockBehavior);
+
+        mock.Setup(x => x.HasActiveTransaction).Returns(false);
+
+        return mock;
+    }
 
     /// <summary>
     /// Configures <see cref="IStateUnit.SaveChangesAsync"/> to return a successful entry count.

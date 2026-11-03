@@ -3,6 +3,16 @@
 A post-commit hook runs a side effect after a state command saves its data.
 Use hooks for actions outside the database, for example emails, messages, or cache updates.
 
+## Delivery guarantee
+
+A hook is **best-effort**. It runs **at most one time**, **after the commit**, and never after a rollback.
+It is not durable. If the process stops between the commit and the hook, the side effect is lost.
+
+Use a hook only where a rare loss is acceptable or recoverable, for example cache invalidation, real-time UI updates, metrics, or a non-critical email.
+For side effects that must not be lost, such as payments or integration events, write an outbox row in the handler, inside the transaction. A separate process sends it. A hook can then wake that process.
+
+[TRADEOFFS.md](TRADEOFFS.md#post-commit-hooks-are-best-effort) explains this decision.
+
 ## Hook interfaces
 
 | Command handler | Hook interface | Hook method |
@@ -76,12 +86,12 @@ When onboarding succeeds, the child hook runs once, after the commit. When the p
 
 The data is already saved when the hook runs. Thus, a hook failure does not change the result of the command:
 
-- If the hook throws `OperationCanceledException`, the pipeline logs event 3002 (Warning).
-- If the hook throws a different exception, the pipeline logs event 3003 (Error) with the exception.
+- If the hook throws `OperationCanceledException`, the pipeline logs event 3001 (`PostCommitHookCanceledMidExecution`, Warning).
+- If the hook throws a different exception, the pipeline logs event 3002 (`PostCommitFaulted`, Error) with the exception.
 - In both cases, the pipeline runs the next hook and returns the handler result.
 
 The caller does not see the failure, so it does not send the command again and create duplicate data.
-Monitor event 3003 to find failed side effects. For work that must not be lost, use an outbox. See [Hook rules](#hook-rules).
+Monitor event 3002 to find failed side effects. For work that must not be lost, use an outbox. See [Hook rules](#hook-rules).
 
 ## Hooks on child commands
 
@@ -93,13 +103,29 @@ A child `IStateCommand` can run on its own or inside a transacted command. Its h
 
 A child `ITransactedStateCommand` joins the outer transaction. Its hooks also wait for the outermost commit.
 
+## Scope and transaction rules
+
+Deferred hooks depend on the same service scope as the `DbContext` and the transaction. Obey these rules:
+
+- Use one service scope for each unit of work, for example each HTTP request or each message. Do not resolve handlers from the root provider.
+- Do not run child commands in parallel in one scope.
+- Do not share one scope between interleaved operations, for example in a Blazor Server circuit.
+- Start transactions only through an `ITransactedStateCommand`.
+
+The pipeline cannot defer hooks to a transaction that it did not start, for example one that you open with `Database.BeginTransactionAsync`, or an ambient `TransactionScope`.
+If a hook is about to run while such a transaction is open, the pipeline logs event 3003 (`PostCommitHookInUnmanagedTransaction`, Warning) and runs the hook. The hook then runs before the real commit.
+The pipeline detects the open transaction with `IStateUnit.HasActiveTransaction`. See [PERSISTENCE.md](PERSISTENCE.md#istateunit).
+
+[TRADEOFFS.md](TRADEOFFS.md#the-pipeline-depends-on-one-scope-for-each-unit-of-work) explains what goes wrong when you break each rule.
+
 ## Hook rules
 
 - Keep the hook short. The caller waits for the hook to complete.
-- For work that must not be lost, write an outbox record in the handler. Send the message from the outbox in a separate process.
+- For work that must not be lost, use an outbox. See [Delivery guarantee](#delivery-guarantee).
 
 ## Related documents
 
 - [COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md)
+- [TRADEOFFS.md](TRADEOFFS.md)
 - [ARCHITECTURE.md](ARCHITECTURE.md)
 - [TESTING.md](TESTING.md)

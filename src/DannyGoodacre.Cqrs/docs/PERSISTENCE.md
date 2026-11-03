@@ -14,6 +14,8 @@ The persistence decorators do not know about EF Core. They use two interfaces.
 public interface IStateUnit
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    bool HasActiveTransaction => false;
 }
 ```
 
@@ -21,6 +23,10 @@ public interface IStateUnit
 It returns the number of entries that it wrote.
 
 The state decorator calls `SaveChangesAsync` after a successful `IStateCommand` handler.
+
+`HasActiveTransaction` shows whether a transaction is open on the unit. The pipeline reads it only when post-commit hooks are about to run.
+If a transaction is open that the pipeline did not start, the pipeline logs event 3003. See [POST-COMMIT-HOOKS.md](POST-COMMIT-HOOKS.md#scope-and-transaction-rules).
+The default implementation returns `false`, so an existing implementation still compiles. Implement the member to turn on the detection.
 
 ### ITransactionUnit
 
@@ -61,6 +67,7 @@ dotnet add package DannyGoodacre.Cqrs.EntityFrameworkCore
 It has these behaviors:
 
 - `SaveChangesAsync` calls `DbContext.SaveChangesAsync`.
+- `HasActiveTransaction` returns `true` if `DbContext.Database.CurrentTransaction` is not `null`.
 - `ExecuteInTransactionAsync` opens a transaction on the `DbContext`, runs the operation, and commits if the result is a success.
 - If a transaction is already open, it does not open a second transaction. See [Nested transactions](#nested-transactions).
 - If the result is a failure, it rolls back the transaction and clears `DbContext.ChangeTracker`.
@@ -208,6 +215,11 @@ You must put the full transaction inside `IExecutionStrategy.ExecuteAsync`.
 3. If a transient fault occurs, it rolls back and clears the change tracker.
 4. The strategy runs step 2 again with a clean change tracker. This includes the handler and all child commands.
 
+### State commands and retries
+
+A standalone `IStateCommand` does not use `ITransactionUnit`. EF Core retries its `SaveChangesAsync` call as a unit, but it does not run the handler again.
+This is enough for a command with one save. [TRADEOFFS.md](TRADEOFFS.md#state-commands-rely-on-ef-core-retries-for-the-save-only) explains the limits and when to use an `ITransactedStateCommand` instead.
+
 ### Rules for retry-safe handlers
 
 The handler of an `ITransactedStateCommand` can run more than one time for one request. Obey these rules:
@@ -228,7 +240,8 @@ Your implementation must do these things:
 2. Otherwise, start a transaction inside the execution strategy of the data store, if it has one.
 3. Commit if the result is a success. Roll back if the result is a failure.
 4. If the operation throws an exception, do not commit. Clear the tracked changes and throw the exception again.
-5. Register one scoped instance for both `IStateUnit` and `ITransactionUnit`, in the same way as `AddEntityFrameworkUnits<TDbContext>()`.
+5. Implement `HasActiveTransaction`, so the pipeline can detect a transaction that it did not start.
+6. Register one scoped instance for both `IStateUnit` and `ITransactionUnit`, in the same way as `AddEntityFrameworkUnits<TDbContext>()`.
 
 ## Related documents
 
