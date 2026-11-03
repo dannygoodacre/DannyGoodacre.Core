@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs;
 
-internal sealed class TransactionCommandDecorator<TCommand>(
+internal sealed class TransactedStateCommandDecorator<TCommand>(
     ICommandHandler<TCommand> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,
@@ -76,7 +76,7 @@ internal sealed class TransactionCommandDecorator<TCommand>(
     }
 }
 
-internal sealed class TransactionCommandDecorator<TCommand, TResult>(
+internal sealed class TransactedStateCommandDecorator<TCommand, TResult>(
     ICommandHandler<TCommand, TResult> inner,
     ITransactionUnit transactionUnit,
     ILogger<TCommand> logger,

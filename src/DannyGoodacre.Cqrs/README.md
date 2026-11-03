@@ -13,7 +13,8 @@ Your handlers contain only domain logic.
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline flow, decorator order, and design principles |
 | [COMMANDS-AND-QUERIES.md](docs/COMMANDS-AND-QUERIES.md) | `ICommand`, `IStateCommand`, `ITransactedStateCommand`, `IQuery<T>`, and `IPostCommitHook` |
 | [PERSISTENCE.md](docs/PERSISTENCE.md) | `IStateUnit`, `ITransactionUnit`, `DbContextTransactionUnit`, and EF Core retries |
-| [RESULT-HANDLING.md](docs/RESULT-HANDLING.md) | `IResult` and `IResult<T>` usage patterns |
+| [RESULT-HANDLING.md](docs/RESULT-HANDLING.md) | Results in the pipeline, child results, and HTTP mapping |
+| [DannyGoodacre.Primitives](../DannyGoodacre.Primitives/README.md) | Reference for `IResult`, `IResult<T>`, `Error`, and `ValidationState` |
 
 ## Installation
 
@@ -24,6 +25,7 @@ dotnet add package DannyGoodacre.Cqrs
 ```
 
 The package depends on `DannyGoodacre.Primitives`. `DannyGoodacre.Primitives` contains `IResult`, `IResult<T>`, and `ValidationState`.
+See the [Primitives documentation](../DannyGoodacre.Primitives/README.md) for these types.
 
 For tests, add the assertion helpers:
 
@@ -216,16 +218,17 @@ app.MapPost("/orders", async (
     return result switch
     {
         Success<Guid>(var orderId) => Results.Created($"/orders/{orderId}", new { orderId }),
-        Invalid<Guid> => Results.BadRequest(),
-        NotFound<Guid> => Results.NotFound(),
-        DomainError<Guid> => Results.UnprocessableEntity(),
-        Canceled<Guid> => Results.StatusCode(StatusCodes.Status499ClientClosedRequest),
+        Invalid(var validationState) => Results.ValidationProblem(
+            validationState.Errors.ToDictionary(e => e.Key, e => e.Value.ToArray())),
+        NotFound => Results.NotFound(),
+        DomainError(var message) => Results.UnprocessableEntity(new { message }),
         _ => Results.Problem()
     };
 });
 ```
 
-> **Note:** ASP.NET Core also has a type named `IResult`. Use `var`, or use the full name `DannyGoodacre.Primitives.IResult`, to prevent a name conflict.
+Use `var` for the result. ASP.NET Core also has a type named `IResult`.
+[RESULT-HANDLING.md](docs/RESULT-HANDLING.md#map-results-to-http-responses) shows a reusable mapping for all result types.
 
 ## Features
 
@@ -243,4 +246,5 @@ app.MapPost("/orders", async (
 1. Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) to learn the pipeline order.
 2. Read [COMMANDS-AND-QUERIES.md](docs/COMMANDS-AND-QUERIES.md) to select the correct marker interface.
 3. Read [PERSISTENCE.md](docs/PERSISTENCE.md) to connect the pipeline to EF Core.
-4. Read [RESULT-HANDLING.md](docs/RESULT-HANDLING.md) to return and read results.
+4. Read [RESULT-HANDLING.md](docs/RESULT-HANDLING.md) to return and read results in the pipeline.
+5. Read the [Primitives documentation](../DannyGoodacre.Primitives/README.md) for the full result type reference.

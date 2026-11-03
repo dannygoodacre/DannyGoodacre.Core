@@ -19,13 +19,13 @@ flowchart LR
     S --> H[Your handler]
 ```
 
-| Step | Decorator | Applies to | Task |
-| --- | --- | --- | --- |
-| 1 | `CommandLoggingDecorator` | All commands | Logs the start and the outcome. Converts exceptions to `InternalError` and cancellations to `Canceled`. |
-| 2 | `CommandValidationDecorator` | Commands with an `IValidator<T>` | Runs the validator. Returns `Invalid` if there are errors. |
-| 3 | `TransactionCommandDecorator` | `ITransactedStateCommand` | Opens a transaction, runs the handler, saves, and commits. Runs the post-commit hook after the commit. |
-| 4 | `StateCommandDecorator` | `IStateCommand` | Calls `SaveChangesAsync` after a successful handler. Runs the post-commit hook after the save. |
-| 5 | Handler | All commands | Runs the domain logic. Returns an `IResult`. |
+| Step | Decorator                         | Applies to | Task |
+| --- |-----------------------------------| --- | --- |
+| 1 | `CommandLoggingDecorator`         | All commands | Logs the start and the outcome. Converts exceptions to `InternalError` and cancellations to `Canceled`. |
+| 2 | `CommandValidationDecorator`      | Commands with an `IValidator<T>` | Runs the validator. Returns `Invalid` if there are errors. |
+| 3 | `TransactedStateCommandDecorator` | `ITransactedStateCommand` | Opens a transaction, runs the handler, saves, and commits. Runs the post-commit hook after the commit. |
+| 4 | `StateCommandDecorator`           | `IStateCommand` | Calls `SaveChangesAsync` after a successful handler. Runs the post-commit hook after the save. |
+| 5 | Handler                           | All commands | Runs the domain logic. Returns an `IResult`. |
 
 All decorators wrap all command handlers. Each decorator checks the command type at run time.
 If the decorator does not apply to the command, it calls the next step and does nothing else.

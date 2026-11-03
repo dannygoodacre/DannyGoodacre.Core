@@ -6,7 +6,7 @@ namespace DannyGoodacre.Cqrs.Testing;
 /// <summary>
 /// Test context for building and testing void-returning transacted command handler pipelines.
 /// </summary>
-public class TransactionCommandTestContext<TCommand>(MockBehavior mockBehavior = MockBehavior.Default)
+public class TransactedStateCommandTestContext<TCommand>(MockBehavior mockBehavior = MockBehavior.Default)
     : StateCommandTestContextCore<TCommand, ICommandHandler<TCommand>, ITransactionUnit>(mockBehavior)
     where TCommand : class, ICommand
 {
@@ -33,7 +33,7 @@ public class TransactionCommandTestContext<TCommand>(MockBehavior mockBehavior =
 
     public ICommandHandler<TCommand> CreatePipeline(bool includePostCommitHook = false)
     {
-        return new TransactionCommandDecorator<TCommand>(
+        return new TransactedStateCommandDecorator<TCommand>(
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,
@@ -44,7 +44,7 @@ public class TransactionCommandTestContext<TCommand>(MockBehavior mockBehavior =
 /// <summary>
 /// Test context for building and testing value-returning transacted command handler pipelines.
 /// </summary>
-public class TransactionCommandTestContext<TCommand, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
+public class TransactedStateCommandTestContext<TCommand, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
     : StateCommandTestContextCore<TCommand, ICommandHandler<TCommand, TResult>, ITransactionUnit>(mockBehavior)
     where TCommand : class, ICommand
     where TResult : notnull
@@ -72,7 +72,7 @@ public class TransactionCommandTestContext<TCommand, TResult>(MockBehavior mockB
 
     public ICommandHandler<TCommand, TResult> CreatePipeline(bool includePostCommitHook = false)
     {
-        return new TransactionCommandDecorator<TCommand, TResult>(
+        return new TransactedStateCommandDecorator<TCommand, TResult>(
             InnerMock.Object,
             TransactionUnitMock.Object,
             Logger,

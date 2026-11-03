@@ -6,13 +6,13 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
     public sealed class TransactedStateCommand : ITransactedStateCommand;
 
-    private readonly TransactionCommandTestContext<TransactedStateCommand> _transactionCommandContext = new(MockBehavior.Strict);
+    private readonly TransactedStateCommandTestContext<TransactedStateCommand> _transactedStateCommandContext = new(MockBehavior.Strict);
 
     [Fact]
     public async Task HandleAsync_WhenCommandIsNotITransactedStateCommand_BypassesTransactionSaveStateAndHook()
     {
         // Arrange
-        var context = new TransactionCommandTestContext<Command>(MockBehavior.Strict);
+        var context = new TransactedStateCommandTestContext<Command>(MockBehavior.Strict);
 
         var command = new Command();
 
@@ -43,15 +43,15 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var failureResult = Result.Conflict("Database validation error");
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<CancellationToken, Task<IResult>>, CancellationToken>((action, ct) => action(ct));
 
-        _transactionCommandContext.InnerMock
+        _transactedStateCommandContext.InnerMock
             .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(failureResult);
 
-        var pipeline = _transactionCommandContext.CreatePipeline(includePostCommitHook: true);
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -59,9 +59,9 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeConflict("Database validation error");
 
-        _transactionCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        _transactedStateCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
 
-        _transactionCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(It.IsAny<TransactedStateCommand>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
+        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(It.IsAny<TransactedStateCommand>(), It.IsAny<IResult>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -70,11 +70,11 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Arrange
         var command = new TransactedStateCommand();
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
-        var pipeline = _transactionCommandContext.CreatePipeline();
+        var pipeline = _transactedStateCommandContext.CreatePipeline();
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -82,7 +82,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeCanceled();
 
-        _transactionCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionCanceled, LogLevel.Warning);
     }
 
     [Fact]
@@ -93,11 +93,11 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var dbException = new InvalidOperationException("Transaction aborted");
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(dbException);
 
-        var pipeline = _transactionCommandContext.CreatePipeline();
+        var pipeline = _transactedStateCommandContext.CreatePipeline();
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -105,7 +105,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeInternalError(dbException);
 
-        var faultLog = _transactionCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionFaulted, LogLevel.Error);
+        var faultLog = _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.TransactionFaulted, LogLevel.Error);
 
         Assert.Equal(dbException, faultLog.Exception);
     }
@@ -118,19 +118,19 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var successResult = Result.Success();
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<CancellationToken, Task<IResult>>, CancellationToken>((action, ct) => action(ct));
 
-        _transactionCommandContext.InnerMock
+        _transactedStateCommandContext.InnerMock
             .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(successResult);
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var pipeline = _transactionCommandContext.CreatePipeline(includePostCommitHook: false);
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: false);
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -138,7 +138,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeSuccess();
 
-        _transactionCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transactedStateCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -149,23 +149,23 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var successResult = Result.Success();
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<CancellationToken, Task<IResult>>, CancellationToken>((action, ct) => action(ct));
 
-        _transactionCommandContext.InnerMock
+        _transactedStateCommandContext.InnerMock
             .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(successResult);
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _transactionCommandContext.PostCommitHookMock
+        _transactedStateCommandContext.PostCommitHookMock
             .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new OperationCanceledException());
 
-        var pipeline = _transactionCommandContext.CreatePipeline(includePostCommitHook: true);
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -173,7 +173,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeSuccess();
 
-        _transactionCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitHookCanceledMidExecution, LogLevel.Warning);
+        _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitHookCanceledMidExecution, LogLevel.Warning);
     }
 
     [Fact]
@@ -186,23 +186,23 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var hookException = new InvalidOperationException("Event publication failed");
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<CancellationToken, Task<IResult>>, CancellationToken>((action, ct) => action(ct));
 
-        _transactionCommandContext.InnerMock
+        _transactedStateCommandContext.InnerMock
             .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(successResult);
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _transactionCommandContext.PostCommitHookMock
+        _transactedStateCommandContext.PostCommitHookMock
             .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
             .ThrowsAsync(hookException);
 
-        var pipeline = _transactionCommandContext.CreatePipeline(includePostCommitHook: true);
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -210,7 +210,7 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeInternalError(hookException);
 
-        var faultLog = _transactionCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitFaulted, LogLevel.Error);
+        var faultLog = _transactedStateCommandContext.LogCollector.ShouldHaveLogged(CqrsLogEvent.PostCommitFaulted, LogLevel.Error);
 
         Assert.Equal(hookException, faultLog.Exception);
     }
@@ -223,23 +223,23 @@ public sealed class VoidTransactedStateCommandDecoratorTests
 
         var successResult = Result.Success();
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task<IResult>>>(), It.IsAny<CancellationToken>()))
             .Returns<Func<CancellationToken, Task<IResult>>, CancellationToken>((action, ct) => action(ct));
 
-        _transactionCommandContext.InnerMock
+        _transactedStateCommandContext.InnerMock
             .Setup(x => x.HandleAsync(command, It.IsAny<CancellationToken>()))
             .ReturnsAsync(successResult);
 
-        _transactionCommandContext.TransactionUnitMock
+        _transactedStateCommandContext.TransactionUnitMock
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        _transactionCommandContext.PostCommitHookMock
+        _transactedStateCommandContext.PostCommitHookMock
             .Setup(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var pipeline = _transactionCommandContext.CreatePipeline(includePostCommitHook: true);
+        var pipeline = _transactedStateCommandContext.CreatePipeline(includePostCommitHook: true);
 
         // Act
         IResult result = await pipeline.HandleAsync(command, CancellationToken.None);
@@ -247,8 +247,8 @@ public sealed class VoidTransactedStateCommandDecoratorTests
         // Assert
         result.ShouldBeSuccess();
 
-        _transactionCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _transactedStateCommandContext.TransactionUnitMock.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
 
-        _transactionCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
+        _transactedStateCommandContext.PostCommitHookMock.Verify(x => x.ExecuteAsync(command, successResult, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

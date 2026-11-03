@@ -1,92 +1,64 @@
 # Result handling
 
-This document tells you how to return and read results in DannyGoodacre.Cqrs.
-The result types are in the `DannyGoodacre.Primitives` namespace.
+This document tells you how handlers and callers use results in the DannyGoodacre.Cqrs pipeline.
 
-## Rules
+The result types are in the `DannyGoodacre.Primitives` package. That package documents the types, the factory methods, and the patterns:
+
+- [Primitives README](../../DannyGoodacre.Primitives/README.md): the outcome types.
+- [RESULTS.md](../../DannyGoodacre.Primitives/docs/RESULTS.md): factory methods, pattern matching, and `MapFailure`.
+- [VALIDATION.md](../../DannyGoodacre.Primitives/docs/VALIDATION.md): `ValidationState`.
+- [ERRORS.md](../../DannyGoodacre.Primitives/docs/ERRORS.md): `Error` and `InternalError`.
+
+## Rules for handlers
 
 1. Each handler must return `IResult` or `IResult<T>`.
 2. Handlers must not throw exceptions for domain logic control flow.
 3. Return a failure result for each expected failure. Examples are "not found", "out of stock", and "email in use".
-4. Use exceptions only for unexpected faults. The pipeline converts them to `InternalError`.
+4. Do not catch exceptions only to convert them. The pipeline converts them.
 
 The reasons for these rules:
 
-- The pipeline reads `IsSuccess` to decide to save, commit, or run hooks. A failure result causes a rollback with no exception.
-- The caller sees all possible outcomes in one `switch` expression.
-- Exceptions are slow and hide the control flow.
+- The persistence decorators read `IsSuccess`. A failure result stops the save, causes a rollback, and stops the post-commit hook. No exception is necessary.
+- The caller sees all outcomes in one `switch` expression.
+- The logs show business failures as warnings, not as errors.
 
-## Result types
+## Who creates each result
 
-| Type | Meaning | Created by |
+| Result | Created by | When |
 | --- | --- | --- |
-| `Success` / `Success<T>` | The operation completed. `Success<T>` contains the value. | Handler |
-| `DomainError` / `DomainError<T>` | A business rule stopped the operation. | Handler |
-| `NotFound` / `NotFound<T>` | The requested data does not exist. | Handler |
-| `Conflict` / `Conflict<T>` | The operation conflicts with the current state, for example a duplicate key. | Handler |
-| `Invalid` / `Invalid<T>` | The input failed validation. It contains the `ValidationState`. | Validation decorator |
-| `InternalError` / `InternalError<T>` | An unexpected exception occurred. It contains the exception. | Logging and persistence decorators |
-| `Canceled` / `Canceled<T>` | The cancellation token was canceled. | Logging and persistence decorators |
+| `Success` | Handler | The operation completed. |
+| `DomainError` | Handler | A business rule stops the operation. |
+| `NotFound` | Handler | The data does not exist. |
+| `Conflict` | Handler | The current data prevents the operation, for example a duplicate email. |
+| `Invalid` | Validation decorator | The `IValidator<T>` adds one or more errors. |
+| `Canceled` | Logging and persistence decorators | The cancellation token is canceled, or an `OperationCanceledException` occurs. |
+| `InternalError` | Logging and persistence decorators | An unexpected exception occurs. |
 
-`IResult<T>` is also an `IResult`. All result types have the `IsSuccess` and `IsFailure` properties.
+[ARCHITECTURE.md](ARCHITECTURE.md#exception-and-cancellation-handling) lists each exception, its result, and its log event.
 
-## Return results from a handler
+### Do not return Invalid from a handler
 
-### Success
+Write an `IValidator<T>` for the request. The validation decorator returns `Invalid` before the handler runs.
+See [ARCHITECTURE.md](ARCHITECTURE.md#validation-short-circuit).
 
-```csharp
-// No value.
-return Result.Success();
-
-// With a value.
-return Result<Guid>.Success(order.Id);
-```
-
-### NotFound
+Validators are synchronous. Rules that need the database go in the handler. Return `Conflict` or `DomainError` for these rules:
 
 ```csharp
-Order? order = await orderRepository.GetByIdAsync(command.OrderId, cancellationToken);
+using DannyGoodacre.Cqrs;
+using DannyGoodacre.Primitives;
 
-if (order is null)
-{
-    return Result.NotFound();
-}
-```
+namespace Shop.Customers;
 
-In a query handler, use the generic form:
-
-```csharp
-return summary is null
-    ? Result<OrderSummary>.NotFound()
-    : Result<OrderSummary>.Success(summary);
-```
-
-### DomainError
-
-```csharp
-if (product.StockLevel < command.Quantity)
-{
-    return Result<Guid>.DomainError("Insufficient stock.");
-}
-```
-
-Write the message for the end user. Do not put internal details in the message.
-
-### Conflict
-
-Use `Conflict` when the request is valid, but the current data prevents it.
-
-```csharp
 public sealed record RegisterCustomerCommand(string Name, string Email) : IStateCommand;
 
-public interface ICustomerRepository
+public interface IRegisteredCustomerRepository
 {
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
 
     void Add(Customer customer);
 }
 
-public sealed class RegisterCustomerCommandHandler(ICustomerRepository customerRepository)
+public sealed class RegisterCustomerCommandHandler(IRegisteredCustomerRepository customerRepository)
     : ICommandHandler<RegisterCustomerCommand, Guid>
 {
     public async Task<IResult<Guid>> HandleAsync(
@@ -107,121 +79,128 @@ public sealed class RegisterCustomerCommandHandler(ICustomerRepository customerR
 }
 ```
 
-### Invalid
+### Do not create InternalError or Canceled in a handler
 
-Do not return `Invalid` from a handler. Write an `IValidator<T>` for the request.
-The validation decorator returns `Invalid` before the handler runs. See [ARCHITECTURE.md](ARCHITECTURE.md#validation-short-circuit).
+Pass the `CancellationToken` to all asynchronous calls. Then a cancellation stops the work, and the pipeline returns `Canceled`.
+If an unexpected exception occurs, let it go to the pipeline. The logging decorator logs it as event 1006 and returns `InternalError`.
+
+## Send a child result to the caller
+
+An orchestrator handler calls child handlers. Use these rules to return a child failure:
+
+| Orchestrator returns | Child returns | Action |
+| --- | --- | --- |
+| `IResult` | `IResult` or `IResult<T>` | Return the child result. `IResult<T>` is also an `IResult`. |
+| `IResult<T>` | `IResult<T>` with the same `T` | Return the child result. |
+| `IResult<TOut>` | `IResult<TIn>` | Return `childResult.MapFailure<TOut>()`. |
+
+[COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md#example-customer-onboarding) shows the first case.
+This example shows the third case. The handler returns `IResult<Guid>`, but the child query returns `IResult<OrderSummary>`:
 
 ```csharp
-public sealed class RegisterCustomerCommandValidator : IValidator<RegisterCustomerCommand>
+using DannyGoodacre.Cqrs;
+using DannyGoodacre.Primitives;
+
+namespace Shop.Orders;
+
+public sealed record ReorderCommand(Guid PreviousOrderId) : IStateCommand;
+
+public sealed class ReorderCommandHandler(
+    IQueryHandler<GetOrderByIdQuery, OrderSummary> getOrderHandler,
+    IOrderRepository orderRepository)
+    : ICommandHandler<ReorderCommand, Guid>
 {
-    public void Validate(RegisterCustomerCommand request, ValidationState validationState)
+    public async Task<IResult<Guid>> HandleAsync(ReorderCommand command, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
+        IResult<OrderSummary> previousResult = await getOrderHandler.HandleAsync(
+            new GetOrderByIdQuery(command.PreviousOrderId), cancellationToken);
+
+        if (previousResult is not Success<OrderSummary>(var previous))
         {
-            validationState.AddError(nameof(request.Name), "Name is required.");
+            return previousResult.MapFailure<Guid>();
         }
 
-        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@'))
-        {
-            validationState.AddError(nameof(request.Email), "A valid email address is required.");
-        }
+        var order = new Order(
+            Guid.CreateVersion7(),
+            previous.CustomerId,
+            previous.ProductSku,
+            previous.Quantity,
+            previous.Total);
+
+        orderRepository.Add(order);
+
+        return Result<Guid>.Success(order.Id);
     }
 }
 ```
 
-The validator records all errors. It does not stop at the first error.
-`ValidationState.Errors` contains the errors. The key is the property name.
+If the previous order does not exist, the caller receives `NotFound<Guid>`.
 
-### InternalError and Canceled
+## Map results to HTTP responses
 
-Do not create `InternalError` or `Canceled` in a handler. Do not catch exceptions only to convert them.
-The pipeline does this for you:
-
-| Exception from the handler | Result |
-| --- | --- |
-| `OperationCanceledException` | `Canceled` |
-| Other exception | `InternalError`. The logging decorator logs the exception as event 1006. |
-
-Pass the `CancellationToken` to all asynchronous calls. Then cancellation stops the work and produces `Canceled`.
-
-## Read results
-
-### Check for success
-
-Use `IsSuccess` or `IsFailure` when you do not need the value.
-
-```csharp
-IResult scheduleResult = await scheduleEmailHandler.HandleAsync(scheduleCommand, cancellationToken);
-
-if (scheduleResult.IsFailure)
-{
-    return scheduleResult;
-}
-```
-
-### Get the value
-
-Use a positional pattern on `Success<T>` to get the value.
-
-```csharp
-IResult<Guid> createResult = await createCustomerHandler.HandleAsync(createCommand, cancellationToken);
-
-if (createResult is not Success<Guid>(var customerId))
-{
-    return createResult;
-}
-
-// customerId is available here.
-```
-
-### Send a child failure to the caller
-
-An orchestrator handler can return a child failure result without change.
-The caller then sees the original failure type, for example `NotFound`.
-
-```csharp
-IResult<string> templateResult = await getTemplateHandler.HandleAsync(templateQuery, cancellationToken);
-
-if (templateResult is not Success<string>(var template))
-{
-    return templateResult;
-}
-```
-
-The orchestrator in this example returns `IResult`. `IResult<string>` is also an `IResult`, so the code compiles.
-
-### Map results to HTTP responses
-
-Use a `switch` expression at the edge of the application. Put the mapping in one extension method.
+Put the mapping in one place at the edge of the application.
+Match the non-generic failure types. They also match the generic types, so one method serves all value types.
 
 ```csharp
 using DannyGoodacre.Primitives;
+using HttpResult = Microsoft.AspNetCore.Http.IResult;
+using IResult = DannyGoodacre.Primitives.IResult;
 
 namespace Shop.Api;
 
 public static class ResultHttpExtensions
 {
-    public static Microsoft.AspNetCore.Http.IResult ToHttpResult<T>(
-        this IResult<T> result,
-        Func<T, Microsoft.AspNetCore.Http.IResult> onSuccess)
-        where T : notnull
+    public static HttpResult ToHttpResult<T>(this IResult<T> result, Func<T, HttpResult> onSuccess)
+        => result is Success<T>(var value)
+            ? onSuccess(value)
+            : result.ToFailureHttpResult();
+
+    public static HttpResult ToHttpResult(this IResult result, Func<HttpResult> onSuccess)
+        => result.IsSuccess
+            ? onSuccess()
+            : result.ToFailureHttpResult();
+
+    private static HttpResult ToFailureHttpResult(this IResult result)
         => result switch
         {
-            Success<T>(var value) => onSuccess(value),
-            Invalid<T> => Results.BadRequest(),
-            NotFound<T> => Results.NotFound(),
-            Conflict<T> => Results.Conflict(),
-            DomainError<T> => Results.UnprocessableEntity(),
-            Canceled<T> => Results.StatusCode(StatusCodes.Status499ClientClosedRequest),
+            Invalid(var validationState) => Results.ValidationProblem(
+                validationState.Errors.ToDictionary(e => e.Key, e => e.Value.ToArray())),
+            NotFound => Results.NotFound(),
+            Conflict(var message) => Results.Conflict(new { message }),
+            DomainError(var message) => Results.UnprocessableEntity(new { message }),
+            Canceled => Results.StatusCode(StatusCodes.Status499ClientClosedRequest),
             _ => Results.Problem(statusCode: StatusCodes.Status500InternalServerError)
         };
 }
 ```
 
-Use the extension method in an endpoint:
+Use the extension methods in the endpoints:
 
 ```csharp
+using DannyGoodacre.Cqrs;
+using Shop.Api;
+using Shop.Orders;
+
+app.MapPost("/orders", async (
+    PlaceOrderCommand command,
+    ICommandHandler<PlaceOrderCommand, Guid> handler,
+    CancellationToken cancellationToken) =>
+{
+    var result = await handler.HandleAsync(command, cancellationToken);
+
+    return result.ToHttpResult(orderId => Results.Created($"/orders/{orderId}", new { orderId }));
+});
+
+app.MapPost("/orders/{orderId:guid}/cancel", async (
+    Guid orderId,
+    ICommandHandler<CancelOrderCommand> handler,
+    CancellationToken cancellationToken) =>
+{
+    var result = await handler.HandleAsync(new CancelOrderCommand(orderId), cancellationToken);
+
+    return result.ToHttpResult(() => Results.NoContent());
+});
+
 app.MapGet("/orders/{orderId:guid}", async (
     Guid orderId,
     IQueryHandler<GetOrderByIdQuery, OrderSummary> handler,
@@ -233,10 +212,9 @@ app.MapGet("/orders/{orderId:guid}", async (
 });
 ```
 
-> **Note:** ASP.NET Core and `DannyGoodacre.Primitives` both have a type named `IResult`. Use the full name for one of them, as in the example above.
+> **Note:** ASP.NET Core and `DannyGoodacre.Primitives` both have a type named `IResult`. The `using` aliases in the example prevent the name conflict. In endpoints, use `var` for the handler result.
 
-The `_` branch handles `InternalError` and all unknown types. Do not send exception details to the client.
-The pipeline already logged the exception.
+The `_` branch handles `InternalError`. Do not send exception details to the client. The pipeline already logged the exception.
 
 ## Do not throw for control flow
 
@@ -271,18 +249,7 @@ if (product.StockLevel < command.Quantity)
 | `ShouldBeNotFound()` | The result is `NotFound` or `NotFound<T>`. | Nothing |
 | `ShouldBeDomainError(message)` | The result is a `DomainError` with this message. | Nothing |
 
-```csharp
-Guid orderId = result.ShouldBeSuccess();
-
-ValidationState validationState = result.ShouldBeInvalid();
-Assert.Contains(nameof(PlaceOrderCommand.Quantity), validationState.Errors.Keys);
-
-result.ShouldBeNotFound();
-
-result.ShouldBeDomainError("Insufficient stock.");
-```
-
-[COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md#tests) has full pipeline tests.
+[COMMANDS-AND-QUERIES.md](COMMANDS-AND-QUERIES.md#tests) has full pipeline tests that use these methods.
 
 ## Related documents
 

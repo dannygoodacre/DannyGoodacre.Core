@@ -453,17 +453,13 @@ The hook does not run in these conditions:
 - The handler returns a failure result.
 - `SaveChangesAsync` or the transaction throws an exception, or is canceled.
 - The command is a plain `ICommand`.
-- The cancellation token is canceled after the save and before the hook starts. The pipeline logs event 3001 and returns the success result.
+- `IStateCommand` only: the cancellation token is canceled after the save and before the hook starts. The pipeline logs event 3001 and returns the success result.
 
 ### Hook failures
 
-The data is already saved when the hook runs. Know these results:
-
-| Hook outcome | Pipeline result | Log event |
-| --- | --- | --- |
-| Completes | The handler result | None |
-| Throws `OperationCanceledException` | The handler result | `PostCommitHookCanceledMidExecution` (3002) |
-| Throws another exception | `InternalError` | `PostCommitFaulted` (3003) |
+The data is already saved when the hook runs.
+If the hook is canceled, the pipeline returns the handler result. If the hook throws a different exception, the pipeline returns `InternalError`.
+[ARCHITECTURE.md](ARCHITECTURE.md#exception-and-cancellation-handling) lists the log events.
 
 > **Warning:** An `InternalError` from a hook does not mean that the save failed. The data is committed. Do not send the command again because of this result. Make hooks safe to fail, or catch and record their exceptions.
 
