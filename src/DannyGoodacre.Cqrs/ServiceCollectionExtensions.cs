@@ -1,3 +1,16 @@
+// AddCqrsHandlers builds the CQRS pipeline at startup, so nothing is scanned or reflected over per request.
+//
+// It registers every handler, then wraps each registration in decorators, innermost first: state, transaction,
+// validation, logging. Each pass replaces the registration with a factory around the previous one, so the order of
+// the passes is the order of the pipeline. Only state commands get the state and transaction decorators, so queries
+// and plain commands need no persistence units.
+//
+// The bare handler moves to a keyed registration under a private key. The container still creates, disposes, and
+// validates it, but only the decorators can resolve it, so no caller can bypass the pipeline.
+//
+// Configuration mistakes that would otherwise fail silently, such as a hook that could never run, throw here instead.
+// The method may be called once per module; each call wraps only its own handlers, and registers shared services once.
+
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -92,7 +105,10 @@ public static class ServiceCollectionExtensions
             {
                 ServiceDescriptor descriptor = services[i];
 
-                if (!descriptor.ServiceType.IsGenericType || descriptor.ServiceType.GetGenericTypeDefinition() != openServiceType)
+                // Skip the bare handlers this loop moves to keyed registrations, or they would be wrapped twice.
+                if (descriptor.IsKeyedService
+                    || !descriptor.ServiceType.IsGenericType
+                    || descriptor.ServiceType.GetGenericTypeDefinition() != openServiceType)
                 {
                     continue;
                 }
@@ -108,27 +124,38 @@ public static class ServiceCollectionExtensions
 
                 Type closedDecoratorType = openDecoratorType.MakeGenericType(genericArgs);
 
-                // Pre-compile the constructor factory at startup so resolving decorated handlers
-                // during HTTP requests incurs zero runtime reflection overhead
+                Func<IServiceProvider, object> createInner = services.CreateInnerFactory(descriptor, closedServiceType);
+
                 ObjectFactory decoratorFactory = ActivatorUtilities.CreateFactory(
                     closedDecoratorType,
                     argumentTypes: [closedServiceType]);
 
                 services[i] = ServiceDescriptor.Describe(
                     closedServiceType,
-                    provider =>
-                    {
-                        object inner = descriptor.ImplementationInstance
-                                       ?? (descriptor.ImplementationType is not null
-                                           ? ActivatorUtilities.CreateInstance(provider, descriptor.ImplementationType)
-                                           : descriptor.ImplementationFactory!(provider));
-
-                        return decoratorFactory(provider, [inner]);
-                    },
+                    provider => decoratorFactory(provider, [createInner(provider)]),
                     descriptor.Lifetime);
             }
 
             return services;
+        }
+
+        private Func<IServiceProvider, object> CreateInnerFactory(ServiceDescriptor descriptor, Type serviceType)
+        {
+            if (descriptor.ImplementationInstance is { } instance)
+            {
+                return _ => instance;
+            }
+
+            if (descriptor.ImplementationType is { } implementationType)
+            {
+                var key = new InnerHandlerKey();
+
+                services.Add(ServiceDescriptor.DescribeKeyed(serviceType, key, implementationType, descriptor.Lifetime));
+
+                return provider => provider.GetRequiredKeyedService(serviceType, key);
+            }
+
+            return descriptor.ImplementationFactory!;
         }
 
         private void RegisterValidators(Assembly[] assemblies)
@@ -208,6 +235,9 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    // Private, so only the decorators can resolve a bare handler.
+    private sealed class InnerHandlerKey;
+
     private static bool IsCommandHandlerInterface(Type type)
     {
         if (!type.IsGenericType)
@@ -229,6 +259,7 @@ public static class ServiceCollectionExtensions
             : typeof(ICommandHandler<,>).MakeGenericType(genericArgs);
     }
 
+    // For error messages: ICommandHandler<X, Guid> rather than ICommandHandler`2.
     private static string FormatTypeName(Type type)
         => type.IsGenericType
             ? $"{type.Name[..type.Name.IndexOf('`')]}<{string.Join(", ", type.GetGenericArguments().Select(FormatTypeName))}>"

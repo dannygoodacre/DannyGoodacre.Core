@@ -55,7 +55,7 @@ Queries have no persistence decorators, so a query cannot save data through the 
 | 3 | Validation | Around the transaction decorator |
 | 4 | Logging | Outermost, next to the caller |
 
-Each step replaces the registration with a factory that builds the new decorator around the previous service. The factories are compiled at startup with `ActivatorUtilities.CreateFactory`, so resolving a handler uses no reflection.
+Each step replaces the registration with a factory that builds the new decorator around the previous service. The handler itself moves to a keyed registration under a private key, so the container creates and disposes it, includes it in `ValidateOnBuild` checks, and never returns it on its own. The decorator factories are compiled at startup with `ActivatorUtilities.CreateFactory`, so resolving a handler uses no reflection.
 
 Each call to `AddCqrsHandlers` wraps only the handlers that it registers, so you can call it once per module. A validator or hook found by two calls is registered once. A handler you register yourself, outside `AddCqrsHandlers`, does not get the pipeline.
 

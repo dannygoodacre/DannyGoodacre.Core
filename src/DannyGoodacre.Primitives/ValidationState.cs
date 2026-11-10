@@ -63,7 +63,8 @@ public sealed class ValidationState
 
         foreach (var (property, errors) in other._errors)
         {
-            foreach (var error in errors)
+            // Iterate a copy: when merging an instance into itself, AddError appends to this same list.
+            foreach (var error in errors.ToArray())
             {
                 AddError(property, error);
             }

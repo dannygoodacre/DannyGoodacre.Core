@@ -6,19 +6,19 @@ namespace DannyGoodacre.Cqrs;
 internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
     where TRequest : IRequest
 {
+    private static readonly string RequestName = typeof(TRequest).Name;
+
     protected async Task<IResult> ExecuteWithLoggingAsync(
         Func<CancellationToken, Task<IResult>> next,
         CancellationToken cancellationToken)
     {
-        string requestName = typeof(TRequest).Name;
-
         try
         {
-            logger.LogRequestStarted(requestName);
+            logger.LogRequestStarted(RequestName);
 
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogRequestCanceledPreExecution(requestName);
+                logger.LogRequestCanceledPreExecution(RequestName);
 
                 return new Canceled();
             }
@@ -27,24 +27,24 @@ internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
 
             if (result.IsFailure)
             {
-                logger.LogRequestFailed(requestName, result);
+                logger.LogRequestFailed(RequestName, result);
             }
             else
             {
-                logger.LogRequestSucceeded(requestName);
+                logger.LogRequestSucceeded(RequestName);
             }
 
             return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            logger.LogRequestCanceledMidExecution(requestName);
+            logger.LogRequestCanceledMidExecution(RequestName);
 
             return new Canceled();
         }
         catch (Exception ex)
         {
-            logger.LogRequestFaulted(requestName, ex);
+            logger.LogRequestFaulted(RequestName, ex);
 
             return new InternalError(ex);
         }
@@ -55,19 +55,19 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
     where TRequest : IRequest
     where TResult : notnull
 {
+    private static readonly string RequestName = typeof(TRequest).Name;
+
     protected async Task<IResult<TResult>> ExecuteWithLoggingAsync(
         Func<CancellationToken, Task<IResult<TResult>>> next,
         CancellationToken cancellationToken)
     {
-        string requestName = typeof(TRequest).Name;
-
         try
         {
-            logger.LogRequestStarted(requestName);
+            logger.LogRequestStarted(RequestName);
 
             if (cancellationToken.IsCancellationRequested)
             {
-                logger.LogRequestCanceledPreExecution(requestName);
+                logger.LogRequestCanceledPreExecution(RequestName);
 
                 return new Canceled<TResult>();
             }
@@ -76,24 +76,24 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
 
             if (result.IsFailure)
             {
-                logger.LogRequestFailed(requestName, result);
+                logger.LogRequestFailed(RequestName, result);
             }
             else
             {
-                logger.LogRequestSucceeded(requestName);
+                logger.LogRequestSucceeded(RequestName);
             }
 
             return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            logger.LogRequestCanceledMidExecution(requestName);
+            logger.LogRequestCanceledMidExecution(RequestName);
 
             return new Canceled<TResult>();
         }
         catch (Exception ex)
         {
-            logger.LogRequestFaulted(requestName, ex);
+            logger.LogRequestFaulted(RequestName, ex);
 
             return new InternalError<TResult>(ex);
         }

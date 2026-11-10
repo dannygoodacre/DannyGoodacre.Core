@@ -8,6 +8,8 @@ internal abstract class ValidationDecoratorBase<TRequest>(
     IEnumerable<IValidator<TRequest>> validators)
     where TRequest : IRequest
 {
+    private static readonly string RequestName = typeof(TRequest).Name;
+
     private readonly IValidator<TRequest>[] _validators = [.. validators];
 
     protected async Task<IResult> ExecuteWithValidationAsync(
@@ -32,7 +34,7 @@ internal abstract class ValidationDecoratorBase<TRequest>(
             return await next(cancellationToken);
         }
 
-        logger.LogRequestValidationFailed(typeof(TRequest).Name, validationState);
+        logger.LogRequestValidationFailed(RequestName, validationState);
 
         return new Invalid(validationState);
     }
@@ -44,6 +46,8 @@ internal abstract class ValidationDecoratorBase<TRequest, TResult>(
     where TRequest : IRequest
     where TResult : notnull
 {
+    private static readonly string RequestName = typeof(TRequest).Name;
+
     private readonly IValidator<TRequest>[] _validators = [.. validators];
 
     protected async Task<IResult<TResult>> ExecuteWithValidationAsync(
@@ -68,7 +72,7 @@ internal abstract class ValidationDecoratorBase<TRequest, TResult>(
             return await next(cancellationToken);
         }
 
-        logger.LogRequestValidationFailed(typeof(TRequest).Name, validationState);
+        logger.LogRequestValidationFailed(RequestName, validationState);
 
         return new Invalid<TResult>(validationState);
     }

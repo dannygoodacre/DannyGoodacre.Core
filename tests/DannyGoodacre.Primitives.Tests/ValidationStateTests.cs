@@ -65,6 +65,22 @@ public sealed class ValidationStateTests
     }
 
     [Fact]
+    public void Merge_WhenMergingIntoItself_DuplicatesEachError()
+    {
+        // Arrange
+        var state = new ValidationState();
+        state.AddError("Email", "Email is required.");
+        state.AddError("Password", "Password is too short.");
+
+        // Act
+        state.Merge(state);
+
+        // Assert
+        Assert.Equal(["Email is required.", "Email is required."], state.Errors["Email"]);
+        Assert.Equal(["Password is too short.", "Password is too short."], state.Errors["Password"]);
+    }
+
+    [Fact]
     public void Merge_CombinesErrorsFromOtherInstance()
     {
         // Arrange

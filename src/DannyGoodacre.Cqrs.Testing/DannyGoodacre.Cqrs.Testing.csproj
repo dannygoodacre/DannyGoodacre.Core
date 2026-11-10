@@ -32,4 +32,16 @@
         <ProjectReference Include="..\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
     </ItemGroup>
 
+    <!--
+        The test contexts construct DannyGoodacre.Cqrs's internal decorators, so this package only works with the exact
+        version it was built with. NuGet would otherwise declare "this version or later" for project references, which
+        would let a newer DannyGoodacre.Cqrs fail at run time with MissingMethodException. The packages are versioned in
+        step, so both dependencies are pinned.
+    -->
+    <Target Name="PinProjectReferenceVersions" AfterTargets="_GetProjectReferenceVersions">
+        <ItemGroup>
+            <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+        </ItemGroup>
+    </Target>
+
 </Project>

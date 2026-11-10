@@ -25,6 +25,48 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.FromResult<IResult>(new Success());
     }
 
+    public sealed class DisposalProbe
+    {
+        public bool HandlerDisposed { get; set; }
+    }
+
+    public sealed class DisposableCommand : ICommand;
+
+    public sealed class DisposableCommandHandler(DisposalProbe probe) : ICommandHandler<DisposableCommand>, IDisposable
+    {
+        public Task<IResult> HandleAsync(DisposableCommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult>(new Success());
+
+        public void Dispose() => probe.HandlerDisposed = true;
+    }
+
+    public sealed class AsyncDisposableCommand : IStateCommand;
+
+    public sealed class AsyncDisposableCommandHandler(DisposalProbe probe) : ICommandHandler<AsyncDisposableCommand, string>, IAsyncDisposable
+    {
+        public Task<IResult<string>> HandleAsync(AsyncDisposableCommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<string>>(new Success<string>("Handled"));
+
+        public ValueTask DisposeAsync()
+        {
+            probe.HandlerDisposed = true;
+
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    public interface IUnregisteredDependency;
+
+    public sealed class MissingDependencyCommand : ICommand;
+
+    public sealed class MissingDependencyCommandHandler(IUnregisteredDependency dependency) : ICommandHandler<MissingDependencyCommand>
+    {
+        public IUnregisteredDependency Dependency { get; } = dependency;
+
+        public Task<IResult> HandleAsync(MissingDependencyCommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult>(new Success());
+    }
+
     public sealed class TestQueryHandler : IQueryHandler<TestQuery, string>
     {
         public Task<IResult<string>> HandleAsync(TestQuery query, CancellationToken cancellationToken = default)
@@ -48,9 +90,9 @@ public sealed class ServiceCollectionExtensionsTests
     {
         _services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
-        _services.AddSingleton<IStateUnit>(new Mock<IStateUnit>().Object);
+        _services.AddSingleton(new Mock<IStateUnit>().Object);
 
-        _services.AddSingleton<ITransactionUnit>(new Mock<ITransactionUnit>().Object);
+        _services.AddSingleton(new Mock<ITransactionUnit>().Object);
     }
 
     [Fact]
@@ -257,6 +299,79 @@ public sealed class ServiceCollectionExtensionsTests
         var validationDecorator = Assert.IsType<CommandValidationDecorator<PlainCommand>>(validationDecoratorObj);
 
         Assert.IsType<PlainCommandHandler>(GetPrivateFieldValue(validationDecorator, "inner"));
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenScopeEnds_DisposesDisposableHandler()
+    {
+        // Arrange
+        var probe = new DisposalProbe();
+
+        _services.AddSingleton(probe);
+        _services.AddCqrsHandlers(typeof(DisposableCommandHandler).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        using (var scope = provider.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<ICommandHandler<DisposableCommand>>();
+        }
+
+        // Assert
+        Assert.True(probe.HandlerDisposed);
+    }
+
+    [Fact]
+    public async Task AddCqrsHandlers_WhenAsyncScopeEnds_DisposesAsyncDisposableStateCommandHandler()
+    {
+        // Arrange
+        var probe = new DisposalProbe();
+
+        _services.AddSingleton(probe);
+        _services.AddCqrsHandlers(typeof(AsyncDisposableCommandHandler).Assembly);
+
+        await using var provider = _services.BuildServiceProvider();
+
+        // Act
+        await using (var scope = provider.CreateAsyncScope())
+        {
+            scope.ServiceProvider.GetRequiredService<ICommandHandler<AsyncDisposableCommand, string>>();
+        }
+
+        // Assert
+        Assert.True(probe.HandlerDisposed);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenValidatingOnBuild_ReportsMissingHandlerDependency()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(MissingDependencyCommandHandler).Assembly);
+
+        // Act & Assert
+        var exception = Assert.Throws<AggregateException>(() =>
+            _services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }));
+
+        Assert.Contains(nameof(IUnregisteredDependency), exception.Message);
+        Assert.Contains(nameof(MissingDependencyCommandHandler), exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_ResolvesOnlyTheDecoratedHandlerThroughTheInterface()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(PlainCommandHandler).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handlers = provider.GetServices<ICommandHandler<PlainCommand>>().ToList();
+
+        // Assert
+        var handler = Assert.Single(handlers);
+
+        Assert.IsType<CommandLoggingDecorator<PlainCommand>>(handler);
     }
 
     private static AssemblyBuilder CreateAssemblyWithHook(string typeName, Type hookInterface)
