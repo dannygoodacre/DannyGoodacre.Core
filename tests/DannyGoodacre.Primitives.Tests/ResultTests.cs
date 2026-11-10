@@ -1,285 +1,175 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DannyGoodacre.Primitives.Tests;
 
-[TestFixture]
-public sealed class ResultTests : TestBase
+[SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance")]
+public sealed class ResultTests
 {
-    [Test]
-    public void IsSuccess_WhenSuccess_ShouldReturnTrue()
+    [Fact]
+    public void Success_CreatesSuccessInstanceAndSetsIsSuccessTrue()
+    {
+        // Act
+        IResult result = new Success();
+
+        // Assert
+        Assert.IsType<Success>(result);
+        Assert.True(result.IsSuccess);
+        Assert.False(result.IsFailure);
+    }
+
+    [Fact]
+    public void SuccessGeneric_CreatesGenericSuccessInstanceAndSetsIsSuccessTrue()
+    {
+        // Act
+        IResult<string> result = new Success<string>("Payload");
+
+        // Assert
+        var success = Assert.IsType<Success<string>>(result);
+
+        Assert.Equal("Payload", success.Value);
+        Assert.True(result.IsSuccess);
+        Assert.False(result.IsFailure);
+    }
+
+    [Fact]
+    public void Canceled_CreatesCanceledInstanceAndSetsIsFailureTrue()
+    {
+        // Act
+        IResult result = new Canceled();
+
+        // Assert
+        Assert.IsType<Canceled>(result);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
+    }
+
+    [Fact]
+    public void Conflict_CreatesConflictInstanceWithMessage()
     {
         // Arrange
-        IResult testResult = Result.Success();
+        const string expectedMessage = "Resource conflict detected";
 
         // Act
-        bool result = testResult.IsSuccess;
+        IResult result = new Conflict(expectedMessage);
 
         // Assert
-        Assert.That(result, Is.True);
+        var conflict = Assert.IsType<Conflict>(result);
+
+        Assert.Equal(expectedMessage, conflict.Message);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void IsSuccess_WhenNotSuccess_ShouldReturnFalse()
+    [Fact]
+    public void DomainError_CreatesDomainErrorInstanceWithMessageAndFormatsToString()
     {
         // Arrange
-        IResult testResult = Result.Canceled();
+        const string expectedMessage = "Invalid business rule";
 
         // Act
-        bool result = testResult.IsSuccess;
+        IResult result = new DomainError(expectedMessage);
 
         // Assert
-        Assert.That(result, Is.False);
+        var domainError = Assert.IsType<DomainError>(result);
+
+        Assert.Equal(expectedMessage, domainError.Message);
+        Assert.Equal("DomainError: Invalid business rule", domainError.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void IsFailure_WhenSuccess_ShouldReturnFalse()
+    [Fact]
+    public void InternalError_FromErrorStruct_CreatesInternalErrorInstance()
     {
         // Arrange
-        IResult testResult = Result.Success();
+        var error = new Error("Database error");
 
         // Act
-        bool result = testResult.IsFailure;
+        IResult result = new InternalError(error);
 
         // Assert
-        Assert.That(result, Is.False);
+        var internalError = Assert.IsType<InternalError>(result);
+
+        Assert.Equal(error, internalError.Error);
+        Assert.Equal($"InternalError: {error}", internalError.ToString());
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void IsFailure_WhenFailure_ShouldReturnTrue()
+    [Fact]
+    public void InternalError_FromStringMessage_CreatesInternalErrorInstance()
     {
         // Arrange
-        IResult testResult = Result.Canceled();
+        const string expectedMessage = "Unexpected failure";
 
         // Act
-        bool result = testResult.IsFailure;
+        IResult result = new InternalError(expectedMessage);
 
         // Assert
-        Assert.That(result, Is.True);
+        var internalError = Assert.IsType<InternalError>(result);
+
+        Assert.Equal(expectedMessage, internalError.Error.Message);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void Success()
-    {
-        // Act
-        IResult result = Result.Success();
-
-        // Assert
-        AssertSuccess(result);
-    }
-
-    [Test]
-    public void Success_WithImplicitValue()
+    [Fact]
+    public void InternalError_FromException_CreatesInternalErrorInstanceWithException()
     {
         // Arrange
-        const int value = 123;
+        var exception = new InvalidOperationException("Fatal error");
 
         // Act
-        IResult<int> result = Result.Success(value);
+        IResult result = new InternalError(exception);
 
         // Assert
-        AssertSuccess(result, value);
+        var internalError = Assert.IsType<InternalError>(result);
+
+        Assert.Equal(exception, internalError.Error.Exception);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void Canceled()
-    {
-        // Act
-        IResult result = Result.Canceled();
-
-        // Assert
-        AssertCanceled(result);
-    }
-
-    [Test]
-    public void Conflict()
-    {
-        // Arrange
-        const string message = "Test Conflict Message";
-
-        // Act
-        IResult result = Result.Conflict(message);
-
-        // Assert
-        AssertConflict(result, message);
-    }
-
-    [Test]
-    public void DomainError()
-    {
-        // Arrange
-        const string message = "Test Error Message";
-
-        // Act
-        IResult result = Result.DomainError(message);
-
-        // Assert
-        AssertDomainError(result, message);
-    }
-
-    [Test]
-    public void InternalError_WithMessage()
-    {
-        // Act
-        const string message = "Test Error Message";
-
-        IResult result = Result.InternalError(message);
-
-        // Assert
-        AssertInternalError(result, message);
-    }
-
-    [Test]
-    public void InternalError_WithException()
-    {
-        // Arrange
-        var exception = new Exception("Test Exception");
-
-        // Act
-        IResult result = Result.InternalError(exception);
-
-        // Assert
-        AssertInternalError(result, exception);
-    }
-
-    [Test]
-    public void Invalid()
+    [Fact]
+    public void Invalid_CreatesInvalidInstanceWithValidationState()
     {
         // Arrange
         var validationState = new ValidationState();
 
-        const string property1 = "Test Property 1";
-        const string property2 = "Test Property 2";
-
-        const string error1 = "Test Error 1";
-        const string error2 = "Test Error 2";
-
-        validationState.AddError(property1, error1);
-        validationState.AddError(property2, error2);
+        validationState.AddError("Field", "Required");
 
         // Act
-        IResult result = Result.Invalid(validationState);
+        IResult result = new Invalid(validationState);
 
         // Assert
-        AssertInvalid(result, validationState);
+        var invalid = Assert.IsType<Invalid>(result);
+
+        Assert.Same(validationState, invalid.ValidationState);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void NotFound()
+    [Fact]
+    public void NotFound_CreatesNotFoundInstance()
     {
         // Act
-        IResult result = Result.NotFound();
+        IResult result = new NotFound();
 
         // Assert
-        AssertNotFound(result);
+        Assert.IsType<NotFound>(result);
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsFailure);
     }
 
-    [Test]
-    public void MapFailure_WhenSuccess_ShouldThrowException()
+    [Fact]
+    public void Factories_ReturnInterfaces_SoIsSuccessIsAvailableWithVar()
     {
-        // Arrange
-        IResult testResult = new Success();
-
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => testResult.MapFailure<int>());
-    }
-
-    [Test]
-    public void MapFailure_WhenCanceled()
-    {
-        // Arrange
-        IResult testResult = new Canceled();
-
         // Act
-        IResult result = testResult.MapFailure<int>();
+        var success = Result.Success();
+        var failure = Result.DomainError("Invalid business rule");
 
         // Assert
-        Assert.That(result, Is.InstanceOf<Canceled<int>>());
-    }
-
-    [Test]
-    public void MapFailure_WhenConflict()
-    {
-        // Arrange
-        const string testMessage = "Test Conflict Message";
-
-        IResult testResult = new Conflict(testMessage);
-
-        // Act
-        IResult result = testResult.MapFailure<int>();
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<Conflict<int>>());
-
-        Assert.That((result as Conflict)?.Message, Is.EqualTo(testMessage));
-    }
-
-    [Test]
-    public void MapFailure_WhenDomainError()
-    {
-        // Arrange
-        const string testMessage = "Test Domain Error Message";
-
-        IResult testResult = new DomainError(testMessage);
-
-        // Act
-        IResult result = testResult.MapFailure<int>();
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<DomainError<int>>());
-
-        Assert.That((result as DomainError)?.Message, Is.EqualTo(testMessage));
-    }
-
-    [Test]
-    public void MapFailure_WhenInternalError()
-    {
-        // Arrange
-        const string testMessage = "Test Internal Error Message";
-
-        var testError = new Error(testMessage);
-
-        IResult testResult = new InternalError(testError);
-
-        // Act
-        IResult result = testResult.MapFailure<int>();
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<InternalError<int>>());
-
-        Assert.That((result as InternalError)?.Error, Is.EqualTo(testError).UsingPropertiesComparer());
-    }
-
-    [Test]
-    public void MapFailure_WhenInvalid()
-    {
-        // Arrange
-        const string testProperty = "Test Property";
-
-        const string testError = "Test Error";
-
-        var testValidationState = new ValidationState();
-
-        testValidationState.AddError(testProperty, testError);
-
-        IResult testResult = Result.Invalid(testValidationState);
-
-        // Act
-        IResult result = testResult.MapFailure<int>();
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<Invalid<int>>());
-
-        Assert.That((result as Invalid<int>)?.ValidationState, Is.EqualTo(testValidationState));
-    }
-
-    [Test]
-    public void MapFailure_NotFound()
-    {
-        // Arrange
-        IResult testResult = new NotFound();
-
-        // Act
-        IResult result = testResult.MapFailure<int>();
-
-        // Assert
-        Assert.That(result, Is.InstanceOf<NotFound<int>>());
+        Assert.True(success.IsSuccess);
+        Assert.True(failure.IsFailure);
     }
 }

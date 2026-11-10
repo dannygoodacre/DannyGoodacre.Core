@@ -19,6 +19,14 @@ jobs:
               with:
                 dotnet-version: '10.0.x'
 
+            - name: Make README links absolute
+              run: |
+                BASE="${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/src"
+                for readme in src/*/README.md; do
+                  project=$(basename "$(dirname "$readme")")
+                  perl -pi -e "s{\]\((?!https?://|#)}{](${BASE}/${project}/}g; s{/src/[^/)]+/\.\./}{/src/}g" "$readme"
+                done
+
             - name: Pack
               run: |
                 dotnet pack src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj \

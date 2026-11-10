@@ -35,13 +35,14 @@ jobs:
           dotnet test \
             --configuration Release \
             --no-build \
-            --collect:"XPlat Code Coverage" \
+            --coverage \
+            --coverage-output-format cobertura \
             --results-directory ./coverage_data
 
       - name: Generate Report
         run: |
           reportgenerator \
-            -reports:./coverage_data/*/coverage.cobertura.xml \
+            -reports:./coverage_data/*.cobertura.xml \
             -targetdir:coverage_report \
             -reporttypes:"Html;MarkdownSummaryGithub"
 
