@@ -60,3 +60,10 @@ Tests use xUnit v3 on Microsoft.Testing.Platform. `global.json` opts `dotnet tes
 - **Registration:** Use primary constructors for dependency injection. Do not write explicit private `readonly` fields and constructor assignments.
 - **API Endpoints:** Prefer Minimal APIs / FastEndpoints / Carter over fat MVC controllers unless working in a legacy project.
 - **Logging:** Use `ILogger<T>` with structured logging message templates (e.g., `_logger.LogInformation("Processing order {OrderId}", order.Id)`—do not use string interpolation `$""`).
+
+## Comments
+- **Only when necessary:** Write a comment only when the code cannot show *why* something was done, for example a non-obvious constraint, a workaround, or a decision that a future change could easily break. Most code needs no comment.
+- **Never how:** Do not describe what the code does or how it works; the code shows that.
+- **Never about changes:** Do not write comments that narrate an edit, its history, or how the code used to be (for example "now uses keyed services", "moved from X", "fixed: …"). That belongs in the commit message or PR description.
+- **File overviews:** A short overview at the top of a file whose logic only makes sense across several methods is acceptable, such as the one in `ServiceCollectionExtensions.cs`. Keep it to the design decisions a change could break.
+- **Example project:** `DannyGoodacre.Cqrs.Examples` is teaching code. Its explanatory comments are intentional and quoted word for word by the docs, so do not remove them under these rules; if you change one, update the docs that quote it.

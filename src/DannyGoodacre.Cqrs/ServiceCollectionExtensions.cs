@@ -36,10 +36,8 @@ public static class ServiceCollectionExtensions
     /// a command that is not a state command; or a post-commit hook has no registered handler with a matching
     /// signature.
     /// </exception>
-    /// <remarks>
-    /// A classic extension method, not an extension block member. As an extension block member, the <c>params</c> array
-    /// caused a nullability warning (CS8620) in callers in other assemblies, although the arguments are not null.
-    /// </remarks>
+    // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
+    // (CS8620) in callers in other assemblies, although the arguments are not null.
     public static IServiceCollection AddCqrsHandlers(this IServiceCollection services, params Assembly[] assemblies)
     {
         services.ValidateRequestMarkerExclusion(assemblies);
