@@ -1,110 +1,167 @@
 namespace DannyGoodacre.Primitives.Tests;
 
-[TestFixture]
-public sealed class ValidationStateTests : TestBase
+public sealed class ValidationStateTests
 {
-    [Test]
-    public void Constructor_WhenErrorsIsEmpty_ShouldReturnNoErrors()
+    [Fact]
+    public void InitialState_HasErrorsIsFalseAndErrorsIsEmpty()
     {
         // Act
-        var validationState = new ValidationState();
+        var state = new ValidationState();
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(validationState.Errors, Is.Empty);
-
-            Assert.That(validationState.HasErrors, Is.False);
-        }
+        Assert.False(state.HasErrors);
+        Assert.Empty(state.Errors);
     }
 
-    [Test]
-    public void AddError_WhenErrorsWithSameProperties_ShouldReturnErrors()
+    [Fact]
+    public void AddError_AddsErrorToSpecifiedProperty()
     {
         // Arrange
-        const string testProperty = "Test Property";
-
-        const string testError1 = "Test Error 1";
-        const string testError2 = "Test Error 2";
-
-        var validationState = new ValidationState();
+        var state = new ValidationState();
 
         // Act
-        validationState.AddError(testProperty, testError1);
-        validationState.AddError(testProperty, testError2);
+        state.AddError("Name", "Name is required.");
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(validationState.HasErrors, Is.True);
+        Assert.True(state.HasErrors);
+        Assert.True(state.Errors.ContainsKey("Name"));
 
-            Assert.That(validationState.Errors, Has.Count.EqualTo(1));
-
-            Assert.That(validationState.Errors[testProperty], Is.EquivalentTo([testError1, testError2]));
-        }
+        var item = Assert.Single(state.Errors["Name"]);
+        Assert.Equal("Name is required.", item);
     }
 
-    [Test]
-    public void AddError_WhenErrorsWithDifferentProperties_ShouldReturnErrors()
+    [Fact]
+    public void AddError_IsCaseInsensitiveForPropertyNames()
     {
         // Arrange
-        const string testProperty1 = "Test Property 1";
-        const string testError1 = "Test Error 1";
-
-        const string testProperty2 = "Test Property 2";
-        const string testError2 = "Test Error 2";
-
-        var validationState = new ValidationState();
+        var state = new ValidationState();
 
         // Act
-        validationState.AddError(testProperty1, testError1);
-        validationState.AddError(testProperty2, testError2);
+        state.AddError("Email", "Email is required.");
+        state.AddError("email", "Email format is invalid.");
 
         // Assert
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(validationState.HasErrors, Is.True);
-            Assert.That(validationState.Errors, Has.Count.EqualTo(2));
-
-            Assert.That(validationState.Errors[testProperty1], Is.EqualTo([testError1]));
-            Assert.That(validationState.Errors[testProperty2], Is.EqualTo([testError2]));
-        }
+        Assert.Single(state.Errors);
+        Assert.Equal(2, state.Errors["Email"].Count);
+        Assert.Equal("Email is required.", state.Errors["Email"][0]);
+        Assert.Equal("Email format is invalid.", state.Errors["Email"][1]);
     }
 
-    [Test]
-    public void ToString_WhenErrorsIsEmpty_ShouldReturnEmptyString()
+    [Fact]
+    public void Merge_WhenOtherHasNoErrors_DoesNotModifyState()
     {
         // Arrange
-        var validationState = new ValidationState();
+        var state = new ValidationState();
+        state.AddError("Age", "Must be positive.");
+
+        var other = new ValidationState();
 
         // Act
-        string error = validationState.ToString();
+        state.Merge(other);
 
         // Assert
-        Assert.That(error, Is.Empty);
+        Assert.Single(state.Errors);
+        Assert.Equal("Must be positive.", state.Errors["Age"][0]);
     }
 
-    [Test]
-    public void ToString_WhenErrors_ShouldReturnErrorsAsString()
+    [Fact]
+    public void Merge_CombinesErrorsFromOtherInstance()
     {
         // Arrange
-        const string testProperty1 = "Test Property 1";
-        const string testError1 = "Test Error 1";
+        var state = new ValidationState();
+        state.AddError("Username", "Username is required.");
 
-        const string testProperty2 = "Test Property 2";
-        const string testError2 = "Test Error 2";
-
-        var validationState = new ValidationState();
-
-        validationState.AddError(testProperty1, testError1);
-        validationState.AddError(testProperty2, testError2);
-
-        string expectedError = $"{testProperty1}:{Environment.NewLine}  - {testError1}{Environment.NewLine}{testProperty2}:{Environment.NewLine}  - {testError2}";
+        var other = new ValidationState();
+        other.AddError("Username", "Username must be unique.");
+        other.AddError("Password", "Password is too short.");
 
         // Act
-        string error = validationState.ToString();
+        state.Merge(other);
 
         // Assert
-        Assert.That(error, Is.EqualTo(expectedError));
+        Assert.Equal(2, state.Errors.Count);
+        Assert.Equal(2, state.Errors["Username"].Count);
+        Assert.Single(state.Errors["Password"]);
+    }
+
+    [Fact]
+    public void ToString_WhenNoErrors_ReturnsEmptyString()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        // Act
+        string result = state.ToString();
+
+        // Assert
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Fact]
+    public void ToString_WhenHasErrors_ReturnsFormattedMultiLineString()
+    {
+        // Arrange
+        var state = new ValidationState();
+        state.AddError("Name", "Name is required.");
+        state.AddError("Name", "Name must be at least 3 characters.");
+        state.AddError("Age", "Must be 18 or older.");
+
+        string expected =
+            "Name:" + Environment.NewLine +
+            "  - Name is required." + Environment.NewLine +
+            "  - Name must be at least 3 characters." + Environment.NewLine +
+            "Age:" + Environment.NewLine +
+            "  - Must be 18 or older.";
+
+        // Act
+        string result = state.ToString();
+
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Errors_IsCaseInsensitiveForLookups()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Email", "Email is required.");
+
+        // Act & Assert
+        Assert.True(state.Errors.ContainsKey("email"));
+        Assert.Equal("Email is required.", Assert.Single(state.Errors["EMAIL"]));
+    }
+
+    [Fact]
+    public void Errors_DoesNotExposeTheInternalLists()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Name", "Name is required.");
+
+        // Act
+        IReadOnlyList<string> errors = state.Errors["Name"];
+
+        // Assert
+        Assert.IsNotType<List<string>>(errors, exactMatch: false);
+    }
+
+    [Fact]
+    public void Errors_AfterAddError_ShowsTheNewError()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        state.AddError("Name", "Name is required.");
+
+        _ = state.Errors;
+
+        // Act
+        state.AddError("Age", "Must be positive.");
+
+        // Assert
+        Assert.Equal(2, state.Errors.Count);
     }
 }

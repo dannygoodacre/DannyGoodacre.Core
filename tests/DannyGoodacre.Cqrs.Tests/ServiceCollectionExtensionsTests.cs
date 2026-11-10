@@ -1,196 +1,326 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DannyGoodacre.Cqrs.Tests;
 
-[TestFixture]
 public sealed class ServiceCollectionExtensionsTests
 {
-    private interface ITestCommand;
+    public sealed class TestStateCommand : IStateCommand;
 
-    private sealed class TestCommandHandler(ILogger logger)
-        : CommandHandler<ICommand>(logger), ITestCommand
+    public sealed class TestQuery : IQuery<string>;
+
+    public sealed class PlainCommand : ICommand;
+
+    public sealed class TestCommandHandler : ICommandHandler<TestStateCommand, string>
     {
-        protected override string CommandName => "Test Command";
+        public Task<IResult<string>> HandleAsync(TestStateCommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<string>>(new Success<string>("Handled"));
+    }
 
-        protected override Task<IResult> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
+    public sealed class PlainCommandHandler : ICommandHandler<PlainCommand>
+    {
+        public Task<IResult> HandleAsync(PlainCommand command, CancellationToken cancellationToken = default)
             => Task.FromResult<IResult>(new Success());
     }
 
-    private interface ITestCommandWithReturnValue;
-
-    private sealed class TestCommandWithReturnValueHandler(ILogger logger)
-        : CommandHandler<ICommand, int>(logger), ITestCommandWithReturnValue
+    public sealed class TestQueryHandler : IQueryHandler<TestQuery, string>
     {
-        protected override string CommandName => "Test Command With Return Value";
-
-        protected override Task<IResult<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult<int>>(new Success<int>(123));
+        public Task<IResult<string>> HandleAsync(TestQuery query, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<string>>(new Success<string>("Queried"));
     }
 
-    private sealed class StateUnit : IStateUnit
+    public sealed class TestValidator : IValidator<TestStateCommand>
     {
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public void Validate(TestStateCommand request, ValidationState state) { }
     }
 
-    private interface IStateCommand;
-
-    private sealed class TestStateCommandHandler(ILogger logger)
-        : StateCommandHandler<ICommand>(logger, new StateUnit()), IStateCommand
+    public sealed class TestPostCommitHook : IPostCommitHook<TestStateCommand, string>
     {
-
-        protected override string CommandName => "Test State Command";
-
-        protected override Task<IResult> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult>(new Success());
+        public Task AfterCommitAsync(TestStateCommand command, IResult<string> result, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 
-    private interface IStateCommandWithReturnValue;
+    private readonly ServiceCollection _services = new();
 
-    private sealed class TestStateCommandHandlerWithReturnValue(ILogger logger)
-        : StateCommandHandler<ICommand, int>(logger, new StateUnit()), IStateCommandWithReturnValue
+    public ServiceCollectionExtensionsTests()
     {
+        _services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
-        protected override string CommandName => "Test State Command With Return Value";
+        _services.AddSingleton<IStateUnit>(new Mock<IStateUnit>().Object);
 
-        protected override Task<IResult<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult<int>>(new Success<int>(123));
+        _services.AddSingleton<ITransactionUnit>(new Mock<ITransactionUnit>().Object);
     }
 
-    private sealed class TestTransactionUnit : ITransactionUnit
+    [Fact]
+    public void AddCqrsHandlers_WhenQueryImplementsStateCommandMarker_ThrowsInvalidOperationException()
     {
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => Task.FromResult(1);
+        // Arrange
+        var assemblyName = new AssemblyName("DynamicViolationAssembly");
 
-        public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken = default)
-            where TResult : IResult
-        {
-            return await operation(cancellationToken);
-        }
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+
+        var moduleBuilder = assemblyBuilder.DefineDynamicModule("MainModule");
+
+        var typeBuilder = moduleBuilder.DefineType("BadQuery", TypeAttributes.Public | TypeAttributes.Class);
+
+        typeBuilder.AddInterfaceImplementation(typeof(IQuery<string>));
+
+        typeBuilder.AddInterfaceImplementation(typeof(IStateCommand));
+
+        typeBuilder.CreateType();
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            _services.AddCqrsHandlers(assemblyBuilder));
+
+        Assert.Contains("Architectural Violation", exception.Message);
+
+        Assert.Contains("BadQuery", exception.Message);
     }
 
-    private interface ITestTransactionCommand;
-
-    private sealed class TestTransactionCommandHandler(ILogger logger)
-        : TransactionCommandHandler<ICommand>(logger, new TestTransactionUnit()), ITestTransactionCommand
+    [Fact]
+    public void AddCqrsHandlers_RegistersValidatorsAndPostCommitHooksInServiceCollection()
     {
-        protected override string CommandName => "Test Transaction Command";
+        // Arrange
+        Assembly testAssembly = typeof(TestCommandHandler).Assembly;
 
-        protected override Task<IResult> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult>(new Success());
+        // Act
+        _services.AddCqrsHandlers(testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Assert
+        var validator = provider.GetService<IValidator<TestStateCommand>>();
+
+        Assert.NotNull(validator);
+        Assert.IsType<TestValidator>(validator);
+
+        var hook = provider.GetService<IPostCommitHook<TestStateCommand, string>>();
+
+        Assert.NotNull(hook);
+        Assert.IsType<TestPostCommitHook>(hook);
     }
 
-    private interface ITestTransactionCommandWithReturnValue;
-
-    private sealed class TestTransactionCommandWithReturnValue(ILogger logger)
-        : TransactionCommandHandler<ICommand, int>(logger, new TestTransactionUnit()), ITestTransactionCommandWithReturnValue
+    [Fact]
+    public void AddCqrsHandlers_DecoratesCommandHandlerInCorrectPipelineOrder()
     {
-        protected override string CommandName => "Test Transaction Command With Return Value";
+        // Arrange
+        Assembly testAssembly = typeof(TestCommandHandler).Assembly;
 
-        protected override Task<IResult<int>> InternalExecuteAsync(ICommand command, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult<int>>(new Success<int>(123));
+        _services.AddCqrsHandlers(testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handler = provider.GetRequiredService<ICommandHandler<TestStateCommand, string>>();
+
+        // Assert
+        var loggingDecorator = Assert.IsType<CommandLoggingDecorator<TestStateCommand, string>>(handler);
+
+        object validationDecoratorObj = GetPrivateFieldValue(loggingDecorator, "inner");
+        var validationDecorator = Assert.IsType<CommandValidationDecorator<TestStateCommand, string>>(validationDecoratorObj);
+
+        object transactedDecoratorObj = GetPrivateFieldValue(validationDecorator, "inner");
+        var transactedDecorator = Assert.IsType<TransactedStateCommandDecorator<TestStateCommand, string>>(transactedDecoratorObj);
+
+        object stateDecoratorObj = GetPrivateFieldValue(transactedDecorator, "inner");
+        var stateDecorator = Assert.IsType<StateCommandDecorator<TestStateCommand, string>>(stateDecoratorObj);
+
+        object coreHandlerObj = GetPrivateFieldValue(stateDecorator, "inner");
+        Assert.IsType<TestCommandHandler>(coreHandlerObj);
     }
 
-    private interface ITestQuery;
-
-    private sealed class TestQueryHandler(ILogger logger) : QueryHandler<IQuery, int>(logger), ITestQuery
+    [Fact]
+    public void AddCqrsHandlers_DecoratesQueryHandlerInCorrectPipelineOrder()
     {
-        protected override string QueryName => "Test Query";
+        // Arrange
+        Assembly testAssembly = typeof(TestQueryHandler).Assembly;
 
-        protected override Task<IResult<int>> InternalExecuteAsync(IQuery query, CancellationToken cancellationToken = default)
-            => Task.FromResult<IResult<int>>(new Success<int>(123));
+        _services.AddCqrsHandlers(testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handler = provider.GetRequiredService<IQueryHandler<TestQuery, string>>();
+
+        // Assert
+        var loggingDecorator = Assert.IsType<QueryLoggingDecorator<TestQuery, string>>(handler);
+
+        object validationDecoratorObj = GetPrivateFieldValue(loggingDecorator, "inner");
+        var validationDecorator = Assert.IsType<QueryValidationDecorator<TestQuery, string>>(validationDecoratorObj);
+
+        object coreHandlerObj = GetPrivateFieldValue(validationDecorator, "inner");
+        Assert.IsType<TestQueryHandler>(coreHandlerObj);
     }
 
-    [Test]
-    public void AddCommandHandlers()
+    [Fact]
+    public void AddCqrsHandlers_WhenQueryStructImplementsStateCommandMarker_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName("DynamicStructAssembly"), AssemblyBuilderAccess.Run);
+
+        var typeBuilder = assemblyBuilder
+            .DefineDynamicModule("MainModule")
+            .DefineType("BadStructQuery", TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.SequentialLayout, typeof(ValueType));
+
+        typeBuilder.AddInterfaceImplementation(typeof(IQuery<string>));
+
+        typeBuilder.AddInterfaceImplementation(typeof(IStateCommand));
+
+        typeBuilder.CreateType();
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assemblyBuilder));
+
+        Assert.Contains("BadStructQuery", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookTargetsPlainCommand_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithHook("PlainCommandHook", typeof(IPostCommitHook<PlainCommand>));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("PlainCommandHook", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookHasNoResultTypeButHandlerReturnsValue_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(TestCommandHandler).Assembly);
+
+        // The handler is ICommandHandler<TestStateCommand, string>, so this hook would never run.
+        AssemblyBuilder assembly = CreateAssemblyWithHook("UntypedHook", typeof(IPostCommitHook<TestStateCommand>));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("UntypedHook", exception.Message);
+        Assert.Contains("ICommandHandler<TestStateCommand>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookResultTypeDiffersFromHandler_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(TestCommandHandler).Assembly);
+
+        AssemblyBuilder assembly = CreateAssemblyWithHook("WrongResultHook", typeof(IPostCommitHook<TestStateCommand, int>));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("WrongResultHook", exception.Message);
+        Assert.Contains("ICommandHandler<TestStateCommand, Int32>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookHandlerIsRegisteredInEarlierCall_RegistersHook()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(TestCommandHandler).Assembly);
+
+        AssemblyBuilder assembly = CreateAssemblyWithHook("ModuleHook", typeof(IPostCommitHook<TestStateCommand, string>));
+
+        // Act
+        _services.AddCqrsHandlers(assembly);
+
+        // Assert
+        Assert.Contains(_services, d => d.ServiceType == typeof(IPostCommitHook<TestStateCommand, string>) && d.ImplementationType?.Name == "ModuleHook");
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenCommandIsPlain_ResolvesWithoutPersistenceUnits()
     {
         // Arrange
         var services = new ServiceCollection();
 
-        services.AddSingleton(Mock.Of<ILogger>());
+        services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
 
-        Assembly assembly = Assembly.GetExecutingAssembly();
+        services.AddCqrsHandlers(typeof(PlainCommandHandler).Assembly);
+
+        using var provider = services.BuildServiceProvider();
 
         // Act
-        services.AddCommandHandlers(assembly);
+        var handler = provider.GetRequiredService<ICommandHandler<PlainCommand>>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        var loggingDecorator = Assert.IsType<CommandLoggingDecorator<PlainCommand>>(handler);
 
-        ITestCommand? command = provider.GetService<ITestCommand>();
+        object validationDecoratorObj = GetPrivateFieldValue(loggingDecorator, "inner");
+        var validationDecorator = Assert.IsType<CommandValidationDecorator<PlainCommand>>(validationDecoratorObj);
 
-        Assert.That(command, Is.Not.Null);
-
-        ITestCommand? commandWithValue = provider.GetService<ITestCommand>();
-
-        Assert.That(commandWithValue, Is.Not.Null);
-
-        ITestTransactionCommand? testUnitOfWorkCommand = provider.GetService<ITestTransactionCommand>();
-
-        Assert.That(testUnitOfWorkCommand, Is.Not.Null);
-
-        ITestTransactionCommandWithReturnValue? testUnitOfWorkCommandWithValue = provider.GetService<ITestTransactionCommandWithReturnValue>();
-
-        Assert.That(testUnitOfWorkCommandWithValue, Is.Not.Null);
-
-        using IServiceScope scope = provider.CreateScope();
-
-        ITestCommand commandHandler1 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
-        ITestCommand commandHandler2 = scope.ServiceProvider.GetRequiredService<ITestCommand>();
-
-        Assert.That(commandHandler1, Is.SameAs(commandHandler2));
-
-        ITestCommandWithReturnValue commandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
-        ITestCommandWithReturnValue commandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestCommandWithReturnValue>();
-
-        Assert.That(commandHandlerWithReturnValue1, Is.SameAs(commandHandlerWithReturnValue2));
-
-        IStateCommand stateCommandHandler1 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
-        IStateCommand stateCommandHandler2 = scope.ServiceProvider.GetRequiredService<IStateCommand>();
-
-        Assert.That(stateCommandHandler1, Is.SameAs(stateCommandHandler2));
-
-        IStateCommandWithReturnValue stateCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
-        IStateCommandWithReturnValue stateCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<IStateCommandWithReturnValue>();
-
-        Assert.That(stateCommandHandlerWithReturnValue1, Is.SameAs(stateCommandHandlerWithReturnValue2));
-
-        ITestTransactionCommand transactionCommandHandler1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
-        ITestTransactionCommand transactionCommandHandler2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommand>();
-
-        Assert.That(transactionCommandHandler1, Is.SameAs(transactionCommandHandler2));
-
-        ITestTransactionCommandWithReturnValue transactionCommandHandlerWithReturnValue1 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
-        ITestTransactionCommandWithReturnValue transactionCommandHandlerWithReturnValue2 = scope.ServiceProvider.GetRequiredService<ITestTransactionCommandWithReturnValue>();
-
-        Assert.That(transactionCommandHandlerWithReturnValue1, Is.SameAs(transactionCommandHandlerWithReturnValue2));
+        Assert.IsType<PlainCommandHandler>(GetPrivateFieldValue(validationDecorator, "inner"));
     }
 
-    [Test]
-    public void AddQueryHandlers()
+    private static AssemblyBuilder CreateAssemblyWithHook(string typeName, Type hookInterface)
+    {
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName($"Dynamic{typeName}Assembly"), AssemblyBuilderAccess.Run);
+
+        MethodInfo interfaceMethod = hookInterface.GetMethod("AfterCommitAsync")!;
+
+        var typeBuilder = assemblyBuilder
+            .DefineDynamicModule("MainModule")
+            .DefineType(typeName, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed);
+
+        typeBuilder.AddInterfaceImplementation(hookInterface);
+
+        MethodBuilder method = typeBuilder.DefineMethod(
+            interfaceMethod.Name,
+            MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+            typeof(Task),
+            [.. interfaceMethod.GetParameters().Select(p => p.ParameterType)]);
+
+        ILGenerator il = method.GetILGenerator();
+        il.Emit(OpCodes.Call, typeof(Task).GetProperty(nameof(Task.CompletedTask))!.GetMethod!);
+        il.Emit(OpCodes.Ret);
+
+        typeBuilder.DefineMethodOverride(method, interfaceMethod);
+
+        typeBuilder.CreateType();
+
+        return assemblyBuilder;
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenCalledTwice_DecoratesEachHandlerOneTime()
     {
         // Arrange
-        var services = new ServiceCollection();
+        Assembly testAssembly = typeof(TestCommandHandler).Assembly;
 
-        services.AddSingleton(Mock.Of<ILogger>());
+        _services.AddCqrsHandlers(testAssembly);
+        _services.AddCqrsHandlers(testAssembly);
 
-        Assembly assembly = Assembly.GetExecutingAssembly();
+        using var provider = _services.BuildServiceProvider();
 
         // Act
-        services.AddQueryHandlers(assembly);
+        var handler = provider.GetRequiredService<ICommandHandler<TestStateCommand, string>>();
 
         // Assert
-        ServiceProvider provider = services.BuildServiceProvider();
+        var loggingDecorator = Assert.IsType<CommandLoggingDecorator<TestStateCommand, string>>(handler);
 
-        ITestQuery? registeredHandler = provider.GetService<ITestQuery>();
+        Assert.IsType<CommandValidationDecorator<TestStateCommand, string>>(GetPrivateFieldValue(loggingDecorator, "inner"));
 
-        Assert.That(registeredHandler, Is.Not.Null);
+        Assert.Single(provider.GetServices<IValidator<TestStateCommand>>());
+        Assert.Single(provider.GetServices<IPostCommitHook<TestStateCommand, string>>());
+    }
 
-        using IServiceScope scope = provider.CreateScope();
+    private static object GetPrivateFieldValue(object target, string fieldName)
+    {
+        Type type = target.GetType();
 
-        ITestQuery query1 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
-        ITestQuery query2 = scope.ServiceProvider.GetRequiredService<ITestQuery>();
+        FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? type.GetField($"<{fieldName}>P", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?? type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                .FirstOrDefault(f => f.Name.Contains($"<{fieldName}>", StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Field '{fieldName}' not found on type '{type.Name}'.");
 
-        Assert.That(query1, Is.SameAs(query2));
+        return field.GetValue(target)!;
     }
 }

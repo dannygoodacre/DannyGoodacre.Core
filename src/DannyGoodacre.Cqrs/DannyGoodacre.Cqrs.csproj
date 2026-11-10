@@ -3,11 +3,12 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <PackageId>DannyGoodacre.Cqrs</PackageId>
-        <Version>0.13.0</Version>
+        <Version>0.14.0</Version>
         <Authors>Danny Goodacre</Authors>
         <Description>A lightweight CQRS and clean architecture foundation library including state and transaction control.</Description>
         <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
         <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -18,6 +19,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     </ItemGroup>
 
@@ -26,6 +31,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Testing"/>
         <InternalsVisibleTo Include="DannyGoodacre.Cqrs.Tests"/>
     </ItemGroup>
 
