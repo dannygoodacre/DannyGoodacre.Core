@@ -6,25 +6,14 @@
         <Project Path="src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj" />
         <Project Path="src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj" />
         <Project Path="src/DannyGoodacre.Cqrs.Examples/DannyGoodacre.Cqrs.Examples.csproj" />
-        <Project Path="src/Test/Test.csproj" />
-    </Folder>
-    <Folder Name="/src/DannyGoodacre.Identity/">
-        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj" />
-        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Abstractions/DannyGoodacre.Identity.Abstractions.csproj" />
-        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Configuration/DannyGoodacre.Identity.Configuration.csproj" />
-        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.Data/DannyGoodacre.Identity.Data.csproj" />
-        <Project Path="src\DannyGoodacre.Identity\DannyGoodacre.Identity.Domain\DannyGoodacre.Identity.Domain.csproj" />
+        <Project Path="src/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj" />
+        <Project Path="src/DannyGoodacre.Identity.Example/DannyGoodacre.Identity.Example.csproj" />
     </Folder>
     <Folder Name="/tests/">
         <Project Path="tests/DannyGoodacre.Primitives.Tests/DannyGoodacre.Primitives.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests/DannyGoodacre.Cqrs.EntityFrameworkCore.Tests.csproj" />
         <Project Path="tests/DannyGoodacre.Cqrs.Examples.Tests/DannyGoodacre.Cqrs.Examples.Tests.csproj" />
-        <Project Path="tests/DannyGoodacre.Cqrs.Tests/DannyGoodacre.Cqrs.Tests.csproj" />
-    </Folder>
-    <Folder Name="/tests/DannyGoodacre.Identity.Tests/">
-        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Application.Tests/DannyGoodacre.Identity.Application.Tests.csproj" />
-        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.Harness/DannyGoodacre.Identity.Tests.Harness.csproj" />
-        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.csproj" />
+        <Project Path="tests/DannyGoodacre.Identity.Tests/DannyGoodacre.Identity.Tests.csproj" />
     </Folder>
 </Solution>

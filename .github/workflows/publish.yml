@@ -49,6 +49,10 @@ jobs:
                 --configuration Release \
                 --output ${{ github.workspace }}/nupkg
 
+                dotnet pack src/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj \
+                --configuration Release \
+                --output ${{ github.workspace }}/nupkg
+
             - name: Push to GitHub Packages
               run: |
                 dotnet nuget push ./nupkg/*.nupkg \
