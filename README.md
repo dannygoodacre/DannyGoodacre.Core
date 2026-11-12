@@ -11,8 +11,9 @@ A set of .NET 10 libraries for structuring application logic: a result type for 
 | `DannyGoodacre.Cqrs.EntityFrameworkCore` | The EF Core implementation of the pipeline's persistence interfaces. | [README](./src/DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) |
 | `DannyGoodacre.Testing` | xUnit assertions for results, `ValidationState`, and `Error`. | [README](./src/DannyGoodacre.Testing/README.md) |
 | `DannyGoodacre.Cqrs.Testing` | Test contexts for the pipeline decorators, built on xUnit and Moq. | [README](./src/DannyGoodacre.Cqrs.Testing/README.md) |
+| `DannyGoodacre.Identity` | Username accounts with invite-code registration, admin-managed accounts and password resets, and cookie sign-in, on ASP.NET Core Identity. | [README](./src/DannyGoodacre.Identity/README.md) |
 
-`DannyGoodacre.Cqrs` builds on `DannyGoodacre.Primitives`, and each testing package builds on the package it tests. `DannyGoodacre.Primitives` can be used on its own.
+`DannyGoodacre.Cqrs` builds on `DannyGoodacre.Primitives`, and each testing package builds on the package it tests. `DannyGoodacre.Primitives` and `DannyGoodacre.Identity` can be used on their own.
 
 ## Installation
 
