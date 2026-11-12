@@ -8,7 +8,9 @@ internal static class UserManagerExtensions
     extension(UserManager<User> userManager)
     {
         public async Task<User?> FindUserAsync(ClaimsPrincipal principal)
-            => principal.GetUserId() is { } id ? await userManager.FindByIdAsync(id.ToString()) : null;
+            => principal.GetUserId() is { } id 
+                ? await userManager.FindByIdAsync(id.ToString()) 
+                : null;
 
         public Task<User?> FindUserAsync(Guid id)
             => userManager.FindByIdAsync(id.ToString());

@@ -38,9 +38,11 @@ internal static class UserEndpoints
             return invalid;
         }
 
-        var inviteCode = await contextAccessor.Context.Set<InviteCode>().AsNoTracking().SingleAsync(cancellationToken);
+        var inviteCode = await contextAccessor.Context.Set<InviteCode>()
+            .AsNoTracking()
+            .SingleAsync(cancellationToken);
 
-        if (!Guid.TryParse(request.InviteCode, out Guid code) || code != inviteCode.Code)
+        if (!Guid.TryParse(request.InviteCode, out var code) || code != inviteCode.Code)
         {
             return Problems.Forbidden("Invalid invite code.");
         }
@@ -58,7 +60,10 @@ internal static class UserEndpoints
             return Problems.From(result);
         }
 
-        return Results.Created(httpRequest.LocationOf(user.Id), await user.ToResponseAsync(userManager));
+        // Built from the request path rather than a route name, so this group does not depend on the admin group.
+        var location = $"{httpRequest.PathBase}{httpRequest.Path.Value?.TrimEnd('/')}/{user.Id}";
+
+        return Results.Created(location, await user.ToResponseAsync(userManager));
     }
 
     private static async Task<IResult> GetCurrentUserAsync(

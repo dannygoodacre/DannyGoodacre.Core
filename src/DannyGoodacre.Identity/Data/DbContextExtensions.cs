@@ -16,7 +16,7 @@ internal static class DbContextExtensions
     {
         var strategy = context.Database.CreateExecutionStrategy();
 
-        bool isRetry = false;
+        var isRetry = false;
 
         return await strategy.ExecuteAsync(async token =>
         {

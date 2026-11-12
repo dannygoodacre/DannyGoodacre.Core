@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using static DannyGoodacre.Identity.Tests.Infrastructure.HttpAssert;
@@ -118,6 +119,22 @@ public sealed class InfrastructureTests
         Assert.Equal(SameSiteMode.Lax, cookie.Cookie.SameSite);
         Assert.Equal(CookieSecurePolicy.SameAsRequest, cookie.Cookie.SecurePolicy);
         Assert.True(cookie.Cookie.HttpOnly);
+    }
+
+    [Fact]
+    public void SecurityStampValidationInterval_IsReadFromConfiguration()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Identity:SecurityStampValidationIntervalMinutes"] = "5" })
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddDbContext<TestIdentityContext>(options => options.UseSqlite("DataSource=:memory:"));
+
+        services.AddUsernameIdentity<TestIdentityContext>(configuration);
+
+        using var provider = services.BuildServiceProvider();
+        Assert.Equal(TimeSpan.FromMinutes(5), provider.GetRequiredService<IOptions<SecurityStampValidatorOptions>>().Value.ValidationInterval);
     }
 
     private static Task<int> CountKeysAsync(TestApp app)

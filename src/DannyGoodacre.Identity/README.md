@@ -67,12 +67,16 @@ The package has one option of its own, bound from the `Identity` configuration s
 ```json
 {
   "Identity": {
-    "InitialAdmin": { "Username": "admin", "Password": "..." }
+    "InitialAdmin": { "Username": "admin", "Password": "..." },
+    "SecurityStampValidationIntervalMinutes": 1
   }
 }
 ```
 
-`InitialAdmin` has a `Username`, a `Password`, and an `Email`, which is needed only when Identity requires a unique email. See [Startup initialization](#startup-initialization).
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `InitialAdmin` | none | `Username`, `Password`, and `Email` of the first admin; `Email` is needed only when Identity requires a unique email. See [Startup initialization](#startup-initialization). |
+| `SecurityStampValidationIntervalMinutes` | `1` | How often a signed-in user's cookie is checked against the database. See [How changes reach existing sessions](#how-changes-reach-existing-sessions). |
 
 Configure everything else through ASP.NET Core Identity, **after** `AddUsernameIdentity`, so your settings win:
 
@@ -84,7 +88,6 @@ builder.Services.Configure<IdentityOptions>(options =>
 });
 
 builder.Services.ConfigureApplicationCookie(options => options.ExpireTimeSpan = TimeSpan.FromDays(30));
-builder.Services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.FromMinutes(5));
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(4));
 ```
 
@@ -92,7 +95,7 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options => option
 
 | Setting | Value | Why |
 | --- | --- | --- |
-| `SecurityStampValidatorOptions.ValidationInterval` | 1 minute (Identity's default is 30) | How quickly admin changes, disabling, and password changes reach existing sessions |
+| `SecurityStampValidatorOptions.ValidationInterval` | `SecurityStampValidationIntervalMinutes`, 1 minute by default (Identity's default is 30) | How quickly admin changes, disabling, and password changes reach existing sessions |
 | Application cookie `OnRedirectToLogin`, `OnRedirectToAccessDenied` | 401 and 403 | These are API endpoints, so there is no login page to redirect to |
 
 Everything else is Identity's default: no email required, lockout for five minutes after five failed sign-ins, reset tokens valid for one day, and Identity's password rules.
@@ -174,7 +177,7 @@ Registration requires the current invite code. `InitializeIdentityAsync` creates
 
 ## How changes reach existing sessions
 
-The cookie is checked against the database every `SecurityStampValidatorOptions.ValidationInterval` (1 minute by default). At each check, the user's roles are reloaded, so:
+The cookie is checked against the database every `SecurityStampValidationIntervalMinutes` (1 minute by default). The check runs while handling a signed-in user's request, so idle users cost nothing. At each check, the user's roles are reloaded, so:
 
 - **Making a user an admin, or removing them,** reaches their existing sessions within the interval, **without** signing them out. Until then, their cookie still has the old role.
 - **Disabling an account, changing a password, and resetting a password** change the user's security stamp, which **signs the user out** of every session at the next check. Changing your own password keeps the session that made the change.

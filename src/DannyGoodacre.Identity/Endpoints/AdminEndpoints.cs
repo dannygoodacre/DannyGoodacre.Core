@@ -37,12 +37,23 @@ internal static class AdminEndpoints
 
     private static async Task<IResult> ListUsersAsync(UserManager<User> userManager, CancellationToken cancellationToken)
     {
-        var users = await userManager.Users.OrderBy(user => user.NormalizedUserName).ToListAsync(cancellationToken);
+        var users = await userManager.Users
+            .OrderBy(user => user.NormalizedUserName)
+            .ToListAsync(cancellationToken);
 
-        var adminIds = (await userManager.GetUsersInRoleAsync(IdentityDefaults.AdminRole)).Select(admin => admin.Id).ToHashSet();
+        var adminIds = (await userManager.GetUsersInRoleAsync(IdentityDefaults.AdminRole))
+            .Select(admin => admin.Id)
+            .ToHashSet();
 
-        return Results.Ok(users.Select(user =>
-            new UserResponse(user.Id, user.UserName ?? "", user.Email, adminIds.Contains(user.Id), !user.IsDisabled)));
+        var responses = users.Select(user => 
+            new UserResponse(
+                user.Id, 
+                user.UserName ?? "", 
+                user.Email, 
+                adminIds.Contains(user.Id),
+                !user.IsDisabled));
+
+        return Results.Ok(responses);
     }
 
     private static async Task<IResult> GetUserAsync(Guid id, UserManager<User> userManager)
@@ -64,8 +75,7 @@ internal static class AdminEndpoints
             return Results.NoContent();
         }
 
-        user.LockoutEnd = null;
-        user.AccessFailedCount = 0;
+        user.Enable();
 
         var result = await userManager.UpdateAsync(user);
 
@@ -98,8 +108,7 @@ internal static class AdminEndpoints
             return Results.NoContent();
         }
 
-        user.LockoutEnabled = true;
-        user.LockoutEnd = UserExtensions.DisabledUntil;
+        user.Disable();
 
         // Security stamp validation does not check lockout, so only a new stamp ends the user's sessions. This also
         // saves the lockout change.
@@ -129,7 +138,7 @@ internal static class AdminEndpoints
             return Problems.Conflict("The user is disabled, so a reset token would not let them sign in.");
         }
 
-        string token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
         return Results.Ok(new PasswordResetTokenResponse(user.UserName ?? "", token));
     }
@@ -152,7 +161,9 @@ internal static class AdminEndpoints
 
         var result = await userManager.AddToRoleAsync(user, IdentityDefaults.AdminRole);
 
-        return result.Succeeded ? Results.NoContent() : Problems.From(result);
+        return result.Succeeded 
+            ? Results.NoContent() 
+            : Problems.From(result);
     }
 
     private static async Task<IResult> RemoveAdminAsync(Guid id, UserManager<User> userManager)
@@ -176,12 +187,16 @@ internal static class AdminEndpoints
 
         var result = await userManager.RemoveFromRoleAsync(user, IdentityDefaults.AdminRole);
 
-        return result.Succeeded ? Results.NoContent() : Problems.From(result);
+        return result.Succeeded 
+            ? Results.NoContent() 
+            : Problems.From(result);
     }
 
     private static async Task<IResult> GetInviteCodeAsync(IIdentityContextAccessor contextAccessor, CancellationToken cancellationToken)
     {
-        var inviteCode = await contextAccessor.Context.Set<InviteCode>().AsNoTracking().SingleAsync(cancellationToken);
+        var inviteCode = await contextAccessor.Context.Set<InviteCode>()
+            .AsNoTracking()
+            .SingleAsync(cancellationToken);
 
         return Results.Ok(new InviteCodeResponse(inviteCode.Code));
     }

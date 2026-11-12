@@ -11,6 +11,8 @@ public static class ClaimsPrincipalExtensions
         /// </summary>
         /// <returns>The id, or <see langword="null"/> when the principal is not signed in.</returns>
         public Guid? GetUserId()
-            => Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out Guid id) ? id : null;
+            => Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out var id) 
+                ? id 
+                : null;
     }
 }

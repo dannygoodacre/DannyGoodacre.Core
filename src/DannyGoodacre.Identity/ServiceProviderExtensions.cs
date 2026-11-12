@@ -24,7 +24,7 @@ public static class ServiceProviderExtensions
         {
             await using var scope = serviceProvider.CreateAsyncScope();
 
-            IServiceProvider services = scope.ServiceProvider;
+            var services = scope.ServiceProvider;
 
             var context = services.GetRequiredService<IIdentityContextAccessor>().Context;
             var userManager = services.GetRequiredService<UserManager<User>>();

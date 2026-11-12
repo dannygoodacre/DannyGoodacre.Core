@@ -13,6 +13,12 @@ public sealed class IdentityProviderOptions
     /// this username exists. It can be removed from configuration after the first run.
     /// </summary>
     public InitialAdminOptions? InitialAdmin { get; set; }
+
+    /// <summary>
+    /// How often, in minutes, a signed-in user's cookie is checked against the database. Disabling, password changes,
+    /// and admin changes reach existing sessions within this interval. Zero checks on every request.
+    /// </summary>
+    public int SecurityStampValidationIntervalMinutes { get; set; } = 1;
 }
 
 public sealed class InitialAdminOptions

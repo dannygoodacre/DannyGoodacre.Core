@@ -1,3 +1,4 @@
+using DannyGoodacre.Identity.Accounts;
 using System.Net;
 using System.Net.Http.Json;
 using DannyGoodacre.Identity.Data;
@@ -178,7 +179,8 @@ public sealed class TestApp : IAsyncDisposable
 
             if (disabled)
             {
-                AssertSucceeded(await userManager.SetLockoutEndDateAsync(user, new DateTimeOffset(9999, 1, 1, 0, 0, 0, TimeSpan.Zero)));
+                user.Disable();
+                AssertSucceeded(await userManager.UpdateSecurityStampAsync(user));
             }
 
             return user.Id;
