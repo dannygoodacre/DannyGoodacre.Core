@@ -10,6 +10,12 @@
 //
 // Configuration mistakes that would otherwise fail silently, such as a hook that could never run, throw here instead.
 // The method may be called once per module; each call wraps only its own handlers, and registers shared services once.
+//
+// An open generic validator V<T> : IValidator<T> is registered as an open generic, so the container closes it per
+// request and leaves it out for a request that does not meet its constraints. Any other open generic validator, and
+// every open generic handler or hook, throws: a handler must be closed to be decorated, the hook checks need the closed
+// command type, and skipping them would leave code that never runs. Abstract types are not scanned, so an abstract
+// generic base class works through the closed classes derived from it.
 
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +38,9 @@ public static class ServiceCollectionExtensions
     /// <param name="assemblies">The assemblies to scan for CQRS types.</param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance for chaining.</returns>
     /// <exception cref="InvalidOperationException">
-    /// A type implements both <see cref="IQuery{TResult}"/> and a state command marker; a post-commit hook targets
+    /// A type implements both <see cref="IQuery{TResult}"/> and a state command marker; a non-abstract open generic
+    /// type is a handler, a post-commit hook, or a validator whose only type parameter is not the request type; a
+    /// post-commit hook targets
     /// a command that is not a state command; or a post-commit hook has no registered handler with a matching
     /// signature.
     /// </exception>
@@ -48,7 +56,9 @@ public static class ServiceCollectionExtensions
                 .Select(t => new ScannedType(t, t.GetInterfaces())),
         ];
 
-        services.ValidateRequestMarkerExclusion(types);
+        IServiceCollection.ValidateRequestMarkerExclusion(types);
+
+        IServiceCollection.ValidateOpenGenericTypes(types);
 
         services.TryAddScoped<PostCommitScope>();
 
@@ -167,7 +177,9 @@ public static class ServiceCollectionExtensions
 
             foreach (var reg in validatorTypes)
             {
-                services.TryAddEnumerable(ServiceDescriptor.Scoped(reg.Iface, reg.Impl));
+                services.TryAddEnumerable(!reg.Impl.ContainsGenericParameters
+                    ? ServiceDescriptor.Scoped(reg.Iface, reg.Impl)
+                    : ServiceDescriptor.Scoped(typeof(IValidator<>), reg.Impl));
             }
         }
 
@@ -215,20 +227,39 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        private void ValidateRequestMarkerExclusion(ScannedType[] types)
+        private static void ValidateOpenGenericTypes(ScannedType[] types)
+        {
+            var invalidTypes = types
+                .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: true })
+                .Where(t => t.Interfaces.Any(i => !IsRegistrableOpenGenericInterface(t.Type, i)))
+                .Select(t => FormatTypeName(t.Type))
+                .ToList();
+
+            if (invalidTypes.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    $"The following open generic types cannot be registered, so they would never run: {string.Join(", ", invalidTypes)}. " +
+                    $"Handlers and post-commit hooks must be closed types, and an open generic validator must have one type parameter " +
+                    $"that is the request type, as in V<TRequest> : IValidator<TRequest>. Make the type abstract and derive closed types from it.");
+            }
+        }
+
+        private static void ValidateRequestMarkerExclusion(ScannedType[] types)
         {
             var invalidRequests = types
                 .Where(t => IsQueryRequest(t.Interfaces) && IsStateCommand(t.Type))
                 .Select(t => t.Type)
                 .ToList();
 
-            if (invalidRequests.Count > 0)
+            if (invalidRequests.Count <= 0)
             {
-                string invalidNames = string.Join(", ", invalidRequests.Select(t => t.Name));
-                
-                throw new InvalidOperationException(
-                    $"Architectural Violation: The following requests implement both IQuery and command state markers ({invalidNames}). Queries must be read-only.");
+                return;
             }
+            
+            var invalidNames = string.Join(", ", invalidRequests.Select(t => t.Name));
+                
+            throw new InvalidOperationException(
+                $"Architectural Violation: The following requests implement both IQuery and command state markers ({invalidNames}). Queries must be read-only.");
         }
     }
 
@@ -236,6 +267,29 @@ public static class ServiceCollectionExtensions
     private sealed class InnerHandlerKey;
 
     private readonly record struct ScannedType(Type Type, Type[] Interfaces);
+
+    // The container closes an open generic by passing the service's type arguments to the implementation in order,
+    // so only a validator of the form V<T> : IValidator<T> can be registered open.
+    private static bool IsRegistrableOpenGenericInterface(Type implementation, Type interfaceType)
+    {
+        if (!interfaceType.IsGenericType)
+        {
+            return true;
+        }
+
+        Type definition = interfaceType.GetGenericTypeDefinition();
+
+        if (definition == typeof(IValidator<>))
+        {
+            return implementation.GetGenericArguments() is [var typeParameter]
+                && interfaceType.GetGenericArguments()[0] == typeParameter;
+        }
+
+        return !IsCommandHandlerInterface(interfaceType)
+            && !IsQueryHandlerInterface(interfaceType)
+            && definition != typeof(IPostCommitHook<>)
+            && definition != typeof(IPostCommitHook<,>);
+    }
 
     private static bool IsCommandHandlerInterface(Type type)
     {
@@ -260,9 +314,21 @@ public static class ServiceCollectionExtensions
 
     // For error messages: ICommandHandler<X, Guid> rather than ICommandHandler`2.
     private static string FormatTypeName(Type type)
-        => type.IsGenericType
-            ? $"{type.Name[..type.Name.IndexOf('`')]}<{string.Join(", ", type.GetGenericArguments().Select(FormatTypeName))}>"
-            : type.Name;
+    {
+        if (!type.IsGenericType)
+        {
+            return type.Name;
+        }
+
+        // A type nested in a generic type is generic without declaring its own type parameters, so its name has no `.
+        int arityIndex = type.Name.IndexOf('`');
+
+        string name = arityIndex < 0 
+            ? type.Name 
+            : type.Name[..arityIndex];
+
+        return $"{name}<{string.Join(", ", type.GetGenericArguments().Select(FormatTypeName))}>";
+    }
 
     private static bool IsQueryHandlerInterface(Type type)
         => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IQueryHandler<,>);

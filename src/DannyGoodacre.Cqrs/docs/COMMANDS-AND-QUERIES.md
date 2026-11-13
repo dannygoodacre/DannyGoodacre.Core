@@ -48,6 +48,31 @@ A validator implements `IValidator<TRequest>`. `AddCqrsHandlers` registers valid
 
 `Validate` is synchronous, so checks that need the database belong in the handler instead.
 
+### Open generic validators
+
+A validator can be an open generic over the request type, with constraints that pick which requests it applies to. `AddCqrsHandlers` registers it as an open generic, so it runs for every request that meets its constraints, alongside that request's own validators:
+
+```csharp
+public interface IHasEmail
+{
+    string Email { get; }
+}
+
+public sealed class EmailValidator<TRequest> : IValidator<TRequest>
+    where TRequest : IRequest, IHasEmail
+{
+    public void Validate(TRequest request, ValidationState validationState)
+    {
+        if (!request.Email.Contains('@'))
+        {
+            validationState.AddError(nameof(IHasEmail.Email), "Email is invalid.");
+        }
+    }
+}
+```
+
+The validator must have one type parameter, and it must be the request type, as in `EmailValidator<TRequest> : IValidator<TRequest>`. `AddCqrsHandlers` throws `InvalidOperationException` at startup for any other open generic validator, such as `PageValidator<T> : IValidator<GetPageQuery<T>>`, because it would never run. To use one, make it abstract and derive closed classes from it, such as `GetCustomerPageValidator : PageValidator<CustomerDetails>`.
+
 A validator can inject other validators. The onboarding validator reuses the rules of its child command, so the outer command fails before the transaction starts. From [`Onboarding/OnboardCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Onboarding/OnboardCustomerCommand.cs):
 
 ```csharp

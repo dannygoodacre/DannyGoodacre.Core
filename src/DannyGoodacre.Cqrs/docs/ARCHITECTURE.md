@@ -59,7 +59,9 @@ Each step replaces the registration with a factory that builds the new decorator
 
 Each call to `AddCqrsHandlers` wraps only the handlers that it registers, so you can call it once per module. A validator or hook found by two calls is registered once. A handler you register yourself, outside `AddCqrsHandlers`, does not get the pipeline.
 
-At startup, `AddCqrsHandlers` also throws `InvalidOperationException` if a type implements both `IQuery<T>` and a state command marker, if a post-commit hook targets a command that is not a state command, or if a hook has no handler with a matching signature (see [Hook interfaces](POST-COMMIT-HOOKS.md#hook-interfaces)).
+Handlers and hooks must be closed types. `AddCqrsHandlers` does not scan abstract types, so an abstract generic base class such as `CrudHandler<T> : ICommandHandler<CreateCommand<T>>` works through the closed classes derived from it, such as `CustomerCrudHandler : CrudHandler<Customer>`. Validators can be open generics; see [Open generic validators](COMMANDS-AND-QUERIES.md#open-generic-validators).
+
+At startup, `AddCqrsHandlers` also throws `InvalidOperationException` if a type implements both `IQuery<T>` and a state command marker, if a non-abstract open generic type is a handler, a hook, or a validator that does not validate its own type parameter, if a post-commit hook targets a command that is not a state command, or if a hook has no handler with a matching signature (see [Hook interfaces](POST-COMMIT-HOOKS.md#hook-interfaces)).
 
 ### Why the order matters
 
