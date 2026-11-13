@@ -52,7 +52,7 @@ jobs:
           echo -e "## [Full coverage report artifact](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> coverage_report/SummaryGithub.md
 
       - name: Write to Job Summary
-        run: cat coverage_report/SummaryGithub.md >> $GITHUB_STEP_SUMMARY
+        run: cat coverage_report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Post Coverage Comment
         if: github.event_name == 'pull_request'

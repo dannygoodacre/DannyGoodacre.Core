@@ -1,18 +1,39 @@
 name: Publish NuGet Package
 
 on:
-    push:
-        branches: [ main ]
+    workflow_dispatch:
+        inputs:
+            version:
+                description: 'Version for all packages (e.g. 0.15.0 or 0.15.0-beta.1)'
+                required: true
+                type: string
 
 jobs:
     publish:
         runs-on: ubuntu-latest
         permissions:
             packages: write
-            contents: read
+            contents: write
+
+        env:
+            VERSION: ${{ inputs.version }}
 
         steps:
+            - name: Validate version
+              run: |
+                if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+                  echo "::error::'$VERSION' is not a valid version. Use MAJOR.MINOR.PATCH with an optional -prerelease suffix."
+                  exit 1
+                fi
+
             - uses: actions/checkout@v6
+
+            - name: Check tag does not exist
+              run: |
+                if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+                  echo "::error::Tag v$VERSION already exists. Choose a new version."
+                  exit 1
+                fi
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v5
@@ -31,31 +52,41 @@ jobs:
               run: |
                 dotnet pack src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
 
                 dotnet pack src/DannyGoodacre.Cqrs/DannyGoodacre.Cqrs.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
                 
                 dotnet pack src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
                 
                 dotnet pack src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
                 
                 dotnet pack src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
 
                 dotnet pack src/DannyGoodacre.Identity/DannyGoodacre.Identity.csproj \
                 --configuration Release \
+                -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
 
             - name: Push to GitHub Packages
               run: |
                 dotnet nuget push ./nupkg/*.nupkg \
                 --api-key ${{ secrets.GITHUB_TOKEN }} \
-                --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
-                --skip-duplicate
+                --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+            - name: Tag release
+              run: |
+                git tag "v$VERSION" "$GITHUB_SHA"
+                git push origin "v$VERSION"

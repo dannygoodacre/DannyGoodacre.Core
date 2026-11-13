@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <PackageId>DannyGoodacre.Identity</PackageId>
-    <Version>0.14.0</Version>
     <Authors>Danny Goodacre</Authors>
     <Description>Username accounts for small private ASP.NET Core apps: invite-code registration, admin-managed accounts and password resets, and cookie sign-in, on ASP.NET Core Identity.</Description>
     <RepositoryUrl>https://github.com/dannygoodacre/DannyGoodacre.Core</RepositoryUrl>
