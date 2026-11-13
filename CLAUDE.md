@@ -20,7 +20,7 @@ Tests use xUnit v3 on Microsoft.Testing.Platform. `global.json` opts `dotnet tes
 
 ## Releases
 
-- Releases are manual: run `publish.yml` from the Actions tab and enter a version. It packs all six packages at that version (`-p:Version`) and pushes them to GitHub Packages; a version that already exists fails the push. The `.csproj` files carry no `<Version>`, so local builds are 1.0.0. The packages stay in step, which `DannyGoodacre.Cqrs.Testing`'s exact-version pin relies on.
+- Releases are manual: run `publish.yml` from the Actions tab and enter a version. It packs all six packages at that version (`-p:Version`), pushes them to GitHub Packages, then tags the commit `v<version>`; a version whose tag or packages already exist fails the run. The `.csproj` files carry no `<Version>`, so local builds are 1.0.0. The packages stay in step, which `DannyGoodacre.Cqrs.Testing`'s exact-version pin relies on.
 - Each package packs its `README.md`. `publish.yml` rewrites relative links to absolute GitHub URLs before packing, so keep links relative in the repository.
 
 ## Architecture

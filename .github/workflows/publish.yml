@@ -13,7 +13,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             packages: write
-            contents: read
+            contents: write
 
         env:
             VERSION: ${{ inputs.version }}
@@ -27,6 +27,13 @@ jobs:
                 fi
 
             - uses: actions/checkout@v6
+
+            - name: Check tag does not exist
+              run: |
+                if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+                  echo "::error::Tag v$VERSION already exists. Choose a new version."
+                  exit 1
+                fi
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v5
@@ -78,3 +85,8 @@ jobs:
                 dotnet nuget push ./nupkg/*.nupkg \
                 --api-key ${{ secrets.GITHUB_TOKEN }} \
                 --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+            - name: Tag release
+              run: |
+                git tag "v$VERSION" "$GITHUB_SHA"
+                git push origin "v$VERSION"
