@@ -40,18 +40,26 @@ public static class ServiceCollectionExtensions
     // (CS8620) in callers in other assemblies, although the arguments are not null.
     public static IServiceCollection AddCqrsHandlers(this IServiceCollection services, params Assembly[] assemblies)
     {
-        services.ValidateRequestMarkerExclusion(assemblies);
+        ScannedType[] types =
+        [
+            .. assemblies
+                .SelectMany(a => a.GetTypes())
+                .Where(t => t is { IsInterface: false, IsAbstract: false })
+                .Select(t => new ScannedType(t, t.GetInterfaces())),
+        ];
+
+        services.ValidateRequestMarkerExclusion(types);
 
         services.TryAddScoped<PostCommitScope>();
 
-        services.RegisterValidators(assemblies);
+        services.RegisterValidators(types);
 
         // Decorate only the handlers that this call adds. Then a second call does not wrap
         // the handlers of the first call again.
         var firstHandlerIndex = services.Count;
 
-        services.AddHandlers(IsCommandHandlerInterface, assemblies);
-        services.AddHandlers(IsQueryHandlerInterface, assemblies);
+        services.AddHandlers(IsCommandHandlerInterface, types);
+        services.AddHandlers(IsQueryHandlerInterface, types);
 
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<>), typeof(StateCommandDecorator<>), IsStateCommand);
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<,>), typeof(StateCommandDecorator<,>), IsStateCommand);
@@ -67,26 +75,20 @@ public static class ServiceCollectionExtensions
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<,>), typeof(CommandLoggingDecorator<,>));
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(IQueryHandler<,>), typeof(QueryLoggingDecorator<,>));
 
-        services.RegisterPostCommitHooks(assemblies);
+        services.RegisterPostCommitHooks(types);
 
         return services;
     }
 
     extension(IServiceCollection services)
     {
-        private IServiceCollection AddHandlers(Func<Type, bool> interfacePredicate, params Assembly[] assemblies)
+        private IServiceCollection AddHandlers(Func<Type, bool> interfacePredicate, ScannedType[] types)
         {
-            var handlerTypes = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t is { IsAbstract: false, IsClass: true });
-
-            foreach (Type handlerType in handlerTypes)
+            foreach (ScannedType handler in types.Where(t => t.Type.IsClass))
             {
-                var targetInterfaces = handlerType.GetInterfaces().Where(interfacePredicate);
-
-                foreach (Type interfaceType in targetInterfaces)
+                foreach (Type interfaceType in handler.Interfaces.Where(interfacePredicate))
                 {
-                    services.AddScoped(interfaceType, handlerType);
+                    services.AddScoped(interfaceType, handler.Type);
                 }
             }
 
@@ -156,12 +158,11 @@ public static class ServiceCollectionExtensions
             return descriptor.ImplementationFactory!;
         }
 
-        private void RegisterValidators(Assembly[] assemblies)
+        private void RegisterValidators(ScannedType[] types)
         {
-            var validatorTypes = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t is { IsClass: true, IsAbstract: false })
-                .SelectMany(t => t.GetInterfaces(), (impl, iface) => new { Impl = impl, Iface = iface })
+            var validatorTypes = types
+                .Where(t => t.Type.IsClass)
+                .SelectMany(t => t.Interfaces, (impl, iface) => new { Impl = impl.Type, Iface = iface })
                 .Where(x => x.Iface.IsGenericType && x.Iface.GetGenericTypeDefinition() == typeof(IValidator<>));
 
             foreach (var reg in validatorTypes)
@@ -170,14 +171,13 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        private void RegisterPostCommitHooks(Assembly[] assemblies)
+        private void RegisterPostCommitHooks(ScannedType[] types)
         {
             var hookGenericDefinitions = new[] { typeof(IPostCommitHook<>), typeof(IPostCommitHook<,>) };
 
-            var hookImplementations = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t is { IsClass: true, IsAbstract: false })
-                .SelectMany(t => t.GetInterfaces(), (impl, iface) => new { Impl = impl, Iface = iface })
+            var hookImplementations = types
+                .Where(t => t.Type.IsClass)
+                .SelectMany(t => t.Interfaces, (impl, iface) => new { Impl = impl.Type, Iface = iface })
                 .Where(x => x.Iface.IsGenericType && hookGenericDefinitions.Contains(x.Iface.GetGenericTypeDefinition()))
                 .ToList();
 
@@ -215,12 +215,11 @@ public static class ServiceCollectionExtensions
             }
         }
 
-        private void ValidateRequestMarkerExclusion(Assembly[] assemblies)
+        private void ValidateRequestMarkerExclusion(ScannedType[] types)
         {
-            var invalidRequests = assemblies
-                .SelectMany(a => a.GetTypes())
-                .Where(t => t is { IsInterface: false, IsAbstract: false })
-                .Where(t => IsQueryRequest(t) && IsStateCommand(t))
+            var invalidRequests = types
+                .Where(t => IsQueryRequest(t.Interfaces) && IsStateCommand(t.Type))
+                .Select(t => t.Type)
                 .ToList();
 
             if (invalidRequests.Count > 0)
@@ -235,6 +234,8 @@ public static class ServiceCollectionExtensions
 
     // Private, so only the decorators can resolve a bare handler.
     private sealed class InnerHandlerKey;
+
+    private readonly record struct ScannedType(Type Type, Type[] Interfaces);
 
     private static bool IsCommandHandlerInterface(Type type)
     {
@@ -269,6 +270,6 @@ public static class ServiceCollectionExtensions
     private static bool IsStateCommand(Type type)
         => typeof(IStateCommand).IsAssignableFrom(type) || typeof(ITransactedStateCommand).IsAssignableFrom(type);
 
-    private static bool IsQueryRequest(Type type)
-        => type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>));
+    private static bool IsQueryRequest(Type[] interfaces)
+        => interfaces.Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IQuery<>));
 }
