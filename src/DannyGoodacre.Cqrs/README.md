@@ -128,7 +128,7 @@ public IServiceCollection AddCustomerOnboarding(Action<IServiceProvider, DbConte
 ```
 
 - `AddEntityFrameworkUnits<TDbContext>()` registers one scoped `DbContextTransaction<TDbContext>` as both `IStateUnit` and `ITransactionUnit`. State command handlers need both.
-- `AddCqrsHandlers` scans the given assemblies, registers all handlers, validators, and post-commit hooks, and wraps each handler in the pipeline. You can call it more than once, for example once per module; each call wraps only the handlers it registers.
+- `AddCqrsHandlers` scans the given assemblies, registers all handlers, validators, and post-commit hooks, and wraps each handler in the pipeline. You can call it more than once, for example once per module; each call wraps only the handlers it registers, and skips any handler, validator, or hook already registered.
 - The pipeline needs logging. `WebApplication.CreateBuilder` registers it; in other hosts, call `services.AddLogging()`.
 
 ### 4. Send the command and read the result
@@ -170,3 +170,4 @@ dotnet run --project tests/DannyGoodacre.Cqrs.Examples.Tests # pipeline tests
 - **No control-flow exceptions.** Handlers return results. The pipeline converts unexpected exceptions to `InternalError` and cancellations to `Canceled`.
 - **Structured logs.** Each log entry has a fixed event ID from `CqrsLogEvent`.
 - **Read-only queries.** `AddCqrsHandlers` throws at startup if a type implements both `IQuery<T>` and a state command marker.
+- **One handler per request.** `AddCqrsHandlers` throws at startup if a request has more than one handler, or if a validator or hook would run twice because it derives from a concrete one. One exception lists every problem found.

@@ -85,7 +85,7 @@ warn: DannyGoodacre.Cqrs.Examples.Onboarding.OnboardCustomerCommand[1004] 'Onboa
 | `ListCustomersQueryHandler`, `ListPlansQueryHandler` | Closed handlers derived from the abstract `ListQueryHandler<TItem>` | The handlers of `ListQuery<CustomerDetails>` and `ListQuery<PlanDetails>` |
 | `RegisterCustomerAuditHook`, `OnboardCustomerAuditHook` | Closed hooks derived from the abstract `AuditHook<TCommand, TResult>` | A hook of each command |
 
-The abstract bases themselves are not registered. A type that `AddCqrsHandlers` cannot register makes it throw at startup, so those types live in the test project, which the application does not scan: [`InvalidOpenGenericTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/InvalidOpenGenericTypes.cs) has a non-abstract open generic handler and hook, open classes derived from the abstract bases, and validators whose type parameter is not the request type. [Open generic validators](COMMANDS-AND-QUERIES.md#open-generic-validators) explains the rules.
+The abstract bases themselves are not registered. A type that `AddCqrsHandlers` cannot register makes it throw at startup, so those types live in the test project, which the application does not scan: [`InvalidOpenGenericTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/InvalidOpenGenericTypes.cs) has a non-abstract open generic handler and hook, open classes derived from the abstract bases, and validators whose type parameter is not the request type. [Open generic validators](COMMANDS-AND-QUERIES.md#open-generic-validators) explains the rules. Likewise, [`DuplicateRegistrationTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/DuplicateRegistrationTypes.cs) has a second handler for `GetPlanQuery`, and a handler, a validator, and a hook each derived from a concrete one. [How AddCqrsHandlers builds the pipeline](ARCHITECTURE.md#how-addcqrshandlers-builds-the-pipeline) explains why each throws.
 
 ## Onboarding workflow
 
@@ -167,5 +167,7 @@ sequenceDiagram
 | [`ListingPipelineTests.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/ListingPipelineTests.cs) | Paged and search query tests: the derived handlers, and which open generic validators apply. |
 | [`OpenGenericRegistrationTests.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/OpenGenericRegistrationTests.cs) | Which generic types are registered, and the startup error for each type in `InvalidOpenGenericTypes.cs`. |
 | [`InvalidOpenGenericTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/InvalidOpenGenericTypes.cs) | Generic types that `AddCqrsHandlers` cannot register. |
+| [`DuplicateRegistrationTests.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/DuplicateRegistrationTests.cs) | The startup error for each type in `DuplicateRegistrationTypes.cs`. |
+| [`DuplicateRegistrationTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/DuplicateRegistrationTypes.cs) | A second handler for a request, and a handler, validator, and hook derived from concrete ones. |
 
 [TESTING.md](TESTING.md) describes the testing approach these tests use.
