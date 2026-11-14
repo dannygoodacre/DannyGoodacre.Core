@@ -28,6 +28,34 @@ public sealed class SendWelcomeEmailHook(IEmailSender emailSender)
 
 The pipeline calls hooks only after a success, so `result` is always the handler's success result. Use it to read the returned value, such as the new customer's ID.
 
+### Generic hooks
+
+A hook must be a closed type: `AddCqrsHandlers` throws for a non-abstract open generic hook, because the checks above need the command type. An abstract generic base class works through the closed hooks derived from it. From [`Auditing/AuditHook.cs`](../../DannyGoodacre.Cqrs.Examples/Auditing/AuditHook.cs):
+
+```csharp
+// An abstract generic base hook. AddCqrsHandlers registers only the closed hooks derived from it, because its startup
+// checks need the command type: a hook must target a state command whose handler has a matching signature.
+// A non-abstract open generic hook would make AddCqrsHandlers throw at startup.
+public abstract class AuditHook<TCommand, TResult>(ILogger<TCommand> logger) : IPostCommitHook<TCommand, TResult>
+    where TCommand : ICommand
+{
+    public Task AfterCommitAsync(TCommand command, IResult<TResult> result, CancellationToken cancellationToken = default)
+    {
+        logger.LogCommitted(typeof(TCommand).Name);
+
+        return Task.CompletedTask;
+    }
+}
+
+// A child command's hooks wait for the outermost commit, so onboarding logs both commands after its transaction
+// commits, and neither if it rolls back.
+public sealed class RegisterCustomerAuditHook(ILogger<RegisterCustomerCommand> logger)
+    : AuditHook<RegisterCustomerCommand, Guid>(logger);
+
+public sealed class OnboardCustomerAuditHook(ILogger<OnboardCustomerCommand> logger)
+    : AuditHook<OnboardCustomerCommand, Guid>(logger);
+```
+
 ## Delivery guarantee
 
 A hook is **best-effort**: it runs **at most once**, **after the commit**, and never after a rollback. It is not durable, so if the process stops between the commit and the hook, the side effect is lost.

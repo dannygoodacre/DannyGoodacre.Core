@@ -8,7 +8,7 @@ internal abstract class ValidationDecoratorBase<TRequest>(
     IEnumerable<IValidator<TRequest>> validators)
     where TRequest : IRequest
 {
-    private static readonly string RequestName = typeof(TRequest).Name;
+    private static readonly string RequestName = TypeNameFormatter.Format(typeof(TRequest));
 
     private readonly IValidator<TRequest>[] _validators = [.. validators];
 
@@ -46,7 +46,7 @@ internal abstract class ValidationDecoratorBase<TRequest, TResult>(
     where TRequest : IRequest
     where TResult : notnull
 {
-    private static readonly string RequestName = typeof(TRequest).Name;
+    private static readonly string RequestName = TypeNameFormatter.Format(typeof(TRequest));
 
     private readonly IValidator<TRequest>[] _validators = [.. validators];
 

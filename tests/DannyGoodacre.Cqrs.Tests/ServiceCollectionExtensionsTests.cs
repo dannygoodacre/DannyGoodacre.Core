@@ -84,6 +84,41 @@ public sealed class ServiceCollectionExtensionsTests
             => Task.CompletedTask;
     }
 
+    public interface IGroupedRequest;
+
+    public sealed class GroupedCommand : ICommand, IGroupedRequest;
+
+    public sealed class GroupedCommandHandler : ICommandHandler<GroupedCommand>
+    {
+        public Task<IResult> HandleAsync(GroupedCommand command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult>(new Success());
+    }
+
+    public sealed class GroupedQuery : IQuery<string>, IGroupedRequest;
+
+    public sealed class GroupedQueryHandler : IQueryHandler<GroupedQuery, string>
+    {
+        public Task<IResult<string>> HandleAsync(GroupedQuery query, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult<string>>(new Success<string>("Queried"));
+    }
+
+    public sealed class GroupedRequestValidator<TRequest> : IValidator<TRequest>
+        where TRequest : IRequest, IGroupedRequest
+    {
+        public void Validate(TRequest request, ValidationState validationState)
+            => validationState.AddError("Group", "Rejected by the group validator.");
+    }
+
+    public sealed class GenericCommand<T> : ICommand;
+
+    public abstract class GenericCommandHandler<T> : ICommandHandler<GenericCommand<T>>
+    {
+        public Task<IResult> HandleAsync(GenericCommand<T> command, CancellationToken cancellationToken = default)
+            => Task.FromResult<IResult>(new Success());
+    }
+
+    public sealed class StringGenericCommandHandler : GenericCommandHandler<string>;
+
     private readonly ServiceCollection _services = new();
 
     public ServiceCollectionExtensionsTests()
@@ -372,6 +407,224 @@ public sealed class ServiceCollectionExtensionsTests
         var handler = Assert.Single(handlers);
 
         Assert.IsType<CommandLoggingDecorator<PlainCommand>>(handler);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenValidatorIsOpenGeneric_RegistersItForRequestsMeetingItsConstraints()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(GroupedRequestValidator<>).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var groupedValidators = provider.GetServices<IValidator<GroupedCommand>>().ToList();
+        var otherValidators = provider.GetServices<IValidator<TestStateCommand>>().ToList();
+
+        // Assert
+        Assert.IsType<GroupedRequestValidator<GroupedCommand>>(Assert.Single(groupedValidators));
+        Assert.IsType<TestValidator>(Assert.Single(otherValidators));
+    }
+
+    [Fact]
+    public async Task AddCqrsHandlers_WhenOpenGenericValidatorRejectsCommand_ReturnsInvalid()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(GroupedCommandHandler).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        var handler = provider.GetRequiredService<ICommandHandler<GroupedCommand>>();
+
+        // Act
+        IResult result = await handler.HandleAsync(new GroupedCommand(), TestContext.Current.CancellationToken);
+
+        // Assert
+        var invalid = Assert.IsType<Invalid>(result);
+        Assert.True(invalid.ValidationState.HasErrors);
+    }
+
+    [Fact]
+    public async Task AddCqrsHandlers_WhenOpenGenericValidatorRejectsQuery_ReturnsInvalid()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(GroupedQueryHandler).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        var handler = provider.GetRequiredService<IQueryHandler<GroupedQuery, string>>();
+
+        // Act
+        IResult<string> result = await handler.HandleAsync(new GroupedQuery(), TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.IsType<Invalid<string>>(result);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenCalledTwice_RegistersOpenGenericValidatorOneTime()
+    {
+        // Arrange
+        Assembly testAssembly = typeof(GroupedRequestValidator<>).Assembly;
+
+        _services.AddCqrsHandlers(testAssembly);
+        _services.AddCqrsHandlers(testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var validators = provider.GetServices<IValidator<GroupedCommand>>();
+
+        // Assert
+        Assert.Single(validators);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenOpenGenericValidatorDoesNotValidateItsTypeParameter_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithOpenGenericType(
+            "WrappedValidator", typeof(IValidator<>), t => [typeof(GenericCommand<>).MakeGenericType(t)]);
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("WrappedValidator<T>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenOpenGenericValidatorValidatesClosedRequest_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithOpenGenericType(
+            "UnusedParameterValidator", typeof(IValidator<>), _ => [typeof(TestStateCommand)]);
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("UnusedParameterValidator<T>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenCommandHandlerIsOpenGeneric_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithOpenGenericType(
+            "OpenCommandHandler", typeof(ICommandHandler<,>), t => [t, typeof(string)], constraint: typeof(ICommand));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("OpenCommandHandler<T>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenQueryHandlerIsOpenGeneric_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithOpenGenericType(
+            "OpenQueryHandler", typeof(IQueryHandler<,>), t => [t, typeof(string)], constraint: typeof(IQuery<string>));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("OpenQueryHandler<T>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookIsOpenGeneric_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssemblyWithOpenGenericType(
+            "OpenHook", typeof(IPostCommitHook<>), t => [t], constraint: typeof(IStateCommand));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("OpenHook<T>", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHandlerDerivesFromAbstractOpenGenericBase_DecoratesTheClosedHandler()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(StringGenericCommandHandler).Assembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handler = provider.GetRequiredService<ICommandHandler<GenericCommand<string>>>();
+
+        // Assert
+        var loggingDecorator = Assert.IsType<CommandLoggingDecorator<GenericCommand<string>>>(handler);
+
+        object validationDecoratorObj = GetPrivateFieldValue(loggingDecorator, "inner");
+        var validationDecorator = Assert.IsType<CommandValidationDecorator<GenericCommand<string>>>(validationDecoratorObj);
+
+        Assert.IsType<StringGenericCommandHandler>(GetPrivateFieldValue(validationDecorator, "inner"));
+    }
+
+    // Emits a non-abstract open generic type T`1 that implements openInterface closed over interfaceArguments(T).
+    // Each method returns null or nothing; the tests only scan the type, so its methods never run.
+    private static AssemblyBuilder CreateAssemblyWithOpenGenericType(
+        string typeName,
+        Type openInterface,
+        Func<Type, Type[]> interfaceArguments,
+        Type? constraint = null)
+    {
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName($"Dynamic{typeName}Assembly"), AssemblyBuilderAccess.Run);
+
+        var typeBuilder = assemblyBuilder
+            .DefineDynamicModule("MainModule")
+            .DefineType($"{typeName}`1", TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed);
+
+        GenericTypeParameterBuilder typeParameter = typeBuilder.DefineGenericParameters("T")[0];
+
+        if (constraint is not null)
+        {
+            typeParameter.SetInterfaceConstraints(constraint);
+        }
+
+        Type[] arguments = interfaceArguments(typeParameter);
+
+        Type interfaceType = openInterface.MakeGenericType(arguments);
+
+        bool interfaceUsesTypeParameter = interfaceType.GetType() != typeof(object).GetType();
+
+        typeBuilder.AddInterfaceImplementation(interfaceType);
+
+        foreach (MethodInfo openMethod in openInterface.GetMethods())
+        {
+            MethodBuilder method = typeBuilder.DefineMethod(
+                openMethod.Name,
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+                Substitute(openMethod.ReturnType, arguments),
+                [.. openMethod.GetParameters().Select(p => Substitute(p.ParameterType, arguments))]);
+
+            ILGenerator il = method.GetILGenerator();
+
+            if (openMethod.ReturnType != typeof(void))
+            {
+                il.Emit(OpCodes.Ldnull);
+            }
+
+            il.Emit(OpCodes.Ret);
+
+            typeBuilder.DefineMethodOverride(
+                method,
+                interfaceUsesTypeParameter
+                    ? TypeBuilder.GetMethod(interfaceType, openMethod)
+                    : interfaceType.GetMethod(openMethod.Name)!);
+        }
+
+        typeBuilder.CreateType();
+
+        return assemblyBuilder;
+
+        static Type Substitute(Type type, Type[] arguments)
+            => type.IsGenericParameter ? arguments[type.GenericParameterPosition]
+                : type.IsGenericType ? type.GetGenericTypeDefinition().MakeGenericType([.. type.GetGenericArguments().Select(a => Substitute(a, arguments))])
+                : type;
     }
 
     private static AssemblyBuilder CreateAssemblyWithHook(string typeName, Type hookInterface)
