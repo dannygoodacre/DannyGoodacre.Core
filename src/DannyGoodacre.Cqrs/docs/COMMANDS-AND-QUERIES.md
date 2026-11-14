@@ -26,7 +26,7 @@ A type cannot implement both `IQuery<T>` and a state command marker; `AddCqrsHan
 | Command with a return value | `ICommandHandler<TCommand, TResult>` | `Task<IResult<TResult>>` |
 | Query | `IQueryHandler<TQuery, TResult>` | `Task<IResult<TResult>>` |
 
-`TResult` is non-nullable; return `NotFound` instead of `null`. `AddCqrsHandlers` finds and registers every handler in the assemblies you give it.
+`TResult` is non-nullable; return `NotFound` instead of `null`. `AddCqrsHandlers` finds and registers every handler in the assemblies you give it. Each request has exactly one handler: a second one, including a class derived from a concrete handler, makes `AddCqrsHandlers` throw at startup. To share code between handlers, put it in an abstract base class.
 
 The persistence decorators read `IsSuccess`, so returning a failure result is enough to stop the save, roll back the transaction, and skip the post-commit hooks. The pipeline also creates some results itself, which callers should expect alongside the handler's own:
 
@@ -47,6 +47,8 @@ A validator implements `IValidator<TRequest>`. `AddCqrsHandlers` registers valid
 3. If there are errors, it logs `RequestValidationFailed` (1007) and returns `Invalid` or `Invalid<T>`. No transaction starts, and neither the handler nor any hook runs.
 
 `Validate` is synchronous, so checks that need the database belong in the handler instead.
+
+To share rules between validators, derive them from an abstract base class. A validator derived from a non-abstract one is registered alongside it, so the base's rules would run twice and report each error twice; `AddCqrsHandlers` throws at startup instead. Make the base abstract to keep one validator with both sets of rules, or remove the inheritance to run them as separate validators. To reuse the base's rules for several requests, make it an abstract generic base and derive a closed validator for each request, as `ListQueryValidator<TItem>` does below.
 
 ### Open generic validators
 

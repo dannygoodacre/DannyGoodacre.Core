@@ -6,10 +6,19 @@
 // and plain commands need no persistence units.
 //
 // The bare handler moves to a keyed registration under a private key. The container still creates, disposes, and
-// validates it, but only the decorators can resolve it, so no caller can bypass the pipeline.
+// validates it, but only the decorators can resolve it, so no caller can bypass the pipeline. That keyed registration
+// keeps the handler's type, which is how a later call recognizes the handlers of earlier calls.
 //
 // Configuration mistakes that would otherwise fail silently, such as a hook that could never run, throw here instead.
+// Every check runs before the service collection changes, and all problems are reported in one exception, so a failed
+// call leaves the collection as it was and one restart shows every mistake.
 // The method may be called once per module; each call wraps only its own handlers, and registers shared services once.
+// A handler, validator, or hook that an earlier call registered is not registered again.
+//
+// Type.GetInterfaces includes inherited interfaces, so a class derived from a concrete handler, validator, or hook is
+// one too. Each request must have exactly one handler, so a second handler for the same handler interface throws,
+// whatever the reason. Several validators and hooks per request are allowed, but one derived from another concrete
+// one of the same interface throws, because the base would also run on its own.
 //
 // An open generic validator V<T> : IValidator<T> is registered as an open generic, so the container closes it per
 // request and leaves it out for a request that does not meet its constraints. Any other open generic validator, and
@@ -28,21 +37,27 @@ namespace DannyGoodacre.Cqrs;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
+    private static readonly Type[] HookDefinitions = [typeof(IPostCommitHook<>), typeof(IPostCommitHook<,>)];
+
     /// <summary>
     /// Scans assemblies to register CQRS command and query handlers, validators, and post-commit hooks,
     /// and wraps each handler in the logging and validation decorators. Handlers of
     /// <see cref="IStateCommand"/> and <see cref="ITransactedStateCommand"/> requests also get the state
     /// and transaction decorators.
     /// </summary>
+    /// <remarks>
+    /// A handler, validator, or hook registered by an earlier call is not registered again. All checks run before
+    /// the service collection changes, and one exception reports every problem found.
+    /// </remarks>
     /// <param name="services">The service collection to add the CQRS services to.</param>
     /// <param name="assemblies">The assemblies to scan for CQRS types.</param>
     /// <returns>The updated <see cref="IServiceCollection"/> instance for chaining.</returns>
     /// <exception cref="InvalidOperationException">
     /// A type implements both <see cref="IQuery{TResult}"/> and a state command marker; a non-abstract open generic
     /// type is a handler, a post-commit hook, or a validator whose only type parameter is not the request type; a
-    /// post-commit hook targets
-    /// a command that is not a state command; or a post-commit hook has no registered handler with a matching
-    /// signature.
+    /// handler interface has more than one implementation, in this call or with an earlier one; a validator or
+    /// post-commit hook derives from a non-abstract one of the same interface; a post-commit hook targets a command
+    /// that is not a state command; or a post-commit hook has no registered handler with a matching signature.
     /// </exception>
     // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
     // (CS8620) in callers in other assemblies, although the arguments are not null.
@@ -51,25 +66,60 @@ public static class ServiceCollectionExtensions
         ScannedType[] types =
         [
             .. assemblies
+                .Distinct()
                 .SelectMany(a => a.GetTypes())
                 .Where(t => t is { IsInterface: false, IsAbstract: false })
                 .Select(t => new ScannedType(t, t.GetInterfaces())),
         ];
 
-        IServiceCollection.ValidateRequestMarkerExclusion(types);
+        Registration[] handlers = FindHandlers(types);
+        Registration[] validators = FindValidators(types);
+        Registration[] hooks = FindHooks(types);
 
-        IServiceCollection.ValidateOpenGenericTypes(types);
+        string[] problems =
+        [
+            .. FindRequestMarkerConflicts(types),
+            .. FindUnregistrableOpenGenericTypes(types),
+            .. services.FindDuplicateHandlers(handlers),
+            .. services.FindConcreteBases(
+                validators,
+                [typeof(IValidator<>)],
+                "validators derive from another registered validator of the same request, so the base's rules would run twice",
+                "validator"),
+            .. services.FindConcreteBases(
+                hooks,
+                HookDefinitions,
+                "post-commit hooks derive from another registered hook of the same command, so the base hook would run twice",
+                "hook"),
+            .. FindHooksForPlainCommands(hooks),
+            .. services.FindUnmatchedHooks(hooks, handlers),
+        ];
+
+        if (problems.Length > 0)
+        {
+            throw new InvalidOperationException(problems.Length == 1
+                ? problems[0]
+                : $"{nameof(AddCqrsHandlers)} found {problems.Length} problems.{Environment.NewLine}{Environment.NewLine}" +
+                  string.Join(Environment.NewLine + Environment.NewLine, problems));
+        }
 
         services.TryAddScoped<PostCommitScope>();
 
-        services.RegisterValidators(types);
+        foreach (Registration validator in validators)
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Scoped(validator.Service, validator.Implementation));
+        }
+
+        HashSet<Registration> earlierHandlers = services.RegisteredHandlers();
 
         // Decorate only the handlers that this call adds. Then a second call does not wrap
         // the handlers of the first call again.
         var firstHandlerIndex = services.Count;
 
-        services.AddHandlers(IsCommandHandlerInterface, types);
-        services.AddHandlers(IsQueryHandlerInterface, types);
+        foreach (Registration handler in handlers.Where(h => !earlierHandlers.Contains(h)))
+        {
+            services.AddScoped(handler.Service, handler.Implementation);
+        }
 
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<>), typeof(StateCommandDecorator<>), IsStateCommand);
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<,>), typeof(StateCommandDecorator<,>), IsStateCommand);
@@ -85,26 +135,16 @@ public static class ServiceCollectionExtensions
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(ICommandHandler<,>), typeof(CommandLoggingDecorator<,>));
         services.DecorateOpenGeneric(firstHandlerIndex, typeof(IQueryHandler<,>), typeof(QueryLoggingDecorator<,>));
 
-        services.RegisterPostCommitHooks(types);
+        foreach (Registration hook in hooks)
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Scoped(hook.Service, hook.Implementation));
+        }
 
         return services;
     }
 
     extension(IServiceCollection services)
     {
-        private IServiceCollection AddHandlers(Func<Type, bool> interfacePredicate, ScannedType[] types)
-        {
-            foreach (ScannedType handler in types.Where(t => t.Type.IsClass))
-            {
-                foreach (Type interfaceType in handler.Interfaces.Where(interfacePredicate))
-                {
-                    services.AddScoped(interfaceType, handler.Type);
-                }
-            }
-
-            return services;
-        }
-
         private IServiceCollection DecorateOpenGeneric(
             int firstIndex,
             Type openServiceType,
@@ -168,98 +208,107 @@ public static class ServiceCollectionExtensions
             return descriptor.ImplementationFactory!;
         }
 
-        private void RegisterValidators(ScannedType[] types)
-        {
-            var validatorTypes = types
-                .Where(t => t.Type.IsClass)
-                .SelectMany(t => t.Interfaces, (impl, iface) => new { Impl = impl.Type, Iface = iface })
-                .Where(x => x.Iface.IsGenericType && x.Iface.GetGenericTypeDefinition() == typeof(IValidator<>));
+        // The handlers of earlier calls, read from the keyed registrations that hold the bare handlers.
+        private HashSet<Registration> RegisteredHandlers()
+            => services
+                .Where(d => d is { IsKeyedService: true, ServiceKey: InnerHandlerKey, KeyedImplementationType: not null })
+                .Select(d => new Registration(d.ServiceType, d.KeyedImplementationType!))
+                .ToHashSet();
 
-            foreach (var reg in validatorTypes)
+        private IEnumerable<Registration> RegisteredImplementations(Type[] serviceDefinitions)
+            => services
+                .Where(d => !d.IsKeyedService
+                    && d.ServiceType.IsGenericType
+                    && serviceDefinitions.Contains(d.ServiceType.GetGenericTypeDefinition()))
+                .Where(d => d.ImplementationType is not null)
+                .Select(d => new Registration(d.ServiceType, d.ImplementationType!));
+
+        private IEnumerable<string> FindDuplicateHandlers(Registration[] handlers)
+        {
+            var duplicates = services.RegisteredHandlers()
+                .Concat(handlers)
+                .Distinct()
+                .GroupBy(r => r.Service)
+                .Where(g => g.Count() > 1 && g.Any(handlers.Contains))
+                .Select(g =>
+                {
+                    Type[] implementations = [.. g.Select(r => r.Implementation)];
+
+                    var names = implementations.Select(i => DescribeWithBase(i, implementations));
+
+                    return $"{TypeNameFormatter.Format(g.Key)} ({string.Join(", ", names)})";
+                })
+                .ToList();
+
+            if (duplicates.Count > 0)
             {
-                services.TryAddEnumerable(!reg.Impl.ContainsGenericParameters
-                    ? ServiceDescriptor.Scoped(reg.Iface, reg.Impl)
-                    : ServiceDescriptor.Scoped(typeof(IValidator<>), reg.Impl));
+                yield return
+                    $"The following requests have more than one handler, so which one runs would be arbitrary: {string.Join("; ", duplicates)}. " +
+                    "Each request must have one handler. To share code between handlers, move it into an abstract base class.";
             }
         }
 
-        private void RegisterPostCommitHooks(ScannedType[] types)
+        // A non-abstract base is registered in its own right, so it would run alongside the type derived from it.
+        private IEnumerable<string> FindConcreteBases(
+            Registration[] registrations,
+            Type[] serviceDefinitions,
+            string problem,
+            string kind)
         {
-            var hookGenericDefinitions = new[] { typeof(IPostCommitHook<>), typeof(IPostCommitHook<,>) };
+            var all = services.RegisteredImplementations(serviceDefinitions).Concat(registrations).ToHashSet();
 
-            var hookImplementations = types
-                .Where(t => t.Type.IsClass)
-                .SelectMany(t => t.Interfaces, (impl, iface) => new { Impl = impl.Type, Iface = iface })
-                .Where(x => x.Iface.IsGenericType && hookGenericDefinitions.Contains(x.Iface.GetGenericTypeDefinition()))
-                .ToList();
+            var conflicts = new List<string>();
 
-            var invalidHooks = hookImplementations
-                .Where(x => !IsStateCommand(x.Iface.GetGenericArguments()[0]))
-                .Select(x => TypeNameFormatter.Format(x.Impl))
-                .Distinct()
-                .ToList();
-
-            if (invalidHooks.Count > 0)
+            foreach (Registration registration in all)
             {
-                throw new InvalidOperationException(
-                    $"The following post-commit hooks target commands that do not save state ({string.Join(", ", invalidHooks)}). " +
-                    $"A post-commit hook runs only for an {nameof(IStateCommand)} or an {nameof(ITransactedStateCommand)}.");
+                for (Type? baseType = registration.Implementation.BaseType;
+                     baseType is not null && baseType != typeof(object);
+                     baseType = baseType.BaseType)
+                {
+                    if (FindRegistration(all, registration.Service, baseType) is not { } baseRegistration)
+                    {
+                        continue;
+                    }
+
+                    if (registrations.Contains(registration) || registrations.Contains(baseRegistration))
+                    {
+                        conflicts.Add(
+                            $"{TypeNameFormatter.Format(registration.Implementation)} : {TypeNameFormatter.Format(baseRegistration.Implementation)} " +
+                            $"({TypeNameFormatter.Format(registration.Service)})");
+                    }
+
+                    break;
+                }
             }
 
-            var registeredServiceTypes = services.Select(d => d.ServiceType).ToHashSet();
+            if (conflicts.Count > 0)
+            {
+                yield return
+                    $"The following {problem}: {string.Join(", ", conflicts.Distinct())}. " +
+                    $"Make the base abstract to run it once as part of the derived {kind}, or remove the inheritance to run them as separate {kind}s.";
+            }
+        }
 
-            var unmatchedHooks = hookImplementations
-                .Where(x => !registeredServiceTypes.Contains(GetRequiredHandlerInterface(x.Iface)))
-                .Select(x => $"{TypeNameFormatter.Format(x.Impl)} (needs {TypeNameFormatter.Format(GetRequiredHandlerInterface(x.Iface))})")
+        private IEnumerable<string> FindUnmatchedHooks(Registration[] hooks, Registration[] handlers)
+        {
+            var registeredServiceTypes = services
+                .Select(d => d.ServiceType)
+                .Concat(handlers.Select(h => h.Service))
+                .ToHashSet();
+
+            var unmatchedHooks = hooks
+                .Where(h => IsStateCommand(h.Service.GetGenericArguments()[0]))
+                .Where(h => !registeredServiceTypes.Contains(GetRequiredHandlerInterface(h.Service)))
+                .Select(h => $"{TypeNameFormatter.Format(h.Implementation)} (needs {TypeNameFormatter.Format(GetRequiredHandlerInterface(h.Service))})")
                 .Distinct()
                 .ToList();
 
             if (unmatchedHooks.Count > 0)
             {
-                throw new InvalidOperationException(
+                yield return
                     $"The following post-commit hooks have no command handler with a matching signature, so they would never run: " +
-                    $"{string.Join(", ", unmatchedHooks)}. Register the handler in this call to {nameof(AddCqrsHandlers)} or an earlier one.");
+                    $"{string.Join(", ", unmatchedHooks)}. Register the handler in this call to {nameof(AddCqrsHandlers)} or an earlier one.";
             }
-
-            foreach (var reg in hookImplementations)
-            {
-                services.TryAddEnumerable(ServiceDescriptor.Scoped(reg.Iface, reg.Impl));
-            }
-        }
-
-        private static void ValidateOpenGenericTypes(ScannedType[] types)
-        {
-            var invalidTypes = types
-                .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: true })
-                .Where(t => t.Interfaces.Any(i => !IsRegistrableOpenGenericInterface(t.Type, i)))
-                .Select(t => TypeNameFormatter.Format(t.Type))
-                .ToList();
-
-            if (invalidTypes.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    $"The following open generic types cannot be registered, so they would never run: {string.Join(", ", invalidTypes)}. " +
-                    $"Handlers and post-commit hooks must be closed types, and an open generic validator must have one type parameter " +
-                    $"that is the request type, as in V<TRequest> : IValidator<TRequest>. Make the type abstract and derive closed types from it.");
-            }
-        }
-
-        private static void ValidateRequestMarkerExclusion(ScannedType[] types)
-        {
-            var invalidRequests = types
-                .Where(t => IsQueryRequest(t.Interfaces) && IsStateCommand(t.Type))
-                .Select(t => t.Type)
-                .ToList();
-
-            if (invalidRequests.Count <= 0)
-            {
-                return;
-            }
-            
-            var invalidNames = string.Join(", ", invalidRequests.Select(TypeNameFormatter.Format));
-                
-            throw new InvalidOperationException(
-                $"Architectural Violation: The following requests implement both IQuery and command state markers ({invalidNames}). Queries must be read-only.");
         }
     }
 
@@ -267,6 +316,122 @@ public static class ServiceCollectionExtensions
     private sealed class InnerHandlerKey;
 
     private readonly record struct ScannedType(Type Type, Type[] Interfaces);
+
+    // An open generic validator's Service is IValidator<> and its Implementation is the generic type definition.
+    private readonly record struct Registration(Type Service, Type Implementation);
+
+    private static Registration[] FindHandlers(ScannedType[] types)
+        =>
+        [
+            .. types
+                .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: false })
+                .SelectMany(t => t.Interfaces
+                    .Where(i => IsCommandHandlerInterface(i) || IsQueryHandlerInterface(i))
+                    .Select(i => new Registration(i, t.Type))),
+        ];
+
+    // Open generic validators that cannot be registered are left out; FindUnregistrableOpenGenericTypes reports them.
+    private static Registration[] FindValidators(ScannedType[] types)
+        =>
+        [
+            .. types
+                .Where(t => t.Type.IsClass)
+                .SelectMany(t => t.Interfaces
+                    .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IValidator<>))
+                    .Where(i => !t.Type.ContainsGenericParameters || IsRegistrableOpenGenericInterface(t.Type, i))
+                    .Select(i => t.Type.ContainsGenericParameters
+                        ? new Registration(typeof(IValidator<>), t.Type)
+                        : new Registration(i, t.Type))),
+        ];
+
+    private static Registration[] FindHooks(ScannedType[] types)
+        =>
+        [
+            .. types
+                .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: false })
+                .SelectMany(t => t.Interfaces
+                    .Where(i => i.IsGenericType && HookDefinitions.Contains(i.GetGenericTypeDefinition()))
+                    .Select(i => new Registration(i, t.Type))),
+        ];
+
+    // An open generic validator is registered under IValidator<> as its generic type definition, so a validator derived
+    // from one, open or closed, finds it by those.
+    private static Registration? FindRegistration(HashSet<Registration> registrations, Type service, Type baseType)
+    {
+        Registration[] candidates =
+        [
+            new(service, OpenIfGeneric(baseType)),
+            .. service.IsConstructedGenericType && baseType.IsGenericType
+                ? [new Registration(service.GetGenericTypeDefinition(), baseType.GetGenericTypeDefinition())]
+                : Array.Empty<Registration>(),
+        ];
+
+        return candidates.Where(registrations.Contains).Cast<Registration?>().FirstOrDefault();
+    }
+
+    // Names the nearest base class in the same list, so the message shows why a class counts as a handler.
+    private static string DescribeWithBase(Type implementation, Type[] implementations)
+    {
+        for (Type? baseType = implementation.BaseType; baseType is not null; baseType = baseType.BaseType)
+        {
+            if (implementations.Contains(baseType))
+            {
+                return $"{TypeNameFormatter.Format(implementation)} : {TypeNameFormatter.Format(baseType)}";
+            }
+        }
+
+        return TypeNameFormatter.Format(implementation);
+    }
+
+    private static Type OpenIfGeneric(Type type)
+        => type is { IsGenericType: true, ContainsGenericParameters: true } ? type.GetGenericTypeDefinition() : type;
+
+    private static IEnumerable<string> FindRequestMarkerConflicts(ScannedType[] types)
+    {
+        var invalidRequests = types
+            .Where(t => IsQueryRequest(t.Interfaces) && IsStateCommand(t.Type))
+            .Select(t => TypeNameFormatter.Format(t.Type))
+            .ToList();
+
+        if (invalidRequests.Count > 0)
+        {
+            yield return
+                $"Architectural Violation: The following requests implement both IQuery and command state markers ({string.Join(", ", invalidRequests)}). Queries must be read-only.";
+        }
+    }
+
+    private static IEnumerable<string> FindUnregistrableOpenGenericTypes(ScannedType[] types)
+    {
+        var invalidTypes = types
+            .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: true })
+            .Where(t => t.Interfaces.Any(i => !IsRegistrableOpenGenericInterface(t.Type, i)))
+            .Select(t => TypeNameFormatter.Format(t.Type))
+            .ToList();
+
+        if (invalidTypes.Count > 0)
+        {
+            yield return
+                $"The following open generic types cannot be registered, so they would never run: {string.Join(", ", invalidTypes)}. " +
+                $"Handlers and post-commit hooks must be closed types, and an open generic validator must have one type parameter " +
+                $"that is the request type, as in V<TRequest> : IValidator<TRequest>. Make the type abstract and derive closed types from it.";
+        }
+    }
+
+    private static IEnumerable<string> FindHooksForPlainCommands(Registration[] hooks)
+    {
+        var invalidHooks = hooks
+            .Where(h => !IsStateCommand(h.Service.GetGenericArguments()[0]))
+            .Select(h => TypeNameFormatter.Format(h.Implementation))
+            .Distinct()
+            .ToList();
+
+        if (invalidHooks.Count > 0)
+        {
+            yield return
+                $"The following post-commit hooks target commands that do not save state ({string.Join(", ", invalidHooks)}). " +
+                $"A post-commit hook runs only for an {nameof(IStateCommand)} or an {nameof(ITransactedStateCommand)}.";
+        }
+    }
 
     // The container closes an open generic by passing the service's type arguments to the implementation in order,
     // so only a validator of the form V<T> : IValidator<T> can be registered open.
@@ -287,8 +452,7 @@ public static class ServiceCollectionExtensions
 
         return !IsCommandHandlerInterface(interfaceType)
             && !IsQueryHandlerInterface(interfaceType)
-            && definition != typeof(IPostCommitHook<>)
-            && definition != typeof(IPostCommitHook<,>);
+            && !HookDefinitions.Contains(definition);
     }
 
     private static bool IsCommandHandlerInterface(Type type)

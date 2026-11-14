@@ -119,6 +119,17 @@ public sealed class ServiceCollectionExtensionsTests
 
     public sealed class StringGenericCommandHandler : GenericCommandHandler<string>;
 
+    public interface IAuditedRequest;
+
+    public sealed class AuditedCommand : ICommand, IAuditedRequest;
+
+    // Deliberately not sealed, so a test can derive a closed validator from this open generic one.
+    public class AuditedRequestValidator<TRequest> : IValidator<TRequest>
+        where TRequest : IRequest, IAuditedRequest
+    {
+        public void Validate(TRequest request, ValidationState validationState) { }
+    }
+
     private readonly ServiceCollection _services = new();
 
     public ServiceCollectionExtensionsTests()
@@ -675,8 +686,212 @@ public sealed class ServiceCollectionExtensionsTests
 
         Assert.IsType<CommandValidationDecorator<TestStateCommand, string>>(GetPrivateFieldValue(loggingDecorator, "inner"));
 
+        Assert.Single(provider.GetServices<ICommandHandler<TestStateCommand, string>>());
         Assert.Single(provider.GetServices<IValidator<TestStateCommand>>());
         Assert.Single(provider.GetServices<IPostCommitHook<TestStateCommand, string>>());
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenAssemblyIsPassedTwiceInOneCall_RegistersEachHandlerOneTime()
+    {
+        // Arrange
+        Assembly testAssembly = typeof(PlainCommandHandler).Assembly;
+
+        _services.AddCqrsHandlers(testAssembly, testAssembly);
+
+        using var provider = _services.BuildServiceProvider();
+
+        // Act
+        var handlers = provider.GetServices<ICommandHandler<PlainCommand>>();
+
+        // Assert
+        Assert.Single(handlers);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHandlerDerivesFromConcreteHandler_ThrowsNamingBoth()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssembly(
+            "ConcreteBaseHandler",
+            new EmittedClass("BaseHandler", Implements: typeof(ICommandHandler<PlainCommand>)),
+            new EmittedClass("DerivedHandler", BaseName: "BaseHandler"));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("ICommandHandler<PlainCommand> (BaseHandler, DerivedHandler : BaseHandler)", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenTwoUnrelatedHandlersHandleOneRequest_ThrowsNamingBoth()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssembly(
+            "UnrelatedHandlers",
+            new EmittedClass("FirstQueryHandler", Implements: typeof(IQueryHandler<TestQuery, string>)),
+            new EmittedClass("SecondQueryHandler", Implements: typeof(IQueryHandler<TestQuery, string>)));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("IQueryHandler<TestQuery, String> (FirstQueryHandler, SecondQueryHandler)", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenEarlierCallRegisteredAnotherHandlerForTheRequest_ThrowsNamingBoth()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(PlainCommandHandler).Assembly);
+
+        AssemblyBuilder assembly = CreateAssembly(
+            "ModuleHandler",
+            new EmittedClass("ModulePlainCommandHandler", Implements: typeof(ICommandHandler<PlainCommand>)));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("ICommandHandler<PlainCommand> (PlainCommandHandler, ModulePlainCommandHandler)", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenValidatorDerivesFromConcreteValidator_ThrowsNamingBoth()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssembly(
+            "ConcreteBaseValidator",
+            new EmittedClass("BaseValidator", Implements: typeof(IValidator<PlainCommand>)),
+            new EmittedClass("DerivedValidator", BaseName: "BaseValidator"));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("DerivedValidator : BaseValidator (IValidator<PlainCommand>)", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenValidatorDerivesFromOpenGenericValidatorOfEarlierCall_ThrowsNamingBoth()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(AuditedRequestValidator<>).Assembly);
+
+        AssemblyBuilder assembly = CreateAssembly(
+            "ClosedFromOpenValidator",
+            new EmittedClass("ClosedAuditedValidator", BaseType: typeof(AuditedRequestValidator<AuditedCommand>)));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains(
+            "ClosedAuditedValidator : AuditedRequestValidator<TRequest> (IValidator<AuditedCommand>)",
+            exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenHookDerivesFromConcreteHook_ThrowsNamingBoth()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(TestCommandHandler).Assembly);
+
+        AssemblyBuilder assembly = CreateAssembly(
+            "ConcreteBaseHook",
+            new EmittedClass("BaseHook", Implements: typeof(IPostCommitHook<TestStateCommand, string>)),
+            new EmittedClass("DerivedHook", BaseName: "BaseHook"));
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.Contains("DerivedHook : BaseHook (IPostCommitHook<TestStateCommand, String>)", exception.Message);
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenRequestHasUnrelatedValidatorsAndHooks_RegistersEach()
+    {
+        // Arrange
+        _services.AddCqrsHandlers(typeof(TestCommandHandler).Assembly);
+
+        AssemblyBuilder assembly = CreateAssembly(
+            "SiblingValidatorsAndHooks",
+            new EmittedClass("SiblingValidator", Implements: typeof(IValidator<TestStateCommand>)),
+            new EmittedClass("SiblingHook", Implements: typeof(IPostCommitHook<TestStateCommand, string>)));
+
+        // Act
+        _services.AddCqrsHandlers(assembly);
+
+        // Assert
+        Assert.Equal(2, _services.Count(d => d.ServiceType == typeof(IValidator<TestStateCommand>)));
+        Assert.Equal(2, _services.Count(d => d.ServiceType == typeof(IPostCommitHook<TestStateCommand, string>)));
+    }
+
+    [Fact]
+    public void AddCqrsHandlers_WhenThereAreSeveralProblems_ReportsEachInOneExceptionAndRegistersNothing()
+    {
+        // Arrange
+        AssemblyBuilder assembly = CreateAssembly(
+            "SeveralProblems",
+            new EmittedClass("FirstPlainCommandHandler", Implements: typeof(ICommandHandler<PlainCommand>)),
+            new EmittedClass("SecondPlainCommandHandler", Implements: typeof(ICommandHandler<PlainCommand>)),
+            new EmittedClass("PlainCommandHook", Implements: typeof(IPostCommitHook<PlainCommand>)));
+
+        int servicesBefore = _services.Count;
+
+        // Act & Assert
+        var exception = Assert.Throws<InvalidOperationException>(() => _services.AddCqrsHandlers(assembly));
+
+        Assert.StartsWith("AddCqrsHandlers found 2 problems.", exception.Message);
+        Assert.Contains("SecondPlainCommandHandler", exception.Message);
+        Assert.Contains("PlainCommandHook", exception.Message);
+        Assert.Equal(servicesBefore, _services.Count);
+    }
+
+    private sealed record EmittedClass(string Name, Type? Implements = null, string? BaseName = null, Type? BaseType = null);
+
+    // Emits public classes into one dynamic assembly, in order, so a class can derive from one emitted before it.
+    // A class that implements an interface gets methods that return null or nothing; the tests only scan the types,
+    // so the methods never run.
+    private static AssemblyBuilder CreateAssembly(string assemblyName, params EmittedClass[] classes)
+    {
+        var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(new AssemblyName($"Dynamic{assemblyName}Assembly"), AssemblyBuilderAccess.Run);
+
+        ModuleBuilder module = assemblyBuilder.DefineDynamicModule("MainModule");
+
+        var emitted = new Dictionary<string, Type>();
+
+        foreach (EmittedClass emittedClass in classes)
+        {
+            Type? parent = emittedClass.BaseName is { } baseName ? emitted[baseName] : emittedClass.BaseType;
+
+            TypeBuilder typeBuilder = module.DefineType(emittedClass.Name, TypeAttributes.Public | TypeAttributes.Class, parent);
+
+            if (emittedClass.Implements is { } interfaceType)
+            {
+                typeBuilder.AddInterfaceImplementation(interfaceType);
+
+                foreach (MethodInfo interfaceMethod in interfaceType.GetMethods())
+                {
+                    MethodBuilder method = typeBuilder.DefineMethod(
+                        interfaceMethod.Name,
+                        MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot,
+                        interfaceMethod.ReturnType,
+                        [.. interfaceMethod.GetParameters().Select(p => p.ParameterType)]);
+
+                    ILGenerator il = method.GetILGenerator();
+
+                    if (interfaceMethod.ReturnType != typeof(void))
+                    {
+                        il.Emit(OpCodes.Ldnull);
+                    }
+
+                    il.Emit(OpCodes.Ret);
+
+                    typeBuilder.DefineMethodOverride(method, interfaceMethod);
+                }
+            }
+
+            emitted[emittedClass.Name] = typeBuilder.CreateType();
+        }
+
+        return assemblyBuilder;
     }
 
     private static object GetPrivateFieldValue(object target, string fieldName)
