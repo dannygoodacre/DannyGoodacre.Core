@@ -59,7 +59,7 @@ Each step replaces the registration with a factory that builds the new decorator
 
 Each call to `AddCqrsHandlers` wraps only the handlers that it registers, so you can call it once per module. A validator or hook found by two calls is registered once. A handler you register yourself, outside `AddCqrsHandlers`, does not get the pipeline.
 
-Handlers and hooks must be closed types. `AddCqrsHandlers` does not scan abstract types, so an abstract generic base class such as `CrudHandler<T> : ICommandHandler<CreateCommand<T>>` works through the closed classes derived from it, such as `CustomerCrudHandler : CrudHandler<Customer>`. Validators can be open generics; see [Open generic validators](COMMANDS-AND-QUERIES.md#open-generic-validators).
+Handlers and hooks must be closed types. `AddCqrsHandlers` does not scan abstract types, so an abstract generic base class works through the closed classes derived from it. In the example project, `ListQueryHandler<TItem>` in [`Listing/ListQuery.cs`](../../DannyGoodacre.Cqrs.Examples/Listing/ListQuery.cs) is the base of `ListCustomersQueryHandler` and `ListPlansQueryHandler`, and `AuditHook<TCommand, TResult>` in [`Auditing/AuditHook.cs`](../../DannyGoodacre.Cqrs.Examples/Auditing/AuditHook.cs) is the base of one closed hook for each command. A non-abstract open generic handler or hook throws at startup, including one derived from such a base that is still open. Validators can be open generics; see [Open generic validators](COMMANDS-AND-QUERIES.md#open-generic-validators).
 
 At startup, `AddCqrsHandlers` also throws `InvalidOperationException` if a type implements both `IQuery<T>` and a state command marker, if a non-abstract open generic type is a handler, a hook, or a validator that does not validate its own type parameter, if a post-commit hook targets a command that is not a state command, or if a hook has no handler with a matching signature (see [Hook interfaces](POST-COMMIT-HOOKS.md#hook-interfaces)).
 
@@ -90,7 +90,7 @@ An `OperationCanceledException` becomes `Canceled` only if the caller's token is
 
 ## Log events
 
-Every log entry uses an event ID from `CqrsLogEvent` and the request type as its category.
+Every log entry uses an event ID from `CqrsLogEvent` and the request type as its category. Messages name the request by its type name, with the type arguments of a generic request written out, such as `'ListQuery<PlanDetails>' started`.
 
 | ID | Event | Level | Meaning |
 | --- | --- | --- | --- |

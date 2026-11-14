@@ -50,28 +50,33 @@ A validator implements `IValidator<TRequest>`. `AddCqrsHandlers` registers valid
 
 ### Open generic validators
 
-A validator can be an open generic over the request type, with constraints that pick which requests it applies to. `AddCqrsHandlers` registers it as an open generic, so it runs for every request that meets its constraints, alongside that request's own validators:
+A validator can be an open generic over the request type, with constraints that pick which requests it applies to. `AddCqrsHandlers` registers it as an open generic, so it runs for every request that meets its constraints, alongside that request's own validators. Each constraint must hold, so a validator constrained to two interfaces runs only for requests that implement both. From [`Listing/PagingValidators.cs`](../../DannyGoodacre.Cqrs.Examples/Listing/PagingValidators.cs):
 
 ```csharp
-public interface IHasEmail
+// The constraints must all hold, so this validator runs only for requests that are both paged and searchable.
+// ListQuery<TItem> is paged but not searchable, so it does not get this validator.
+public sealed class SearchPagingValidator<TRequest> : IValidator<TRequest>
+    where TRequest : IRequest, IPagedRequest, ISearchableRequest
 {
-    string Email { get; }
-}
+    public const int MaxSearchPage = 5;
 
-public sealed class EmailValidator<TRequest> : IValidator<TRequest>
-    where TRequest : IRequest, IHasEmail
-{
     public void Validate(TRequest request, ValidationState validationState)
     {
-        if (!request.Email.Contains('@'))
+        if (request.Page > MaxSearchPage)
         {
-            validationState.AddError(nameof(IHasEmail.Email), "Email is invalid.");
+            validationState.AddError(nameof(IPagedRequest.Page), $"Search results stop after page {MaxSearchPage}.");
         }
     }
 }
 ```
 
-The validator must have one type parameter, and it must be the request type, as in `EmailValidator<TRequest> : IValidator<TRequest>`. `AddCqrsHandlers` throws `InvalidOperationException` at startup for any other open generic validator, such as `PageValidator<T> : IValidator<GetPageQuery<T>>`, because it would never run. To use one, make it abstract and derive closed classes from it, such as `GetCustomerPageValidator : PageValidator<CustomerDetails>`.
+`IValidator<TRequest>` requires `TRequest : IRequest`, so an open validator repeats that constraint; with no other constraint, it runs for every request.
+
+The validator must have one type parameter, and that parameter must be the request type, as in `SearchPagingValidator<TRequest> : IValidator<TRequest>`. It may get that interface from an abstract generic base class: `PagingValidator<TRequest>` in the same file derives from [`ValidatorBase<TRequest>`](../../DannyGoodacre.Cqrs.Examples/Validation/ValidatorBase.cs), and `SearchCustomersQueryValidator` in [`Customers/ListCustomers.cs`](../../DannyGoodacre.Cqrs.Examples/Customers/ListCustomers.cs) is a closed validator derived from the same base.
+
+`AddCqrsHandlers` throws `InvalidOperationException` at startup for any other non-abstract open generic validator, because it would never run: one whose type parameter is inside the request type, such as `OpenListQueryValidator<TItem> : IValidator<ListQuery<TItem>>`, one that validates a closed request type, or one with two type parameters. [`InvalidOpenGenericTypes.cs`](../../../tests/DannyGoodacre.Cqrs.Examples.Tests/InvalidOpenGenericTypes.cs) in the example tests shows each case.
+
+To share rules across a generic request such as `ListQuery<TItem>`, make the generic validator abstract and derive a closed validator for each request type. `ListQueryValidator<TItem>` in [`Listing/PagingValidators.cs`](../../DannyGoodacre.Cqrs.Examples/Listing/PagingValidators.cs) sets a page size limit for each list, and `ListCustomersQueryValidator` and `ListPlansQueryValidator` derive from it, one for each list.
 
 A validator can inject other validators. The onboarding validator reuses the rules of its child command, so the outer command fails before the transaction starts. From [`Onboarding/OnboardCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Onboarding/OnboardCustomerCommand.cs):
 

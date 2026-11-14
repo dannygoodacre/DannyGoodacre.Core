@@ -4,6 +4,8 @@ public sealed class QueryLoggingDecoratorTests
 {
     public sealed class TestQuery : IQuery<string>;
 
+    public sealed class GenericTestQuery<T> : IQuery<string>;
+
     private sealed class QueryLoggingTestContext<TQuery, TResult>(MockBehavior mockBehavior = MockBehavior.Default)
         : TestContext<TQuery>
         where TQuery : class, IQuery<TResult>
@@ -41,5 +43,26 @@ public sealed class QueryLoggingDecoratorTests
 
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestSucceeded, LogLevel.Information);
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenQueryIsGeneric_LogsTheReadableTypeName()
+    {
+        // Arrange
+        var context = new QueryLoggingTestContext<GenericTestQuery<int>, string>();
+
+        var query = new GenericTestQuery<int>();
+
+        context.InnerMock
+            .Setup(x => x.HandleAsync(query, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Success<string>("Response"));
+
+        // Act
+        await context.CreatePipeline().HandleAsync(query, CancellationToken.None);
+
+        // Assert
+        var record = context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
+
+        Assert.Equal("'GenericTestQuery<Int32>' started", record.Message);
     }
 }

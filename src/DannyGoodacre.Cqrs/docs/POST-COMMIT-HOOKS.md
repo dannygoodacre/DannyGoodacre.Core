@@ -9,7 +9,7 @@ A post-commit hook runs a side effect after a state command's data is committed.
 | `ICommandHandler<TCommand>` | `IPostCommitHook<TCommand>` | `AfterCommitAsync(TCommand, IResult, CancellationToken)` |
 | `ICommandHandler<TCommand, TResult>` | `IPostCommitHook<TCommand, TResult>` | `AfterCommitAsync(TCommand, IResult<TResult>, CancellationToken)` |
 
-`AddCqrsHandlers` finds and registers hooks. A command can have several; they run in the order `AddCqrsHandlers` discovers them, so they should not depend on each other's order. A hook must target an `IStateCommand` or `ITransactedStateCommand`, and its interface must match the handler's: `IPostCommitHook<TCommand>` for a handler that returns no value, and `IPostCommitHook<TCommand, TResult>` with the same `TResult` for one that does. `AddCqrsHandlers` throws `InvalidOperationException` at startup for any other hook, because it would never run. The handler must be registered in the same call to `AddCqrsHandlers` as the hook, or an earlier one. A hook must also be a closed type: `AddCqrsHandlers` throws for a non-abstract open generic hook, but an abstract generic base class works through the closed hooks derived from it.
+`AddCqrsHandlers` finds and registers hooks. A command can have several; they run in the order `AddCqrsHandlers` discovers them, so they should not depend on each other's order. A hook must target an `IStateCommand` or `ITransactedStateCommand`, and its interface must match the handler's: `IPostCommitHook<TCommand>` for a handler that returns no value, and `IPostCommitHook<TCommand, TResult>` with the same `TResult` for one that does. `AddCqrsHandlers` throws `InvalidOperationException` at startup for any other hook, because it would never run. The handler must be registered in the same call to `AddCqrsHandlers` as the hook, or an earlier one.
 
 From [`Onboarding/OnboardCustomerCommand.cs`](../../DannyGoodacre.Cqrs.Examples/Onboarding/OnboardCustomerCommand.cs):
 
@@ -27,6 +27,34 @@ public sealed class SendWelcomeEmailHook(IEmailSender emailSender)
 ```
 
 The pipeline calls hooks only after a success, so `result` is always the handler's success result. Use it to read the returned value, such as the new customer's ID.
+
+### Generic hooks
+
+A hook must be a closed type: `AddCqrsHandlers` throws for a non-abstract open generic hook, because the checks above need the command type. An abstract generic base class works through the closed hooks derived from it. From [`Auditing/AuditHook.cs`](../../DannyGoodacre.Cqrs.Examples/Auditing/AuditHook.cs):
+
+```csharp
+// An abstract generic base hook. AddCqrsHandlers registers only the closed hooks derived from it, because its startup
+// checks need the command type: a hook must target a state command whose handler has a matching signature.
+// A non-abstract open generic hook would make AddCqrsHandlers throw at startup.
+public abstract class AuditHook<TCommand, TResult>(ILogger<TCommand> logger) : IPostCommitHook<TCommand, TResult>
+    where TCommand : ICommand
+{
+    public Task AfterCommitAsync(TCommand command, IResult<TResult> result, CancellationToken cancellationToken = default)
+    {
+        logger.LogCommitted(typeof(TCommand).Name);
+
+        return Task.CompletedTask;
+    }
+}
+
+// A child command's hooks wait for the outermost commit, so onboarding logs both commands after its transaction
+// commits, and neither if it rolls back.
+public sealed class RegisterCustomerAuditHook(ILogger<RegisterCustomerCommand> logger)
+    : AuditHook<RegisterCustomerCommand, Guid>(logger);
+
+public sealed class OnboardCustomerAuditHook(ILogger<OnboardCustomerCommand> logger)
+    : AuditHook<OnboardCustomerCommand, Guid>(logger);
+```
 
 ## Delivery guarantee
 

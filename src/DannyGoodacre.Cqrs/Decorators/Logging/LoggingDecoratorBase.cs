@@ -6,7 +6,7 @@ namespace DannyGoodacre.Cqrs;
 internal abstract class LoggingDecoratorBase<TRequest>(ILogger logger)
     where TRequest : IRequest
 {
-    private static readonly string RequestName = typeof(TRequest).Name;
+    private static readonly string RequestName = TypeNameFormatter.Format(typeof(TRequest));
 
     protected async Task<IResult> ExecuteWithLoggingAsync(
         Func<CancellationToken, Task<IResult>> next,
@@ -55,7 +55,7 @@ internal abstract class LoggingDecoratorBase<TRequest, TResult>(ILogger logger)
     where TRequest : IRequest
     where TResult : notnull
 {
-    private static readonly string RequestName = typeof(TRequest).Name;
+    private static readonly string RequestName = TypeNameFormatter.Format(typeof(TRequest));
 
     protected async Task<IResult<TResult>> ExecuteWithLoggingAsync(
         Func<CancellationToken, Task<IResult<TResult>>> next,

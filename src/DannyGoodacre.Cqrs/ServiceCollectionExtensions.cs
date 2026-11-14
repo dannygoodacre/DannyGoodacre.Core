@@ -195,7 +195,7 @@ public static class ServiceCollectionExtensions
 
             var invalidHooks = hookImplementations
                 .Where(x => !IsStateCommand(x.Iface.GetGenericArguments()[0]))
-                .Select(x => x.Impl.Name)
+                .Select(x => TypeNameFormatter.Format(x.Impl))
                 .Distinct()
                 .ToList();
 
@@ -210,7 +210,7 @@ public static class ServiceCollectionExtensions
 
             var unmatchedHooks = hookImplementations
                 .Where(x => !registeredServiceTypes.Contains(GetRequiredHandlerInterface(x.Iface)))
-                .Select(x => $"{x.Impl.Name} (needs {FormatTypeName(GetRequiredHandlerInterface(x.Iface))})")
+                .Select(x => $"{TypeNameFormatter.Format(x.Impl)} (needs {TypeNameFormatter.Format(GetRequiredHandlerInterface(x.Iface))})")
                 .Distinct()
                 .ToList();
 
@@ -232,7 +232,7 @@ public static class ServiceCollectionExtensions
             var invalidTypes = types
                 .Where(t => t.Type is { IsClass: true, ContainsGenericParameters: true })
                 .Where(t => t.Interfaces.Any(i => !IsRegistrableOpenGenericInterface(t.Type, i)))
-                .Select(t => FormatTypeName(t.Type))
+                .Select(t => TypeNameFormatter.Format(t.Type))
                 .ToList();
 
             if (invalidTypes.Count > 0)
@@ -256,7 +256,7 @@ public static class ServiceCollectionExtensions
                 return;
             }
             
-            var invalidNames = string.Join(", ", invalidRequests.Select(t => t.Name));
+            var invalidNames = string.Join(", ", invalidRequests.Select(TypeNameFormatter.Format));
                 
             throw new InvalidOperationException(
                 $"Architectural Violation: The following requests implement both IQuery and command state markers ({invalidNames}). Queries must be read-only.");
@@ -310,24 +310,6 @@ public static class ServiceCollectionExtensions
         return hookInterface.GetGenericTypeDefinition() == typeof(IPostCommitHook<>)
             ? typeof(ICommandHandler<>).MakeGenericType(genericArgs)
             : typeof(ICommandHandler<,>).MakeGenericType(genericArgs);
-    }
-
-    // For error messages: ICommandHandler<X, Guid> rather than ICommandHandler`2.
-    private static string FormatTypeName(Type type)
-    {
-        if (!type.IsGenericType)
-        {
-            return type.Name;
-        }
-
-        // A type nested in a generic type is generic without declaring its own type parameters, so its name has no `.
-        int arityIndex = type.Name.IndexOf('`');
-
-        string name = arityIndex < 0 
-            ? type.Name 
-            : type.Name[..arityIndex];
-
-        return $"{name}<{string.Join(", ", type.GetGenericArguments().Select(FormatTypeName))}>";
     }
 
     private static bool IsQueryHandlerInterface(Type type)

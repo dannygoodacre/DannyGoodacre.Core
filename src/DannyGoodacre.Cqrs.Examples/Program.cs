@@ -1,8 +1,10 @@
 using DannyGoodacre.Cqrs;
 using DannyGoodacre.Cqrs.Examples;
 using DannyGoodacre.Cqrs.Examples.Customers;
+using DannyGoodacre.Cqrs.Examples.Listing;
 using DannyGoodacre.Cqrs.Examples.Onboarding;
 using DannyGoodacre.Cqrs.Examples.Persistence;
+using DannyGoodacre.Cqrs.Examples.Plans;
 using DannyGoodacre.Primitives;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +40,9 @@ internal static class Program
         var register = scope.ServiceProvider.GetRequiredService<ICommandHandler<RegisterCustomerCommand, Guid>>();
         var onboard = scope.ServiceProvider.GetRequiredService<ICommandHandler<OnboardCustomerCommand, Guid>>();
         var getCustomer = scope.ServiceProvider.GetRequiredService<IQueryHandler<GetCustomerQuery, CustomerDetails>>();
+        var listCustomers = scope.ServiceProvider.GetRequiredService<IQueryHandler<ListQuery<CustomerDetails>, IReadOnlyList<CustomerDetails>>>();
+        var listPlans = scope.ServiceProvider.GetRequiredService<IQueryHandler<ListQuery<PlanDetails>, IReadOnlyList<PlanDetails>>>();
+        var searchCustomers = scope.ServiceProvider.GetRequiredService<IQueryHandler<SearchCustomersQuery, IReadOnlyList<CustomerDetails>>>();
 
         List<Guid> customerIds = [];
 
@@ -92,5 +97,42 @@ internal static class Program
                 _ => $"The query failed: {result}"
             });
         }
+
+        // Paged queries. The open generic PagingValidator checks every paged request,
+        // and the open generic SearchPagingValidator checks only the ones that are also searchable.
+        Console.WriteLine(DescribePage(
+            "Customers",
+            await listCustomers.HandleAsync(new ListQuery<CustomerDetails>(Page: 1, PageSize: 10)),
+            customer => customer.Name));
+
+        Console.WriteLine(DescribePage(
+            "Plans",
+            await listPlans.HandleAsync(new ListQuery<PlanDetails>(Page: 1, PageSize: 10)),
+            plan => plan.Code));
+
+        // Invalid: PagingValidator<ListQuery<PlanDetails>> rejects page 0.
+        Console.WriteLine(DescribePage(
+            "Plans",
+            await listPlans.HandleAsync(new ListQuery<PlanDetails>(Page: 0, PageSize: 10)),
+            plan => plan.Code));
+
+        Console.WriteLine(DescribePage(
+            "Customers named 'Jane'",
+            await searchCustomers.HandleAsync(new SearchCustomersQuery("Jane", Page: 1, PageSize: 10)),
+            customer => customer.Name));
+
+        // Invalid: SearchPagingValidator<SearchCustomersQuery> rejects pages after page 5.
+        Console.WriteLine(DescribePage(
+            "Customers named 'Jane'",
+            await searchCustomers.HandleAsync(new SearchCustomersQuery("Jane", Page: 6, PageSize: 10)),
+            customer => customer.Name));
     }
+
+    private static string DescribePage<TItem>(string title, IResult<IReadOnlyList<TItem>> result, Func<TItem, string> describe)
+        => result switch
+        {
+            Success<IReadOnlyList<TItem>>(var items) => $"{title}: {string.Join(", ", items.Select(describe))}.",
+            Invalid(var validationState) => $"The request is not valid:{Environment.NewLine}{validationState}",
+            _ => $"The query failed: {result}"
+        };
 }

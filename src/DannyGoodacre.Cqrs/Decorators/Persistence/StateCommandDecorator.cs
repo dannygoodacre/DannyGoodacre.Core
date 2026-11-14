@@ -11,7 +11,7 @@ internal sealed class StateCommandDecorator<TCommand>(
     IEnumerable<IPostCommitHook<TCommand>> postCommitHooks) : ICommandHandler<TCommand>
     where TCommand : ICommand
 {
-    private static readonly string CommandName = typeof(TCommand).Name;
+    private static readonly string CommandName = TypeNameFormatter.Format(typeof(TCommand));
 
     private readonly IPostCommitHook<TCommand>[] _postCommitHooks = [.. postCommitHooks];
 
@@ -66,7 +66,7 @@ internal sealed class StateCommandDecorator<TCommand, TResult>(
     where TCommand : ICommand
     where TResult : notnull
 {
-    private static readonly string CommandName = typeof(TCommand).Name;
+    private static readonly string CommandName = TypeNameFormatter.Format(typeof(TCommand));
 
     private readonly IPostCommitHook<TCommand, TResult>[] _postCommitHooks = [.. postCommitHooks];
 

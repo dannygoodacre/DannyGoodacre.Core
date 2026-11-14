@@ -16,11 +16,21 @@ public interface ICustomerRepository
     Task<int> GetIdAsync(Guid publicId, CancellationToken cancellationToken = default);
 
     Task<CustomerDetails?> FindDetailsAsync(Guid publicId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CustomerDetails>> ListDetailsAsync(int skip, int take, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<CustomerDetails>> SearchDetailsAsync(
+        string search,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default);
 }
 
 public interface IPlanRepository
 {
     Task<PlanDetails?> FindAsync(string planCode, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<PlanDetails>> ListAsync(int skip, int take, CancellationToken cancellationToken = default);
 }
 
 public interface ISubscriptionRepository
@@ -44,18 +54,38 @@ public sealed class CustomerRepository(ExamplesDbContext dbContext) : ICustomerR
             .SingleAsync(cancellationToken);
 
     public Task<CustomerDetails?> FindDetailsAsync(Guid publicId, CancellationToken cancellationToken = default)
-        => dbContext.Customers
-            .AsNoTracking()
-            .Where(c => c.PublicId == publicId)
-            .Select(c => new CustomerDetails(
-                c.PublicId,
-                c.Name,
-                c.Email,
-                dbContext.Subscriptions
-                    .Where(s => s.CustomerId == c.Id)
-                    .Select(s => s.PlanCode)
-                    .FirstOrDefault()))
+        => SelectDetails(dbContext.Customers.AsNoTracking().Where(c => c.PublicId == publicId))
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CustomerDetails>> ListDetailsAsync(
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+        => await SelectDetails(dbContext.Customers.AsNoTracking().OrderBy(c => c.Id).Skip(skip).Take(take))
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CustomerDetails>> SearchDetailsAsync(
+        string search,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+        => await SelectDetails(dbContext.Customers
+                .AsNoTracking()
+                .Where(c => c.Name.Contains(search))
+                .OrderBy(c => c.Id)
+                .Skip(skip)
+                .Take(take))
+            .ToListAsync(cancellationToken);
+
+    private IQueryable<CustomerDetails> SelectDetails(IQueryable<Customer> customers)
+        => customers.Select(c => new CustomerDetails(
+            c.PublicId,
+            c.Name,
+            c.Email,
+            dbContext.Subscriptions
+                .Where(s => s.CustomerId == c.Id)
+                .Select(s => s.PlanCode)
+                .FirstOrDefault()));
 }
 
 public sealed class PlanRepository(ExamplesDbContext dbContext) : IPlanRepository
@@ -66,6 +96,15 @@ public sealed class PlanRepository(ExamplesDbContext dbContext) : IPlanRepositor
             .Where(p => p.Code == planCode)
             .Select(p => new PlanDetails(p.Code, p.Name, p.MonthlyPrice))
             .SingleOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<PlanDetails>> ListAsync(int skip, int take, CancellationToken cancellationToken = default)
+        => await dbContext.Plans
+            .AsNoTracking()
+            .OrderBy(p => p.Code)
+            .Skip(skip)
+            .Take(take)
+            .Select(p => new PlanDetails(p.Code, p.Name, p.MonthlyPrice))
+            .ToListAsync(cancellationToken);
 }
 
 public sealed class SubscriptionRepository(ExamplesDbContext dbContext) : ISubscriptionRepository
