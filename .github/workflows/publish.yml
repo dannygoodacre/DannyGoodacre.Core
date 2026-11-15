@@ -40,6 +40,9 @@ jobs:
               with:
                 dotnet-version: '10.0.x'
 
+            - name: Test
+              run: dotnet test --configuration Release
+
             - name: Make README links absolute
               run: |
                 BASE="${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/src"
@@ -81,7 +84,15 @@ jobs:
                 --api-key ${{ secrets.GITHUB_TOKEN }} \
                 --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
-            - name: Tag release
+            - name: Create GitHub release
+              env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                GH_REPO: ${{ github.repository }}
               run: |
-                git tag "v$VERSION" "$GITHUB_SHA"
-                git push origin "v$VERSION"
+                PRERELEASE_FLAG=""
+                if [[ "$VERSION" == *-* ]]; then PRERELEASE_FLAG="--prerelease"; fi
+                gh release create "v$VERSION" ./nupkg/*.nupkg \
+                  --target "$GITHUB_SHA" \
+                  --title "v$VERSION" \
+                  --generate-notes \
+                  $PRERELEASE_FLAG
