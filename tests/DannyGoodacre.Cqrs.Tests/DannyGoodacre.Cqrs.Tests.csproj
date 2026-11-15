@@ -19,13 +19,13 @@
         <Using Include="Microsoft.Extensions.Logging" />
         <Using Include="DannyGoodacre.Testing" />
         <Using Include="DannyGoodacre.Cqrs.Testing" />
-        <Using Include="DannyGoodacre.Primitives" />
+        <Using Include="DannyGoodacre.Results" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\DannyGoodacre.Cqrs.Testing\DannyGoodacre.Cqrs.Testing.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Cqrs\DannyGoodacre.Cqrs.csproj" />
-      <ProjectReference Include="..\..\src\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
+      <ProjectReference Include="..\..\src\DannyGoodacre.Results\DannyGoodacre.Results.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
     </ItemGroup>
     

@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Primitives;
+namespace DannyGoodacre.Results;
 
 /// <summary>
 /// Defines the contract for an operation result without throwing exceptions.
@@ -76,7 +76,7 @@ public record NotFound : IResult;
 public static class Result
 {
     /// <summary>
-    /// Creates a <see cref="Primitives.Success"/> result.
+    /// Creates a <see cref="Results.Success"/> result.
     /// </summary>
     public static IResult Success() => new Success();
 
@@ -88,50 +88,50 @@ public static class Result
     public static IResult<T> Success<T>(T value) => new Success<T>(value);
 
     /// <summary>
-    /// Creates a <see cref="Primitives.Canceled"/> result.
+    /// Creates a <see cref="Results.Canceled"/> result.
     /// </summary>
     public static IResult Canceled() => new Canceled();
 
     /// <summary>
-    /// Creates a <see cref="Primitives.Conflict"/> result.
+    /// Creates a <see cref="Results.Conflict"/> result.
     /// </summary>
     /// <param name="message">A description of the conflict.</param>
     public static IResult Conflict(string message) => new Conflict(message);
 
     /// <summary>
-    /// Creates a <see cref="Primitives.DomainError"/> result.
+    /// Creates a <see cref="Results.DomainError"/> result.
     /// </summary>
     /// <param name="message">A description of the rule that stopped the operation.</param>
     public static IResult DomainError(string message) => new DomainError(message);
 
     /// <summary>
-    /// Creates an <see cref="Primitives.InternalError"/> result.
+    /// Creates an <see cref="Results.InternalError"/> result.
     /// </summary>
     /// <param name="error">The details of the fault.</param>
     public static IResult InternalError(Error error) => new InternalError(error);
 
     /// <summary>
-    /// Creates an <see cref="Primitives.InternalError"/> result with an <see cref="Error"/> that has this message
+    /// Creates an <see cref="Results.InternalError"/> result with an <see cref="Error"/> that has this message
     /// and the default code.
     /// </summary>
     /// <param name="message">A description of the fault.</param>
     public static IResult InternalError(string message) => new InternalError(new Error(message));
 
     /// <summary>
-    /// Creates an <see cref="Primitives.InternalError"/> result with an <see cref="Error"/> created from
+    /// Creates an <see cref="Results.InternalError"/> result with an <see cref="Error"/> created from
     /// <paramref name="exception"/>, using the exception type name as the code.
     /// </summary>
     /// <param name="exception">The exception that caused the fault.</param>
     public static IResult InternalError(Exception exception) => new InternalError(new Error(exception));
 
     /// <summary>
-    /// Creates an <see cref="Primitives.Invalid"/> result.
+    /// Creates an <see cref="Results.Invalid"/> result.
     /// </summary>
     /// <param name="state">The validation errors.</param>
     public static IResult Invalid(ValidationState state) => new Invalid(state);
 
     /// <summary>
-    /// Creates a <see cref="Primitives.NotFound"/> result.
+    /// Creates a <see cref="Results.NotFound"/> result.
     /// </summary>
     public static IResult NotFound() => new NotFound();
 }

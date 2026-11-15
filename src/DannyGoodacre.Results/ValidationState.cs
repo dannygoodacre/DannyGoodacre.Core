@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text;
 
-namespace DannyGoodacre.Primitives;
+namespace DannyGoodacre.Results;
 
 /// <summary>
 /// A mutable collection of validation errors grouped by property name.

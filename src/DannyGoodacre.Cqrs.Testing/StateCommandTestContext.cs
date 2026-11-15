@@ -1,4 +1,4 @@
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 using Moq;
 
 namespace DannyGoodacre.Cqrs.Testing;

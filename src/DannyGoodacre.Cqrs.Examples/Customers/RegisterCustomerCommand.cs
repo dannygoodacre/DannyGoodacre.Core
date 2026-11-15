@@ -1,6 +1,6 @@
 using System.Net.Mail;
 using DannyGoodacre.Cqrs.Examples.Persistence;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 
 namespace DannyGoodacre.Cqrs.Examples.Customers;
 

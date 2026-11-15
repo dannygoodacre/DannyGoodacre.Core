@@ -50,7 +50,7 @@ jobs:
 
             - name: Pack
               run: |
-                dotnet pack src/DannyGoodacre.Primitives/DannyGoodacre.Primitives.csproj \
+                dotnet pack src/DannyGoodacre.Results/DannyGoodacre.Results.csproj \
                 --configuration Release \
                 -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg

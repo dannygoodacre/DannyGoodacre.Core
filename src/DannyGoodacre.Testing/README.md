@@ -1,6 +1,6 @@
 # DannyGoodacre.Testing
 
-xUnit assertion helpers for the [DannyGoodacre.Primitives](../DannyGoodacre.Primitives/README.md) types: results, `ValidationState`, and `Error`. Each assertion checks the type and returns the contents, so a test needs no casts.
+xUnit assertion helpers for the [DannyGoodacre.Results](../DannyGoodacre.Results/README.md) types: results, `ValidationState`, and `Error`. Each assertion checks the type and returns the contents, so a test needs no casts.
 
 ```csharp
 Guid customerId = result.ShouldBeSuccess();

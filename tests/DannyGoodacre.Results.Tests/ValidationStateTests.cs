@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Primitives.Tests;
+namespace DannyGoodacre.Results.Tests;
 
 public sealed class ValidationStateTests
 {

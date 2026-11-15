@@ -21,7 +21,7 @@
         <Using Include="Xunit" />
         <Using Include="Microsoft.Extensions.Logging" />
         <Using Include="DannyGoodacre.Testing" />
-        <Using Include="DannyGoodacre.Primitives" />
+        <Using Include="DannyGoodacre.Results" />
     </ItemGroup>
     
     <ItemGroup>

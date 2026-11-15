@@ -1,6 +1,6 @@
 # Commands and queries
 
-How to choose a request marker and write handlers and validators. The examples come from the [example project](EXAMPLES.md); the result types are documented in [DannyGoodacre.Primitives](../../DannyGoodacre.Primitives/README.md).
+How to choose a request marker and write handlers and validators. The examples come from the [example project](EXAMPLES.md); the result types are documented in [DannyGoodacre.Results](../../DannyGoodacre.Results/README.md).
 
 ## Select a marker interface
 

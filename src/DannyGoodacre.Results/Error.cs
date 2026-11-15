@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace DannyGoodacre.Primitives;
+namespace DannyGoodacre.Results;
 
 /// <summary>
 /// Represents an application error containing a description, a machine-readable error code,

@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Primitives;
+namespace DannyGoodacre.Results;
 
 /// <summary>
 /// Provides extension methods for <see cref="IResult"/>.

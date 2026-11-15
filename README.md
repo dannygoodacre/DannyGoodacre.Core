@@ -6,13 +6,13 @@ A set of .NET 10 libraries for structuring application logic: a result type for 
 
 | Package | Purpose | Documentation |
 | --- | --- | --- |
-| `DannyGoodacre.Primitives` | Result types, `Error`, and `ValidationState`. Methods return a result for each expected outcome instead of throwing. No dependencies. | [README](./src/DannyGoodacre.Primitives/README.md) |
+| `DannyGoodacre.Results` | Result types, `Error`, and `ValidationState`. Methods return a result for each expected outcome instead of throwing. No dependencies. | [README](./src/DannyGoodacre.Results/README.md) |
 | `DannyGoodacre.Cqrs` | Commands, queries, and the decorator pipeline that runs them. Handlers contain only domain logic. | [README](./src/DannyGoodacre.Cqrs/README.md) |
 | `DannyGoodacre.Cqrs.EntityFrameworkCore` | The EF Core implementation of the pipeline's persistence interfaces. | [README](./src/DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) |
 | `DannyGoodacre.Testing` | xUnit assertions for results, `ValidationState`, and `Error`. | [README](./src/DannyGoodacre.Testing/README.md) |
 | `DannyGoodacre.Cqrs.Testing` | Test contexts for the pipeline decorators, built on xUnit and Moq. | [README](./src/DannyGoodacre.Cqrs.Testing/README.md) |
 
-`DannyGoodacre.Cqrs` builds on `DannyGoodacre.Primitives`, and each testing package builds on the package it tests. `DannyGoodacre.Primitives` can be used on its own.
+`DannyGoodacre.Cqrs` builds on `DannyGoodacre.Results`, and each testing package builds on the package it tests. `DannyGoodacre.Results` can be used on its own.
 
 ## Installation
 

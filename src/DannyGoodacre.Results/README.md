@@ -1,6 +1,6 @@
-# DannyGoodacre.Primitives
+# DannyGoodacre.Results
 
-DannyGoodacre.Primitives is a dependency-free .NET 10 library of result types. A method returns a result object for each expected outcome instead of throwing an exception.
+DannyGoodacre.Results is a dependency-free .NET 10 library of result types. A method returns a result object for each expected outcome instead of throwing an exception.
 
 The package has three parts:
 
@@ -15,7 +15,7 @@ The reference docs are [RESULTS.md](docs/RESULTS.md) (creating and reading resul
 ## Installation
 
 ```shell
-dotnet add package DannyGoodacre.Primitives
+dotnet add package DannyGoodacre.Results
 ```
 
 > **Note:** The package is currently published to GitHub Packages only; publication to nuget.org is planned. Until then, add the feed with a GitHub token that has the `read:packages` scope:
@@ -24,7 +24,7 @@ dotnet add package DannyGoodacre.Primitives
 > dotnet nuget add source https://nuget.pkg.github.com/dannygoodacre/index.json --name dannygoodacre --username <github-username> --password <token>
 > ```
 
-All types are in the `DannyGoodacre.Primitives` namespace.
+All types are in the `DannyGoodacre.Results` namespace.
 
 ## Outcome types
 
@@ -47,7 +47,7 @@ This example applies a discount code to an order total.
 ### 1. Return results
 
 ```csharp
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 
 namespace Shop.Pricing;
 
