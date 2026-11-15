@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository
 
-.NET 10 libraries, each a separate NuGet package: `DannyGoodacre.Primitives` (result types), `DannyGoodacre.Cqrs` (decorator pipeline), `DannyGoodacre.Cqrs.EntityFrameworkCore`, `DannyGoodacre.Testing`, `DannyGoodacre.Cqrs.Testing`, and `DannyGoodacre.Identity` (accounts, invite code, and admins on ASP.NET Core Identity), plus the `DannyGoodacre.Cqrs.Examples` app and the `DannyGoodacre.Identity.Example` web API (SQLite, EF migrations, Scalar at `/scalar` in Development). Only projects in `DannyGoodacre.Core.slnx` are part of the codebase; other folders under `src/` and `tests/` are untracked leftovers.
+.NET 10 libraries, each a separate NuGet package: `DannyGoodacre.Primitives` (result types), `DannyGoodacre.Cqrs` (decorator pipeline), `DannyGoodacre.Cqrs.EntityFrameworkCore`, `DannyGoodacre.Testing`, `DannyGoodacre.Cqrs.Testing`, plus the `DannyGoodacre.Cqrs.Examples` app. Only projects in `DannyGoodacre.Core.slnx` are part of the codebase; other folders under `src/` and `tests/` are untracked leftovers.
 
 ## Commands
 
@@ -20,7 +20,7 @@ Tests use xUnit v3 on Microsoft.Testing.Platform. `global.json` opts `dotnet tes
 
 ## Releases
 
-- Releases are manual: run `publish.yml` from the Actions tab and enter a version. It packs all six packages at that version (`-p:Version`), pushes them to GitHub Packages, then tags the commit `v<version>`; a version whose tag or packages already exist fails the run. The `.csproj` files carry no `<Version>`, so local builds are 1.0.0. The packages stay in step, which `DannyGoodacre.Cqrs.Testing`'s exact-version pin relies on.
+- Releases are manual: run `publish.yml` from the Actions tab and enter a version. It packs all five packages at that version (`-p:Version`), pushes them to GitHub Packages, then tags the commit `v<version>`; a version whose tag or packages already exist fails the run. The `.csproj` files carry no `<Version>`, so local builds are 1.0.0. The packages stay in step, which `DannyGoodacre.Cqrs.Testing`'s exact-version pin relies on.
 - Each package packs its `README.md`. `publish.yml` rewrites relative links to absolute GitHub URLs before packing, so keep links relative in the repository.
 
 ## Architecture
@@ -30,7 +30,6 @@ Tests use xUnit v3 on Microsoft.Testing.Platform. `global.json` opts `dotnet tes
 - **Post-commit hooks** of child commands are deferred to the outermost commit by the internal scoped `PostCommitScope`; hook failures are logged, never returned.
 - **Logging** uses `[LoggerMessage]` methods in `Decorators/LoggerExtensions.cs` with IDs from `CqrsLogEvent`; a new message needs both.
 - **Persistence:** `IStateUnit` and `ITransactionUnit` must resolve to one scoped instance so child commands save inside the outer transaction. `DbContextTransaction` runs inside EF Core's execution strategy, so a retry replays the whole handler.
-- **Identity:** a thin layer over stock ASP.NET Core Identity; configuration stays in Identity's own options, and the package changes only the security stamp interval (from its `SecurityStampValidationIntervalMinutes` option) and the cookie's redirect events. It does not depend on Cqrs, because Identity's managers save through their stores. Registration requires the invite code (one row in the internal `InviteCodes` table). Disabling an account uses Identity lockout until a far-future date, kept private to `UserExtensions` behind `Disable`/`Enable`/`IsDisabled`; disabling must be saved with a security stamp change. Admins are the `Admin` role, exposed as the `Admin` policy (`IdentityDefaults`); at least one enabled admin must remain. Folders match namespaces: the public API lives in the root `DannyGoodacre.Identity` namespace so consumers need one `using`; internals go in `Accounts/`, `Data/`, and `Endpoints/`. Tests run each case on its own `TestApp` (test server, SQLite in-memory) rather than `WebApplicationFactory`, so options can differ per test.
 - **Testing packages:** decorators are `internal`, exposed to `DannyGoodacre.Cqrs.Testing` and `DannyGoodacre.Cqrs.Tests` via `InternalsVisibleTo`. Every mock in a test context must use the context's `MockBehavior`; `TestContextMockBehaviorTests` enforces this. `DannyGoodacre.Testing` depends only on Primitives and `xunit.v3.assert`.
 
 ## Documentation
