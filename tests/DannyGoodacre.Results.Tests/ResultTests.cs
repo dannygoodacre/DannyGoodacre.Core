@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace DannyGoodacre.Primitives.Tests;
+namespace DannyGoodacre.Results.Tests;
 
 [SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance")]
 public sealed class ResultTests

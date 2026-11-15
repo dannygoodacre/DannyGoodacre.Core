@@ -2,7 +2,7 @@ using DannyGoodacre.Cqrs.Examples.Customers;
 using DannyGoodacre.Cqrs.Examples.Notifications;
 using DannyGoodacre.Cqrs.Examples.Persistence;
 using DannyGoodacre.Cqrs.Examples.Plans;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 
 namespace DannyGoodacre.Cqrs.Examples.Onboarding;
 

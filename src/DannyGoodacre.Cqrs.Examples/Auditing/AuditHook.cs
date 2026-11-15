@@ -1,6 +1,6 @@
 using DannyGoodacre.Cqrs.Examples.Customers;
 using DannyGoodacre.Cqrs.Examples.Onboarding;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 using Microsoft.Extensions.Logging;
 
 namespace DannyGoodacre.Cqrs.Examples.Auditing;

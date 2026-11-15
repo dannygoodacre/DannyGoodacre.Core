@@ -10,7 +10,7 @@ DannyGoodacre.Cqrs is a CQRS library for .NET 10. It sends each command and quer
 | [PERSISTENCE.md](docs/PERSISTENCE.md) | `IStateUnit`, `ITransactionUnit`, nested transactions, and retries |
 | [TESTING.md](docs/TESTING.md) | Testing requests through the pipeline |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline order, exception handling, log events, scopes, and design principles |
-| [DannyGoodacre.Primitives](../DannyGoodacre.Primitives/README.md) | `IResult`, `IResult<T>`, `Error`, and `ValidationState` |
+| [DannyGoodacre.Results](../DannyGoodacre.Results/README.md) | `IResult`, `IResult<T>`, `Error`, and `ValidationState` |
 | [DannyGoodacre.Cqrs.EntityFrameworkCore](../DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) | The EF Core implementation of `IStateUnit` and `ITransactionUnit` |
 | [DannyGoodacre.Testing](../DannyGoodacre.Testing/README.md) | xUnit assertions for results, `ValidationState`, and `Error` |
 | [DannyGoodacre.Cqrs.Testing](../DannyGoodacre.Cqrs.Testing/README.md) | Test contexts for the pipeline decorators |
@@ -28,7 +28,7 @@ dotnet add package DannyGoodacre.Cqrs.EntityFrameworkCore
 > dotnet nuget add source https://nuget.pkg.github.com/dannygoodacre/index.json --name dannygoodacre --username <github-username> --password <token>
 > ```
 
-The package depends on [`DannyGoodacre.Primitives`](../DannyGoodacre.Primitives/README.md) for its result and validation types.
+The package depends on [`DannyGoodacre.Results`](../DannyGoodacre.Results/README.md) for its result and validation types.
 
 State commands (`IStateCommand` and `ITransactedStateCommand`) need an `IStateUnit` and an `ITransactionUnit` to save their changes. [`DannyGoodacre.Cqrs.EntityFrameworkCore`](../DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) provides both for EF Core, the most widely used ORM for .NET. With any other data access, implement the two interfaces yourself; see [Custom implementation](docs/PERSISTENCE.md#custom-implementation). Queries and plain `ICommand`s, such as a command that only sends an email, need neither.
 

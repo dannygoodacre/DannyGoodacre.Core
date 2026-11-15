@@ -17,13 +17,13 @@
     <ItemGroup>
         <Using Include="Xunit"/>
         <Using Include="Moq"/>
-        <Using Include="DannyGoodacre.Primitives"/>
+        <Using Include="DannyGoodacre.Results"/>
         <Using Include="DannyGoodacre.Testing"/>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\DannyGoodacre.Cqrs.Examples\DannyGoodacre.Cqrs.Examples.csproj" />
-      <ProjectReference Include="..\..\src\DannyGoodacre.Primitives\DannyGoodacre.Primitives.csproj" />
+      <ProjectReference Include="..\..\src\DannyGoodacre.Results\DannyGoodacre.Results.csproj" />
       <ProjectReference Include="..\..\src\DannyGoodacre.Testing\DannyGoodacre.Testing.csproj" />
     </ItemGroup>
 

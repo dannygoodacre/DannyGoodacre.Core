@@ -1,5 +1,5 @@
 using DannyGoodacre.Cqrs.Examples.Validation;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 
 namespace DannyGoodacre.Cqrs.Examples.Listing;
 

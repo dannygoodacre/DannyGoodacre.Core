@@ -1,4 +1,4 @@
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 
 namespace DannyGoodacre.Cqrs.Examples.Validation;
 

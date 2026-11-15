@@ -5,7 +5,7 @@ using DannyGoodacre.Cqrs.Examples.Listing;
 using DannyGoodacre.Cqrs.Examples.Onboarding;
 using DannyGoodacre.Cqrs.Examples.Persistence;
 using DannyGoodacre.Cqrs.Examples.Plans;
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

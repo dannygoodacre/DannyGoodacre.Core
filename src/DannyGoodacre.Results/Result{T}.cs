@@ -1,4 +1,4 @@
-namespace DannyGoodacre.Primitives;
+namespace DannyGoodacre.Results;
 
 /// <summary>
 /// Defines the contract for an operation result carrying a <typeparamref name="T"/> payload.

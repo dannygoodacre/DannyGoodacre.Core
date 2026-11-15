@@ -1,4 +1,4 @@
-using DannyGoodacre.Primitives;
+using DannyGoodacre.Results;
 using Xunit;
 
 namespace DannyGoodacre.Testing;
