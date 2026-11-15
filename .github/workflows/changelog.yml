@@ -1,0 +1,71 @@
+name: Update changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package folder name, e.g. Pkg"
+        required: true
+        type: string
+      baseline:
+        description: "Ignore commits before this tag, e.g. Pkg-v1.2.0 (leave empty for full history)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE: ${{ inputs.package }}
+      BASELINE: ${{ inputs.baseline }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Generate changelog
+        run: |
+          CHANGELOG="src/${PACKAGE}/CHANGELOG.md"
+          RANGE="${BASELINE:+${BASELINE}..HEAD}"
+
+          git cliff ${RANGE:-} \
+            --tag-pattern "${PACKAGE}-v.*" \
+            --include-path "src/${PACKAGE}/**" \
+            -o "$CHANGELOG"
+
+          echo "CHANGELOG=$CHANGELOG" >> "$GITHUB_ENV"
+
+      - name: Create PR if changed
+        run: |
+          if git diff --quiet -- "$CHANGELOG"; then
+            echo "Changelog is already up to date."
+            exit 0
+          fi
+
+          BRANCH="changelog/${PACKAGE}-$(date -u +%Y%m%d%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch -c "$BRANCH"
+          git add "$CHANGELOG"
+          git commit -m "docs(changelog): update ${PACKAGE} changelog"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "docs(changelog): update ${PACKAGE} changelog" \
+            --body "Regenerated \`${CHANGELOG}\` from conventional commits.${BASELINE:+ Commits before \`${BASELINE}\` were ignored.}"
