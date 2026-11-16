@@ -5,12 +5,13 @@ on:
     branches: [changelog-pr-workflow]
   workflow_dispatch:
     inputs:
-      package:
-        description: "Package folder name, e.g. Pkg"
-        required: true
+      version:
+        description: "Version being released, e.g. 1.0.0-alpha.2 (leave empty for an Unreleased section)"
+        required: false
         type: string
+        default: ""
       baseline:
-        description: "Ignore commits before this tag, e.g. Pkg-v1.2.0 (leave empty for full history)"
+        description: "Only used when CHANGELOG.md does not exist yet: ignore commits before this tag, e.g. v0.15.0"
         required: false
         type: string
         default: ""
@@ -23,13 +24,12 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     env:
-      PACKAGE: ${{ inputs.package }}
+      VERSION: ${{ inputs.version }}
       BASELINE: ${{ inputs.baseline }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
           fetch-tags: true
 
@@ -40,34 +40,36 @@ jobs:
 
       - name: Generate changelog
         run: |
-          CHANGELOG="src/${PACKAGE}/CHANGELOG.md"
-          RANGE="${BASELINE:+${BASELINE}..HEAD}"
+          TAG=()
+          if [ -n "$VERSION" ]; then TAG=(--tag "v$VERSION"); fi
 
-          git cliff ${RANGE:-} \
-            --tag-pattern "${PACKAGE}-v.*" \
-            --include-path "src/${PACKAGE}/**" \
-            -o "$CHANGELOG"
-
-          echo "CHANGELOG=$CHANGELOG" >> "$GITHUB_ENV"
+          if [ -f CHANGELOG.md ]; then
+            git cliff --unreleased "${TAG[@]}" --prepend CHANGELOG.md
+          else
+            RANGE=()
+            if [ -n "$BASELINE" ]; then RANGE=("${BASELINE}..HEAD"); fi
+            git cliff "${RANGE[@]}" "${TAG[@]}" -o CHANGELOG.md
+          fi
 
       - name: Create PR if changed
         run: |
-          if git diff --quiet -- "$CHANGELOG"; then
+          if [ -z "$(git status --porcelain -- CHANGELOG.md)" ]; then
             echo "Changelog is already up to date."
             exit 0
           fi
 
-          BRANCH="changelog/${PACKAGE}-$(date -u +%Y%m%d%H%M%S)"
+          BRANCH="changelog/${VERSION:-unreleased}-$(date -u +%Y%m%d%H%M%S)"
+          TITLE="docs(changelog): update changelog${VERSION:+ for $VERSION}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git switch -c "$BRANCH"
-          git add "$CHANGELOG"
-          git commit -m "docs(changelog): update ${PACKAGE} changelog"
+          git add CHANGELOG.md
+          git commit -m "$TITLE"
           git push -u origin "$BRANCH"
 
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "docs(changelog): update ${PACKAGE} changelog" \
-            --body "Regenerated \`${CHANGELOG}\` from conventional commits.${BASELINE:+ Commits before \`${BASELINE}\` were ignored.}"
+            --title "$TITLE" \
+            --body "Generated \`CHANGELOG.md\` from conventional commits."
