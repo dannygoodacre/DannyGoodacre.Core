@@ -1,6 +1,8 @@
 name: Update changelog
 
 on:
+  push:
+    branches: [changelog-pr-workflow]
   workflow_dispatch:
     inputs:
       package:
