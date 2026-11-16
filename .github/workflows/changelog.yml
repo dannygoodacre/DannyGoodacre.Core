@@ -1,0 +1,73 @@
+name: Update changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version being released, e.g. 1.0.0-alpha.2 (leave empty for an Unreleased section)"
+        required: false
+        type: string
+        default: ""
+      baseline:
+        description: "Only used when CHANGELOG.md does not exist yet: ignore commits before this tag or commit"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
+      BASELINE: ${{ inputs.baseline }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Generate changelog
+        run: |
+          TAG=()
+          if [ -n "$VERSION" ]; then TAG=(--tag "v$VERSION"); fi
+
+          if [ -f CHANGELOG.md ]; then
+            git cliff --unreleased "${TAG[@]}" --prepend CHANGELOG.md
+          else
+            RANGE=()
+            if [ -n "$BASELINE" ]; then RANGE=("${BASELINE}..HEAD"); fi
+            git cliff "${RANGE[@]}" "${TAG[@]}" -o CHANGELOG.md
+          fi
+
+      - name: Create PR if changed
+        run: |
+          if [ -z "$(git status --porcelain -- CHANGELOG.md)" ]; then
+            echo "Changelog is already up to date."
+            exit 0
+          fi
+
+          BRANCH="changelog/${VERSION:-unreleased}-$(date -u +%Y%m%d%H%M%S)"
+          TITLE="docs(changelog): update changelog${VERSION:+ for $VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git switch -c "$BRANCH"
+          git add CHANGELOG.md
+          git commit -m "$TITLE"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$TITLE" \
+            --body "Generated \`CHANGELOG.md\` from conventional commits."
