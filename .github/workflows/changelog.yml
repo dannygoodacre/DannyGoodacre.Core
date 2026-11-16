@@ -1,9 +1,6 @@
 name: Update changelog
 
-
 on:
-  push:
-    branches: [changelog-pr-workflow]
   workflow_dispatch:
     inputs:
       version:
@@ -12,7 +9,7 @@ on:
         type: string
         default: ""
       baseline:
-        description: "Only used when CHANGELOG.md does not exist yet: ignore commits before this tag, e.g. v0.15.0"
+        description: "Only used when CHANGELOG.md does not exist yet: ignore commits before this tag or commit"
         required: false
         type: string
         default: ""
@@ -25,8 +22,8 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ inputs.version || '1.0.0-alpha.1' }}
-      BASELINE: ${{ inputs.baseline || '8d28d4f1337dd0ae43f99765c63b0c0d96b49967' }}
+      VERSION: ${{ inputs.version }}
+      BASELINE: ${{ inputs.baseline }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
