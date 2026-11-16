@@ -24,8 +24,8 @@ jobs:
   changelog:
     runs-on: ubuntu-latest
     env:
-      VERSION: ${{ inputs.version }}
-      BASELINE: ${{ inputs.baseline }}
+      VERSION: ${{ inputs.version || '1.0.0-alpha.1' }}
+      BASELINE: ${{ inputs.baseline || '2a4263d486b5c881bb4b43e676b4f402939940f6' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
