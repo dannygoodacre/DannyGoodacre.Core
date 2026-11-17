@@ -53,10 +53,13 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# JetBrains
 *.sln.DotSettings.user
 .idea/
 
+# Coverage Report
 coverage_data/
 coverage_report/
 
+# SQLite
 *.db
