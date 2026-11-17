@@ -52,6 +52,20 @@ public sealed class ValidationState
     }
 
     /// <summary>
+    /// Append a validation error message to the specified property name only when <paramref name="condition"/> is true.
+    /// </summary>
+    /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
+    public bool AddErrorIf(bool condition, string property, string error)
+    {
+        if (condition)
+        {
+            AddError(property, error);
+        }
+
+        return condition;
+    }
+
+    /// <summary>
     /// Merge another ValidationState instance into this instance.
     /// </summary>
     public void Merge(ValidationState other)

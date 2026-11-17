@@ -34,8 +34,7 @@ public sealed class SearchCustomersQueryValidator : ValidatorBase<SearchCustomer
     public const int MinSearchLength = 2;
 
     public override void Validate(SearchCustomersQuery request, ValidationState validationState)
-        => AddErrorIf(
-            validationState,
+        => validationState.AddErrorIf(
             request.Search.Trim().Length < MinSearchLength,
             nameof(request.Search),
             $"Search must be at least {MinSearchLength} characters.");

@@ -31,6 +31,36 @@ public sealed class ValidationStateTests
     }
 
     [Fact]
+    public void AddErrorIf_WhenConditionIsTrue_AddsErrorAndReturnsTrue()
+    {
+        // Arrange
+        var state = new ValidationState();
+
+        // Act
+        var result = state.AddErrorIf(true, "Name", "Name is required.");
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal("Name is required.", Assert.Single(state.Errors["Name"]));
+    }
+
+    [Fact]
+    public void AddErrorIf_WhenConditionIsFalse_AddsNothingAndReturnsFalse()
+    {
+        // Arrange
+        var state = new ValidationState();
+        var errors = state.Errors;
+
+        // Act
+        var result = state.AddErrorIf(false, "Name", "Name is required.");
+
+        // Assert
+        Assert.False(result);
+        Assert.False(state.HasErrors);
+        Assert.Same(errors, state.Errors);
+    }
+
+    [Fact]
     public void AddError_IsCaseInsensitiveForPropertyNames()
     {
         // Arrange

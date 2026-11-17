@@ -13,10 +13,9 @@ public sealed class PagingValidator<TRequest> : ValidatorBase<TRequest>
 
     public override void Validate(TRequest request, ValidationState validationState)
     {
-        AddErrorIf(validationState, request.Page < 1, nameof(IPagedRequest.Page), "Page must be at least 1.");
+        validationState.AddErrorIf(request.Page < 1, nameof(IPagedRequest.Page), "Page must be at least 1.");
 
-        AddErrorIf(
-            validationState,
+        validationState.AddErrorIf(
             request.PageSize is < 1 or > MaxPageSize,
             nameof(IPagedRequest.PageSize),
             $"Page size must be between 1 and {MaxPageSize}.");
@@ -31,8 +30,7 @@ public abstract class ListQueryValidator<TItem> : ValidatorBase<ListQuery<TItem>
     protected abstract int MaxPageSize { get; }
 
     public override void Validate(ListQuery<TItem> request, ValidationState validationState)
-        => AddErrorIf(
-            validationState,
+        => validationState.AddErrorIf(
             request.PageSize > MaxPageSize,
             nameof(request.PageSize),
             $"This list returns at most {MaxPageSize} items per page.");
