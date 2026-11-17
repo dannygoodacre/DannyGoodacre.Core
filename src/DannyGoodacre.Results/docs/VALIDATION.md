@@ -5,6 +5,7 @@
 | Member | Description |
 | --- | --- |
 | `AddError(string property, string error)` | Adds an error message to a property. A property can have several errors. |
+| `AddErrorIf(bool condition, string property, string error)` | Calls `AddError` only when `condition` is `true`, and returns `condition`. |
 | `HasErrors` | `true` if at least one error exists. |
 | `Errors` | A read-only `IReadOnlyDictionary<string, IReadOnlyList<string>>` of the errors. |
 | `Merge(ValidationState other)` | Copies all errors from `other` into this instance, after any existing errors for the same property. |

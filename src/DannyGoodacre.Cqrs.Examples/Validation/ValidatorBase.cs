@@ -9,12 +9,4 @@ public abstract class ValidatorBase<TRequest> : IValidator<TRequest>
     where TRequest : IRequest
 {
     public abstract void Validate(TRequest request, ValidationState validationState);
-
-    protected static void AddErrorIf(ValidationState validationState, bool condition, string property, string error)
-    {
-        if (condition)
-        {
-            validationState.AddError(property, error);
-        }
-    }
 }
