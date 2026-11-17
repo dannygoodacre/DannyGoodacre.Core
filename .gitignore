@@ -58,8 +58,12 @@ nunit-*.xml
 .idea/
 
 # Coverage Report
+*.cobertura.xml
 coverage_data/
 coverage_report/
 
 # SQLite
 *.db
+*.db-shm
+*.db-wal
+*.db-journal
