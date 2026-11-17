@@ -9,20 +9,20 @@ internal static partial class LoggerExtensions
     [LoggerMessage(EventId = (int)CqrsLogEvent.RequestStarted, Level = LogLevel.Information, Message = "'{RequestName}' started")]
     public static partial void LogRequestStarted(this ILogger logger, string requestName);
 
-    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestSucceeded, Level = LogLevel.Information, Message = "'{RequestName}' completed successfully")]
-    public static partial void LogRequestSucceeded(this ILogger logger, string requestName);
+    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestSucceeded, Level = LogLevel.Information, Message = "'{RequestName}' completed successfully in {ElapsedMilliseconds:0.0}ms")]
+    public static partial void LogRequestSucceeded(this ILogger logger, string requestName, double elapsedMilliseconds);
 
     [LoggerMessage(EventId = (int)CqrsLogEvent.RequestCanceledPreExecution, Level = LogLevel.Warning, Message = "'{RequestName}' canceled before handling")]
     public static partial void LogRequestCanceledPreExecution(this ILogger logger, string requestName);
 
-    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestFailed, Level = LogLevel.Warning, Message = "'{RequestName}' failed: {Result}")]
-    public static partial void LogRequestFailed(this ILogger logger, string requestName, IResult result);
+    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestFailed, Level = LogLevel.Warning, Message = "'{RequestName}' failed after {ElapsedMilliseconds:0.0}ms: {Result}")]
+    public static partial void LogRequestFailed(this ILogger logger, string requestName, double elapsedMilliseconds, IResult result);
 
-    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestCanceledMidExecution, Level = LogLevel.Warning, Message = "'{RequestName}' canceled during handling")]
-    public static partial void LogRequestCanceledMidExecution(this ILogger logger, string requestName);
+    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestCanceledMidExecution, Level = LogLevel.Warning, Message = "'{RequestName}' canceled after {ElapsedMilliseconds:0.0}ms during handling")]
+    public static partial void LogRequestCanceledMidExecution(this ILogger logger, string requestName, double elapsedMilliseconds);
 
-    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestFaulted, Level = LogLevel.Error, Message = "'{RequestName}' threw an exception")]
-    public static partial void LogRequestFaulted(this ILogger logger, string requestName, Exception ex);
+    [LoggerMessage(EventId = (int)CqrsLogEvent.RequestFaulted, Level = LogLevel.Error, Message = "'{RequestName}' threw an exception after {ElapsedMilliseconds:0.0}ms")]
+    public static partial void LogRequestFaulted(this ILogger logger, string requestName, double elapsedMilliseconds, Exception ex);
 
     [LoggerMessage(EventId = (int)CqrsLogEvent.RequestValidationFailed, Level = LogLevel.Warning, Message = "'{RequestName}' failed validation: {ValidationState}")]
     public static partial void LogRequestValidationFailed(this ILogger logger, string requestName, ValidationState validationState);

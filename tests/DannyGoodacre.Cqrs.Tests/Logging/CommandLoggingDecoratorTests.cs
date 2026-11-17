@@ -40,7 +40,7 @@ public sealed class CommandLoggingDecoratorTests
         result.ShouldBeSuccess(expectedPayload);
 
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
-        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestSucceeded, LogLevel.Information);
+        Assert.Matches(@"completed successfully in \d+\.\dms$", _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestSucceeded, LogLevel.Information).Message);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class CommandLoggingDecoratorTests
         result.ShouldBeConflict(expectedMessage);
 
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
-        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestFailed, LogLevel.Warning);
+        Assert.Matches(@"failed after \d+\.\dms: ", _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestFailed, LogLevel.Warning).Message);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class CommandLoggingDecoratorTests
         result.ShouldBeCanceled();
 
         _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestStarted, LogLevel.Information);
-        _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestCanceledMidExecution, LogLevel.Warning);
+        Assert.Matches(@"canceled after \d+\.\dms during handling$", _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestCanceledMidExecution, LogLevel.Warning).Message);
     }
 
     [Fact]
@@ -163,5 +163,6 @@ public sealed class CommandLoggingDecoratorTests
         var faultLog = _context.LogCollector.ShouldHaveLogged(CqrsLogEvent.RequestFaulted, LogLevel.Error);
 
         Assert.Equal(expectedException, faultLog.Exception);
+        Assert.Matches(@"threw an exception after \d+\.\dms$", faultLog.Message);
     }
 }

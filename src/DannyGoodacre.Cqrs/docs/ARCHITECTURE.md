@@ -97,11 +97,11 @@ Every log entry uses an event ID from `CqrsLogEvent` and the request type as its
 | ID | Event | Level | Meaning |
 | --- | --- | --- | --- |
 | 1001 | `RequestStarted` | Information | The request entered the pipeline. |
-| 1002 | `RequestSucceeded` | Information | The request returned a success result. |
+| 1002 | `RequestSucceeded` | Information | The request returned a success result. The message includes the elapsed time. |
 | 1003 | `RequestCanceledPreExecution` | Warning | The token was canceled before the request started. |
-| 1004 | `RequestFailed` | Warning | The request returned a failure result. The message includes the result. |
-| 1005 | `RequestCanceledMidExecution` | Warning | The request was canceled while running. |
-| 1006 | `RequestFaulted` | Error | The request threw an exception. |
+| 1004 | `RequestFailed` | Warning | The request returned a failure result. The message includes the elapsed time and the result. |
+| 1005 | `RequestCanceledMidExecution` | Warning | The request was canceled while running. The message includes the elapsed time. |
+| 1006 | `RequestFaulted` | Error | The request threw an exception. The message includes the elapsed time. |
 | 1007 | `RequestValidationFailed` | Warning | A validator reported errors. The message includes the `ValidationState`. |
 | 2001 | `SaveChangesCanceled` | Warning | The save was canceled. |
 | 2002 | `SaveChangesFaulted` | Error | The save threw an exception. |
@@ -110,6 +110,8 @@ Every log entry uses an event ID from `CqrsLogEvent` and the request type as its
 | 3003 | `PostCommitHookInUnmanagedTransaction` | Warning | Hooks ran inside a transaction that the pipeline did not start. |
 | 4001 | `TransactionCanceled` | Warning | The transaction was canceled. |
 | 4002 | `TransactionFaulted` | Error | The transaction threw an exception. |
+
+The elapsed time in 1002, 1004, 1005 and 1006 runs from the start of the logging decorator to the outcome. It covers validation, the handler, the save and transaction commit, and the post-commit hooks that run for that request. A child command's hooks are deferred to the outermost commit, so they count toward the outermost request, not the child. 1003 and 1007 carry no time.
 
 Because the logging decorator is outermost, a failure from an inner decorator is logged twice: once by the inner decorator (for example 2002) and once as `RequestFailed` (1004).
 
