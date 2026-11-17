@@ -49,8 +49,8 @@ The pipeline logs are interleaved with these lines. For example, the conflict pr
 ```text
 info: DannyGoodacre.Cqrs.Examples.Onboarding.OnboardCustomerCommand[1001] 'OnboardCustomerCommand' started
 info: DannyGoodacre.Cqrs.Examples.Customers.RegisterCustomerCommand[1001] 'RegisterCustomerCommand' started
-warn: DannyGoodacre.Cqrs.Examples.Customers.RegisterCustomerCommand[1004] 'RegisterCustomerCommand' failed: Conflict { Message = A customer with this email address already exists. }
-warn: DannyGoodacre.Cqrs.Examples.Onboarding.OnboardCustomerCommand[1004] 'OnboardCustomerCommand' failed: Conflict { Message = A customer with this email address already exists. }
+warn: DannyGoodacre.Cqrs.Examples.Customers.RegisterCustomerCommand[1004] 'RegisterCustomerCommand' failed after 0.3ms: Conflict { Message = A customer with this email address already exists. }
+warn: DannyGoodacre.Cqrs.Examples.Onboarding.OnboardCustomerCommand[1004] 'OnboardCustomerCommand' failed after 8.6ms: Conflict { Message = A customer with this email address already exists. }
 ```
 
 ## Domain
