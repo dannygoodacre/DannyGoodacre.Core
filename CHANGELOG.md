@@ -8,7 +8,6 @@ All packages are released together at the same version.
 
 - **results:** Add ValidationState.AddErrorIf (#64)
 
-
 ### Breaking
 
 - **cqrs:** Log elapsed time on request completion (#66). The message text of log events 1002, 1004, 1005 and 1006 has changed to include the elapsed time, for example "'X' failed after 8.6ms: {Result}". Anything that matches on the old text must be updated; match on the event ID instead.
