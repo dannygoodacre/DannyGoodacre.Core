@@ -12,21 +12,15 @@ public readonly record struct Error
 
     private const string DefaultCode = "General";
 
-    // default(Error) does not run a constructor, so the fields can be null.
-    // The properties return the default values in that case.
-    private readonly string? _message;
-
-    private readonly string? _code;
-
     /// <summary>
     /// Gets a human-readable description of the error.
     /// </summary>
-    public string Message => _message ?? DefaultMessage;
+    public string Message => field ?? DefaultMessage;
 
     /// <summary>
     /// Gets a machine-readable category or error code. Defaults to <c>"General"</c>.
     /// </summary>
-    public string Code => _code ?? DefaultCode;
+    public string Code => field ?? DefaultCode;
 
     /// <summary>
     /// Gets the underlying causal exception if this error originated from an exception;
@@ -77,11 +71,11 @@ public readonly record struct Error
     [JsonConstructor]
     public Error(string message, string code = "General", Exception? exception = null)
     {
-        _message = string.IsNullOrWhiteSpace(message)
+        Message = string.IsNullOrWhiteSpace(message)
             ? DefaultMessage
             : message;
 
-        _code = string.IsNullOrWhiteSpace(code)
+        Code = string.IsNullOrWhiteSpace(code)
             ? DefaultCode
             : code;
 

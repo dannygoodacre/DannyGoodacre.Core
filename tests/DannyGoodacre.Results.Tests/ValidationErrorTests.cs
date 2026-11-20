@@ -3,12 +3,11 @@ namespace DannyGoodacre.Results.Tests;
 public sealed class ValidationErrorTests
 {
     [Fact]
-    public void Constructor_WithMessageOnly_UsesDefaultCodeAndNoArguments()
+    public void Constructor_WithoutArguments_HasEmptyArguments()
     {
-        var error = new ValidationError("Bad.");
+        var error = new ValidationError("Bad.", "Invalid");
 
-        Assert.Equal("Bad.", error.Message);
-        Assert.Equal("General", error.Code);
+        Assert.NotNull(error.Arguments);
         Assert.Empty(error.Arguments);
     }
 
@@ -28,23 +27,24 @@ public sealed class ValidationErrorTests
         ValidationError error = default;
 
         Assert.Equal("An unspecified error occurred.", error.Message);
-        Assert.Equal("General", error.Code);
+        Assert.Equal("Unknown", error.Code);
         Assert.NotNull(error.Arguments);
         Assert.Empty(error.Arguments);
-        Assert.Equal(new ValidationError("An unspecified error occurred."), error);
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public void Constructor_WithBlankMessageOrCode_UsesDefaults(string? blank)
-    {
-        var error = new ValidationError(blank!, blank!);
+    public void Constructor_WithBlankMessage_UsesDefaultMessage(string? blank)
+        => Assert.Equal("An unspecified error occurred.", new ValidationError(blank!, "Invalid").Message);
 
-        Assert.Equal("An unspecified error occurred.", error.Message);
-        Assert.Equal("General", error.Code);
-    }
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void Constructor_WithBlankCode_Throws(string? blank)
+        => Assert.ThrowsAny<ArgumentException>(() => new ValidationError("Bad.", blank!));
 
     [Fact]
     public void Constructor_CopiesTheArguments()

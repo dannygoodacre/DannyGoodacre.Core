@@ -4,21 +4,19 @@
 
 | Member | Description |
 | --- | --- |
-| `ValidationError` | One error: a `Code`, a `Message`, and `Arguments` (never `null`, empty when none were given). Create it with `new ValidationError(message, code, arguments)`; the code defaults to `General`. |
+| `ValidationError` | One error: a `Code`, a `Message`, and `Arguments` (never `null`, empty when none were given). Create it with `new ValidationError(message, code, arguments)`. The code is required, and a blank one throws `ArgumentException`; only `default(ValidationError)` has the code `Unknown`. |
 | `AddError(string property, ValidationError error)` | Adds an error to a property. A property can have several errors. |
-| `AddError(string property, string message)` | Shortcut: adds an error with the default code `General`. |
 | `AddErrorIf(bool condition, string property, ValidationError error)` | Calls `AddError` only when `condition` is `true`, and returns `condition`. |
-| `AddErrorIf(bool condition, string property, string message)` | Shortcut for `AddErrorIf` with the default code `General`. |
 | `HasErrors` | `true` if at least one error exists. |
 | `Errors` | A read-only `IReadOnlyDictionary<string, IReadOnlyList<ValidationError>>` of the errors. |
 | `Merge(ValidationState other)` | Copies all errors from `other` into this instance, after any existing errors for the same property. |
 | `ToString()` | Returns the errors as multi-line text, or an empty string if there are none. |
 
-- Property names are case-insensitive: `AddError("email", ...)` adds to the same list as `AddError("Email", ...)`, and keys keep the casing of the first call. Use `nameof` so names stay correct after a rename.
+- Property names are case-insensitive: `AddError("email", error)` adds to the same list as `AddError("Email", error)`, and keys keep the casing of the first call. Use `nameof` so names stay correct after a rename.
 - `Errors` is read-only, so a caller cannot change the state through it.
 - `ValidationState` is mutable and not thread-safe. Use one instance per validation operation.
 
-Codes are the stable contract: a caller compares `Code` (and reads `Arguments`), while `Message` is formatted English for people and may change. The application owns its codes and wording; the library has no catalogue and does no message templating. Use PascalCase codes, such as `Required` and `InvalidFormat`, to match `Error`'s `General`. `ValidationError` has no attempted value, because that can echo sensitive input. `Arguments` is a dictionary of strings, so the caller converts values itself; format numbers and dates with the invariant culture. It compares by content, so two errors with the same code, message, and arguments are equal.
+Codes are the stable contract: a caller compares `Code` (and reads `Arguments`), while `Message` is formatted English for people and may change. The application owns its codes and wording; the library has no catalogue and does no message templating. Use PascalCase codes, such as `Required` and `InvalidFormat`. `ValidationError` has no attempted value, because that can echo sensitive input. `Arguments` is a dictionary of strings, so the caller converts values itself; format numbers and dates with the invariant culture. It compares by content, so two errors with the same code, message, and arguments are equal.
 
 ```csharp
 validationState.AddError(

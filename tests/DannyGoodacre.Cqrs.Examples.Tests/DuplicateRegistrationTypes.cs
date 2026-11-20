@@ -40,7 +40,7 @@ public class ArchivePlanCommandValidator : IValidator<ArchivePlanCommand>
     {
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Invalid"));
         }
     }
 }
@@ -53,7 +53,7 @@ public sealed class StrictArchivePlanCommandValidator : ArchivePlanCommandValida
 
         if (request.PlanCode.Length > 20)
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code cannot exceed 20 characters.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code cannot exceed 20 characters.", "Invalid"));
         }
     }
 }

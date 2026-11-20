@@ -52,11 +52,6 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Append a validation error with the default code to the specified property name.
-    /// </summary>
-    public void AddError(string property, string message) => AddError(property, new ValidationError(message));
-
-    /// <summary>
     /// Append a validation error to the specified property name only when <paramref name="condition"/> is true.
     /// </summary>
     /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
@@ -69,14 +64,6 @@ public sealed class ValidationState
 
         return condition;
     }
-
-    /// <summary>
-    /// Append a validation error with the default code to the specified property name only when
-    /// <paramref name="condition"/> is true.
-    /// </summary>
-    /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
-    public bool AddErrorIf(bool condition, string property, string message)
-        => AddErrorIf(condition, property, new ValidationError(message));
 
     /// <summary>
     /// Merge another ValidationState instance into this instance.

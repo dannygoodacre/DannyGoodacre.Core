@@ -10,30 +10,25 @@ public readonly record struct ValidationError
 {
     private const string DefaultMessage = "An unspecified error occurred.";
 
-    private const string DefaultCode = "General";
-
-    // default(ValidationError) does not run a constructor, so the fields can be null.
-    // The properties return the default values in that case.
-    private readonly string? _message;
-
-    private readonly string? _code;
-
-    private readonly IReadOnlyDictionary<string, string>? _arguments;
+    // The code of default(ValidationError), which skips the constructor. It marks an error nobody created.
+    private const string DefaultCode = "Unknown";
 
     /// <summary>
     /// Gets a human-readable description of the error, already formatted. Defaults to a generic message.
     /// </summary>
-    public string Message => _message ?? DefaultMessage;
+    public string Message => field ?? DefaultMessage;
 
     /// <summary>
-    /// Gets the machine-readable error code, such as <c>"Required"</c>. Defaults to <c>"General"</c>.
+    /// Gets the machine-readable error code, such as <c>"Required"</c>. Only <c>default(ValidationError)</c>
+    /// has the code <c>"Unknown"</c>.
     /// </summary>
-    public string Code => _code ?? DefaultCode;
+    public string Code => field ?? DefaultCode;
 
     /// <summary>
-    /// Gets the values behind the message, such as a limit. Never <see langword="null"/>: empty when none were given.
+    /// Gets the values behind the message, such as a limit, as strings. Never <see langword="null"/>:
+    /// empty when none were given. Format numbers and dates with the invariant culture.
     /// </summary>
-    public IReadOnlyDictionary<string, string> Arguments => _arguments ?? ReadOnlyDictionary<string, string>.Empty;
+    public IReadOnlyDictionary<string, string> Arguments => field ?? ReadOnlyDictionary<string, string>.Empty;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ValidationError"/> struct.
@@ -41,21 +36,19 @@ public readonly record struct ValidationError
     /// <param name="message">The human-readable description of the error.</param>
     /// <param name="code">The machine-readable error code.</param>
     /// <param name="arguments">The values behind the message. The dictionary is copied.</param>
-    public ValidationError(
-        string message,
-        string code = DefaultCode,
-        IReadOnlyDictionary<string, string>? arguments = null)
+    /// <exception cref="ArgumentException"><paramref name="code"/> is <see langword="null"/>, empty, or whitespace.</exception>
+    public ValidationError(string message, string code, IReadOnlyDictionary<string, string>? arguments = null)
     {
-        _message = string.IsNullOrWhiteSpace(message)
+        ArgumentException.ThrowIfNullOrWhiteSpace(code);
+
+        Message = string.IsNullOrWhiteSpace(message)
             ? DefaultMessage
             : message;
 
-        _code = string.IsNullOrWhiteSpace(code)
-            ? DefaultCode
-            : code;
+        Code = code;
 
-        _arguments = arguments is null or { Count: 0 }
-            ? null
+        Arguments = arguments is null or { Count: 0 }
+            ? ReadOnlyDictionary<string, string>.Empty
             : new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(arguments));
     }
 
