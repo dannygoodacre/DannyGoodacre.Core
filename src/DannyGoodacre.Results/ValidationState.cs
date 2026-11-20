@@ -13,7 +13,7 @@ public sealed class ValidationState
     private IReadOnlyDictionary<string, IReadOnlyList<ValidationError>>? _errorsView;
 
     /// <summary>
-    /// A read-only view of the current validation errors. Key lookups are not case-sensitive.
+    /// Gets a read-only view of the current validation errors. Key lookups are not case-sensitive.
     /// </summary>
     /// <remarks>
     /// The view is created on first read and kept until the next <see cref="AddError(string, ValidationError)"/> call.
@@ -29,12 +29,12 @@ public sealed class ValidationState
                     StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Indicates whether any validation errors have been recorded.
+    /// Gets a value that indicates whether any validation errors have been recorded.
     /// </summary>
     public bool HasErrors => _errors is not null && _errors.Count > 0;
 
     /// <summary>
-    /// Append a validation error to the specified property name.
+    /// Appends a validation error to the specified property name.
     /// </summary>
     public void AddError(string property, ValidationError error)
     {
@@ -52,7 +52,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Append a validation error to the specified property name only when <paramref name="condition"/> is true.
+    /// Appends a validation error to the specified property name only when <paramref name="condition"/> is true.
     /// </summary>
     /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
     public bool AddErrorIf(bool condition, string property, ValidationError error)
@@ -66,7 +66,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Merge another ValidationState instance into this instance.
+    /// Merges another ValidationState instance into this instance.
     /// </summary>
     public void Merge(ValidationState other)
     {
@@ -86,7 +86,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Format errors into a human-readable, multi-line string.
+    /// Formats errors into a human-readable, multi-line string.
     /// </summary>
     public override string ToString()
     {
