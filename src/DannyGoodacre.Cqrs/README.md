@@ -65,7 +65,7 @@ public sealed class RegisterCustomerCommandValidator : IValidator<RegisterCustom
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            validationState.AddError(nameof(request.Name), "Name is required.");
+            validationState.AddError(nameof(request.Name), new ValidationError("Name is required.", "Required"));
         }
 
         // ... email rules ...

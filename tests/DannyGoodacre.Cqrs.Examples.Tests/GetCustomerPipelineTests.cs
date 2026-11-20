@@ -73,7 +73,7 @@ public sealed class GetCustomerPipelineTests
         // Assert
         ValidationState validationState = result.ShouldBeInvalid();
 
-        Assert.Contains(nameof(GetCustomerQuery.PublicId), validationState.Errors.Keys);
+        validationState.ShouldHaveErrorCode(nameof(GetCustomerQuery.PublicId), "Required");
         Assert.Empty(host.DatabaseActivity.Commands);
     }
 }

@@ -8,24 +8,24 @@ namespace DannyGoodacre.Results;
 /// </summary>
 public sealed class ValidationState
 {
-    private Dictionary<string, List<string>>? _errors;
+    private Dictionary<string, List<ValidationError>>? _errors;
 
-    private IReadOnlyDictionary<string, IReadOnlyList<string>>? _errorsView;
+    private IReadOnlyDictionary<string, IReadOnlyList<ValidationError>>? _errorsView;
 
     /// <summary>
     /// A read-only view of the current validation errors. Key lookups are not case-sensitive.
     /// </summary>
     /// <remarks>
-    /// The view is created on first read and kept until the next <see cref="AddError"/> call.
+    /// The view is created on first read and kept until the next <see cref="AddError(string, ValidationError)"/> call.
     /// The lists are read-only wrappers, so a caller cannot change the internal state.
     /// </remarks>
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors
+    public IReadOnlyDictionary<string, IReadOnlyList<ValidationError>> Errors
         => _errorsView ??= _errors is null
-            ? ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty
-            : new ReadOnlyDictionary<string, IReadOnlyList<string>>(
+            ? ReadOnlyDictionary<string, IReadOnlyList<ValidationError>>.Empty
+            : new ReadOnlyDictionary<string, IReadOnlyList<ValidationError>>(
                 _errors.ToDictionary(
                     kvp => kvp.Key,
-                    IReadOnlyList<string> (kvp) => kvp.Value.AsReadOnly(),
+                    IReadOnlyList<ValidationError> (kvp) => kvp.Value.AsReadOnly(),
                     StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
@@ -34,15 +34,15 @@ public sealed class ValidationState
     public bool HasErrors => _errors is not null && _errors.Count > 0;
 
     /// <summary>
-    /// Append a validation error message to the specified property name.
+    /// Append a validation error to the specified property name.
     /// </summary>
-    public void AddError(string property, string error)
+    public void AddError(string property, ValidationError error)
     {
-        _errors ??= new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        _errors ??= new Dictionary<string, List<ValidationError>>(StringComparer.OrdinalIgnoreCase);
 
         _errorsView = null;
 
-        ref List<string>? list = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
+        ref List<ValidationError>? list = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
             _errors,
             property,
             out _);
@@ -52,10 +52,15 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Append a validation error message to the specified property name only when <paramref name="condition"/> is true.
+    /// Append a validation error with the default code to the specified property name.
+    /// </summary>
+    public void AddError(string property, string message) => AddError(property, new ValidationError(message));
+
+    /// <summary>
+    /// Append a validation error to the specified property name only when <paramref name="condition"/> is true.
     /// </summary>
     /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
-    public bool AddErrorIf(bool condition, string property, string error)
+    public bool AddErrorIf(bool condition, string property, ValidationError error)
     {
         if (condition)
         {
@@ -64,6 +69,14 @@ public sealed class ValidationState
 
         return condition;
     }
+
+    /// <summary>
+    /// Append a validation error with the default code to the specified property name only when
+    /// <paramref name="condition"/> is true.
+    /// </summary>
+    /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
+    public bool AddErrorIf(bool condition, string property, string message)
+        => AddErrorIf(condition, property, new ValidationError(message));
 
     /// <summary>
     /// Merge another ValidationState instance into this instance.
@@ -101,9 +114,9 @@ public sealed class ValidationState
         {
             stringBuilder.AppendLine($"{property}:");
 
-            foreach (string error in errors)
+            foreach (var error in errors)
             {
-                stringBuilder.AppendLine($"  - {error}");
+                stringBuilder.AppendLine($"  - {error.Message}");
             }
         }
 

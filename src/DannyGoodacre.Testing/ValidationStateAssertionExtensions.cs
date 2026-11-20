@@ -21,27 +21,53 @@ public static class ValidationStateAssertionExtensions
         }
 
         /// <summary>
-        /// Asserts that a specific error message exists for the specified property name.
+        /// Asserts that the specified property has an error with the given code, among any others.
         /// </summary>
-        public void ShouldHaveError(string propertyName, string expectedError)
+        public void ShouldHaveErrorCode(string propertyName, string expectedCode)
         {
-            Assert.True(
-                validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<string>? errors),
-                $"Expected validation error for property '{propertyName}', but no errors were recorded for it.");
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
 
-            Assert.Contains(expectedError, errors, StringComparer.Ordinal);
+            Assert.True(
+                errors.Any(e => e.Code == expectedCode),
+                $"Expected an error with code '{expectedCode}' for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
         }
 
         /// <summary>
-        /// Asserts that the exact list of error messages exists for the specified property name.
+        /// Asserts that the specified property has an error equal to <paramref name="expected"/>, among any others.
+        /// Arguments are compared by content.
         /// </summary>
-        public void ShouldHaveErrorsFor(string propertyName, params string[] expectedErrors)
+        public void ShouldHaveError(string propertyName, ValidationError expected)
         {
-            Assert.True(
-                validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<string>? errors),
-                $"Expected validation errors for property '{propertyName}', but no errors were recorded for it.");
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
 
-            Assert.Equal(expectedErrors, errors);
+            Assert.True(
+                errors.Contains(expected),
+                $"Expected error '{expected.Code}' ({expected.Message}) for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
+        }
+
+        /// <summary>
+        /// Asserts that the specified property has exactly these error codes, in this order.
+        /// </summary>
+        public void ShouldHaveErrorCodesFor(string propertyName, params string[] expectedCodes)
+        {
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+            Assert.True(
+                errors.Select(e => e.Code).SequenceEqual(expectedCodes),
+                $"Expected codes [{string.Join(", ", expectedCodes)}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
+        }
+
+        /// <summary>
+        /// Asserts that the specified property has exactly these errors, in this order.
+        /// Arguments are compared by content.
+        /// </summary>
+        public void ShouldHaveErrorsFor(string propertyName, params ValidationError[] expected)
+        {
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+            Assert.True(
+                errors.SequenceEqual(expected),
+                $"Expected errors [{string.Join(", ", expected.Select(e => e.Code))}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
         }
 
         /// <summary>
@@ -62,11 +88,25 @@ public static class ValidationStateAssertionExtensions
             foreach (var (property, expectedErrors) in expected.Errors)
             {
                 Assert.True(
-                    validationState.Errors.TryGetValue(property, out IReadOnlyList<string>? actualErrors),
+                    validationState.Errors.TryGetValue(property, out IReadOnlyList<ValidationError>? actualErrors),
                     $"Expected property '{property}' in validation state, but it was missing.");
 
-                Assert.Equal(expectedErrors, actualErrors);
+                Assert.True(
+                    expectedErrors.SequenceEqual(actualErrors),
+                    $"Expected codes [{string.Join(", ", expectedErrors.Select(e => e.Code))}] for property '{property}', but found codes: {FormatCodes(actualErrors)}.");
             }
         }
     }
+
+    private static IReadOnlyList<ValidationError> GetErrors(ValidationState validationState, string propertyName)
+    {
+        Assert.True(
+            validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<ValidationError>? errors),
+            $"Expected validation errors for property '{propertyName}', but no errors were recorded for it.");
+
+        return errors;
+    }
+
+    private static string FormatCodes(IEnumerable<ValidationError> errors)
+        => $"[{string.Join(", ", errors.Select(e => e.Code))}]";
 }

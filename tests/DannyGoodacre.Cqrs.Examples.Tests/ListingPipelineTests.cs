@@ -112,9 +112,12 @@ public sealed class ListingPipelineTests
         // Assert
         ValidationState validationState = result.ShouldBeInvalid();
 
-        Assert.Equal(
-            ["This list returns at most 10 items per page."],
-            validationState.Errors[nameof(IPagedRequest.PageSize)]);
+        validationState.ShouldHaveErrorsFor(
+            nameof(IPagedRequest.PageSize),
+            new ValidationError(
+                "This list returns at most 10 items per page.",
+                "OutOfRange",
+                new Dictionary<string, string> { ["Max"] = "10" }));
         Assert.Empty(host.DatabaseActivity.Commands);
     }
 

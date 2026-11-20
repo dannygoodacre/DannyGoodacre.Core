@@ -13,16 +13,16 @@ public sealed class RegisterCustomerCommandValidator : IValidator<RegisterCustom
     {
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            validationState.AddError(nameof(request.Name), "Name is required.");
+            validationState.AddError(nameof(request.Name), new ValidationError("Name is required.", "Required"));
         }
 
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            validationState.AddError(nameof(request.Email), "Email is required.");
+            validationState.AddError(nameof(request.Email), new ValidationError("Email is required.", "Required"));
         }
         else if (!MailAddress.TryCreate(request.Email, out _))
         {
-            validationState.AddError(nameof(request.Email), "Email format is invalid.");
+            validationState.AddError(nameof(request.Email), new ValidationError("Email format is invalid.", "InvalidFormat"));
         }
     }
 }
