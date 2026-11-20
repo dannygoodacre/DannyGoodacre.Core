@@ -4,7 +4,7 @@ using Xunit;
 namespace DannyGoodacre.Testing;
 
 /// <summary>
-/// Contains fluent xUnit assertion extension methods for <see cref="ValidationState"/>.
+/// Fluent xUnit assertion extension methods for <see cref="ValidationState"/>.
 /// </summary>
 public static class ValidationStateAssertionExtensions
 {

@@ -29,7 +29,7 @@ public sealed class ValidationState
                     StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Gets a value that indicates whether any validation errors have been recorded.
+    /// Gets a value indicating whether any validation errors have been recorded.
     /// </summary>
     public bool HasErrors => _errors is not null && _errors.Count > 0;
 
@@ -52,7 +52,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Appends a validation error to the specified property name only when <paramref name="condition"/> is true.
+    /// Appends a validation error to the specified property name only when <paramref name="condition"/> is <see langword="true"/>.
     /// </summary>
     /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
     public bool AddErrorIf(bool condition, string property, ValidationError error)
@@ -66,7 +66,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Merges another ValidationState instance into this instance.
+    /// Merges another <see cref="ValidationState"/> into this instance.
     /// </summary>
     public void Merge(ValidationState other)
     {

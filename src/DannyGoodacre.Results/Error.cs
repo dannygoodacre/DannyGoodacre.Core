@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace DannyGoodacre.Results;
 
 /// <summary>
-/// Represents an application error containing a description, a machine-readable error code,
+/// An application error that has a description, a machine-readable error code,
 /// and an optional causal exception.
 /// </summary>
 public readonly record struct Error
@@ -95,6 +95,8 @@ public readonly record struct Error
     /// <summary>
     /// Compares the public values, so <c>default(Error)</c> equals an error with the default message and code.
     /// </summary>
+    /// <param name="other">The error to compare with.</param>
+    /// <returns><see langword="true"/> if the message, code, and exception instance are the same; otherwise, <see langword="false"/>.</returns>
     public bool Equals(Error other)
         => Message == other.Message
            && Code == other.Code

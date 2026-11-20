@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 namespace DannyGoodacre.Results;
 
 /// <summary>
-/// Represents a single validation error: a machine-readable code, a human-readable message,
+/// A single validation error that has a machine-readable code, a human-readable message,
 /// and the arguments that were used to build the message.
 /// </summary>
 public readonly record struct ValidationError
@@ -19,15 +19,19 @@ public readonly record struct ValidationError
     public string Message => field ?? DefaultMessage;
 
     /// <summary>
-    /// Gets the machine-readable error code, such as <c>"Required"</c>. Only <c>default(ValidationError)</c>
-    /// has the code <c>"Unknown"</c>.
+    /// Gets the machine-readable error code, such as <c>"Required"</c>.
     /// </summary>
+    /// <remarks>
+    /// Only <c>default(ValidationError)</c> has the code <c>"Unknown"</c>.
+    /// </remarks>
     public string Code => field ?? DefaultCode;
 
     /// <summary>
-    /// Gets the values behind the message, such as a limit, as strings. Never <see langword="null"/>:
-    /// empty when none were given. Format numbers and dates with the invariant culture.
+    /// Gets the values behind the message, such as a limit, as strings.
     /// </summary>
+    /// <remarks>
+    /// Never <see langword="null"/>: empty when none were given. Format numbers and dates with the invariant culture.
+    /// </remarks>
     public IReadOnlyDictionary<string, string> Arguments => field ?? ReadOnlyDictionary<string, string>.Empty;
 
     /// <summary>
@@ -53,9 +57,13 @@ public readonly record struct ValidationError
     }
 
     /// <summary>
-    /// Compares the public values, with <see cref="Arguments"/> compared by content: the same keys,
-    /// and equal values (ordinal).
+    /// Compares the public values, with <see cref="Arguments"/> compared by content.
     /// </summary>
+    /// <param name="other">The error to compare with.</param>
+    /// <returns>
+    /// <see langword="true"/> if the message and code are equal and <see cref="Arguments"/> has the same keys
+    /// with equal values (ordinal); otherwise, <see langword="false"/>.
+    /// </returns>
     public bool Equals(ValidationError other)
     {
         if (Message != other.Message || Code != other.Code || Arguments.Count != other.Arguments.Count)
