@@ -155,9 +155,9 @@ public sealed class OnboardCustomerPipelineTests
         ValidationState validationState = result.ShouldBeInvalid();
 
         Assert.Equal(3, validationState.Errors.Count);
-        Assert.Contains(nameof(OnboardCustomerCommand.Name), validationState.Errors.Keys);
-        Assert.Contains(nameof(OnboardCustomerCommand.Email), validationState.Errors.Keys);
-        Assert.Contains(nameof(OnboardCustomerCommand.PlanCode), validationState.Errors.Keys);
+        validationState.ShouldHaveErrorCode(nameof(OnboardCustomerCommand.Name), "Required");
+        validationState.ShouldHaveErrorCode(nameof(OnboardCustomerCommand.Email), "InvalidFormat");
+        validationState.ShouldHaveErrorCode(nameof(OnboardCustomerCommand.PlanCode), "Required");
 
         Assert.Equal(0, host.DatabaseActivity.TransactionsStarted);
         Assert.Empty(host.DatabaseActivity.Commands);

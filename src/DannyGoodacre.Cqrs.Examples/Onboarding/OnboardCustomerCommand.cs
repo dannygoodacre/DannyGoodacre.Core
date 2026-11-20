@@ -20,7 +20,7 @@ public sealed class OnboardCustomerCommandValidator(IValidator<RegisterCustomerC
 
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Required"));
         }
     }
 }

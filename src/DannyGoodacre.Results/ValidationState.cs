@@ -8,41 +8,41 @@ namespace DannyGoodacre.Results;
 /// </summary>
 public sealed class ValidationState
 {
-    private Dictionary<string, List<string>>? _errors;
+    private Dictionary<string, List<ValidationError>>? _errors;
 
-    private IReadOnlyDictionary<string, IReadOnlyList<string>>? _errorsView;
+    private IReadOnlyDictionary<string, IReadOnlyList<ValidationError>>? _errorsView;
 
     /// <summary>
-    /// A read-only view of the current validation errors. Key lookups are not case-sensitive.
+    /// Gets a read-only view of the current validation errors. Key lookups are not case-sensitive.
     /// </summary>
     /// <remarks>
-    /// The view is created on first read and kept until the next <see cref="AddError"/> call.
+    /// The view is created on first read and kept until the next <see cref="AddError(string, ValidationError)"/> call.
     /// The lists are read-only wrappers, so a caller cannot change the internal state.
     /// </remarks>
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors
+    public IReadOnlyDictionary<string, IReadOnlyList<ValidationError>> Errors
         => _errorsView ??= _errors is null
-            ? ReadOnlyDictionary<string, IReadOnlyList<string>>.Empty
-            : new ReadOnlyDictionary<string, IReadOnlyList<string>>(
+            ? ReadOnlyDictionary<string, IReadOnlyList<ValidationError>>.Empty
+            : new ReadOnlyDictionary<string, IReadOnlyList<ValidationError>>(
                 _errors.ToDictionary(
                     kvp => kvp.Key,
-                    IReadOnlyList<string> (kvp) => kvp.Value.AsReadOnly(),
+                    IReadOnlyList<ValidationError> (kvp) => kvp.Value.AsReadOnly(),
                     StringComparer.OrdinalIgnoreCase));
 
     /// <summary>
-    /// Indicates whether any validation errors have been recorded.
+    /// Gets a value indicating whether any validation errors have been recorded.
     /// </summary>
     public bool HasErrors => _errors is not null && _errors.Count > 0;
 
     /// <summary>
-    /// Append a validation error message to the specified property name.
+    /// Appends a validation error to the specified property name.
     /// </summary>
-    public void AddError(string property, string error)
+    public void AddError(string property, ValidationError error)
     {
-        _errors ??= new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        _errors ??= new Dictionary<string, List<ValidationError>>(StringComparer.OrdinalIgnoreCase);
 
         _errorsView = null;
 
-        ref List<string>? list = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
+        ref List<ValidationError>? list = ref System.Runtime.InteropServices.CollectionsMarshal.GetValueRefOrAddDefault(
             _errors,
             property,
             out _);
@@ -52,10 +52,10 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Append a validation error message to the specified property name only when <paramref name="condition"/> is true.
+    /// Appends a validation error to the specified property name only when <paramref name="condition"/> is <see langword="true"/>.
     /// </summary>
     /// <returns><paramref name="condition"/>, so the caller knows whether an error was added.</returns>
-    public bool AddErrorIf(bool condition, string property, string error)
+    public bool AddErrorIf(bool condition, string property, ValidationError error)
     {
         if (condition)
         {
@@ -66,7 +66,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Merge another ValidationState instance into this instance.
+    /// Merges another <see cref="ValidationState"/> into this instance.
     /// </summary>
     public void Merge(ValidationState other)
     {
@@ -86,7 +86,7 @@ public sealed class ValidationState
     }
 
     /// <summary>
-    /// Format errors into a human-readable, multi-line string.
+    /// Formats errors into a human-readable, multi-line string.
     /// </summary>
     public override string ToString()
     {
@@ -101,9 +101,9 @@ public sealed class ValidationState
         {
             stringBuilder.AppendLine($"{property}:");
 
-            foreach (string error in errors)
+            foreach (var error in errors)
             {
-                stringBuilder.AppendLine($"  - {error}");
+                stringBuilder.AppendLine($"  - {error.Message}");
             }
         }
 

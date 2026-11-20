@@ -18,11 +18,11 @@ public sealed class MultipleValidatorsTests
 
         firstValidatorMock
             .Setup(x => x.Validate(It.IsAny<Command>(), It.IsAny<ValidationState>()))
-            .Callback((Command _, ValidationState state) => state.AddError("Name", "Name is required."));
+            .Callback((Command _, ValidationState state) => state.AddError("Name", new ValidationError("Name is required.", "Invalid")));
 
         secondValidatorMock
             .Setup(x => x.Validate(It.IsAny<Command>(), It.IsAny<ValidationState>()))
-            .Callback((Command _, ValidationState state) => state.AddError("Email", "Email is required."));
+            .Callback((Command _, ValidationState state) => state.AddError("Email", new ValidationError("Email is required.", "Invalid")));
 
         var pipeline = new CommandValidationDecorator<Command>(
             innerMock.Object,

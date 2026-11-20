@@ -6,11 +6,11 @@ The package has three parts:
 
 - **Results.** `IResult`, `IResult<T>`, and seven outcome types.
 - **Errors.** The `Error` struct, which describes an unexpected fault.
-- **Validation.** The `ValidationState` class, which collects input errors by property name.
+- **Validation.** The `ValidationState` class, which collects input errors by property name, and `ValidationError`, which gives each one a stable code, a message, and arguments.
 
 `DannyGoodacre.Cqrs` uses these types for all handler return values.
 
-The reference docs are [RESULTS.md](docs/RESULTS.md) (creating and reading results, `MapFailure`, and equality), [ERRORS.md](docs/ERRORS.md) (`Error`), and [VALIDATION.md](docs/VALIDATION.md) (`ValidationState`).
+The reference docs are [RESULTS.md](docs/RESULTS.md) (creating and reading results, `MapFailure`, and equality), [ERRORS.md](docs/ERRORS.md) (`Error`), and [VALIDATION.md](docs/VALIDATION.md) (`ValidationState` and `ValidationError`).
 
 ## Installation
 
@@ -66,12 +66,14 @@ public sealed class DiscountCalculator(IDiscountCodeRepository repository, TimeP
 
         if (orderTotal <= 0)
         {
-            validationState.AddError(nameof(orderTotal), "Order total must be greater than zero.");
+            validationState.AddError(
+                nameof(orderTotal),
+                new ValidationError("Order total must be greater than zero.", "OutOfRange"));
         }
 
         if (string.IsNullOrWhiteSpace(code))
         {
-            validationState.AddError(nameof(code), "Discount code is required.");
+            validationState.AddError(nameof(code), new ValidationError("Discount code is required.", "Required"));
         }
 
         if (validationState.HasErrors)
@@ -126,6 +128,7 @@ IResult<decimal> result = calculator.Apply(0m, "");
 
 var invalid = Assert.IsType<Invalid<decimal>>(result);
 Assert.Equal(2, invalid.ValidationState.Errors.Count);
+Assert.Equal("Required", Assert.Single(invalid.ValidationState.Errors["code"]).Code);
 ```
 
 The [DannyGoodacre.Testing](../DannyGoodacre.Testing/README.md) package adds assertion helpers that do the type check and return the contents, for example `ValidationState state = result.ShouldBeInvalid();`.

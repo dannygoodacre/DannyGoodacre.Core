@@ -61,7 +61,7 @@ public sealed class VoidCommandValidationDecoratorTests
 
         _context.ValidatorMock
             .Setup(x => x.Validate(command, It.IsAny<ValidationState>()))
-            .Callback<Command, ValidationState>((_, state) => state.AddError("PropertyName", "Error message"));
+            .Callback<Command, ValidationState>((_, state) => state.AddError("PropertyName", new ValidationError("Error message", "Invalid")));
 
         var pipeline = _context.CreatePipeline(includeValidator: true);
 

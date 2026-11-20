@@ -15,7 +15,7 @@ public sealed class GetCustomerQueryValidator : IValidator<GetCustomerQuery>
     {
         if (request.PublicId == Guid.Empty)
         {
-            validationState.AddError(nameof(request.PublicId), "Public ID is required.");
+            validationState.AddError(nameof(request.PublicId), new ValidationError("Public ID is required.", "Required"));
         }
     }
 }

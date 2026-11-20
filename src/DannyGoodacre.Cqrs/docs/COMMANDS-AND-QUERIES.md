@@ -66,7 +66,12 @@ public sealed class SearchPagingValidator<TRequest> : IValidator<TRequest>
     {
         if (request.Page > MaxSearchPage)
         {
-            validationState.AddError(nameof(IPagedRequest.Page), $"Search results stop after page {MaxSearchPage}.");
+            validationState.AddError(
+                nameof(IPagedRequest.Page),
+                new ValidationError(
+                    $"Search results stop after page {MaxSearchPage}.",
+                    "OutOfRange",
+                    new Dictionary<string, string> { ["Max"] = $"{MaxSearchPage}" }));
         }
     }
 }
@@ -93,7 +98,7 @@ public sealed class OnboardCustomerCommandValidator(IValidator<RegisterCustomerC
 
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Required"));
         }
     }
 }
