@@ -7,16 +7,23 @@ on:
                 description: 'Version for all packages (e.g. 0.15.0 or 0.15.0-beta.1)'
                 required: true
                 type: string
+            dry-run:
+                description: 'Do everything except push to nuget.org (the NuGet login still runs)'
+                required: false
+                type: boolean
+                default: false
+
+concurrency:
+    group: publish
+    cancel-in-progress: false
+
+env:
+    VERSION: ${{ inputs.version }}
 
 jobs:
-    publish:
+    validate:
         runs-on: ubuntu-latest
-        permissions:
-            packages: write
-            contents: write
-
-        env:
-            VERSION: ${{ inputs.version }}
+        permissions: {}
 
         steps:
             - name: Validate version
@@ -26,14 +33,72 @@ jobs:
                   exit 1
                 fi
 
-            - uses: actions/checkout@v6
-
             - name: Check tag does not exist
               run: |
-                if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" > /dev/null; then
+                if git ls-remote --exit-code --tags "${{ github.server_url }}/${{ github.repository }}" "refs/tags/v$VERSION" > /dev/null; then
                   echo "::error::Tag v$VERSION already exists. Choose a new version."
                   exit 1
                 fi
+
+    changelog:
+        needs: validate
+        uses: ./.github/workflows/changelog.yml
+        permissions:
+            contents: write
+            pull-requests: write
+        with:
+            version: ${{ inputs.version }}
+            fail-if-unchanged: true
+
+    approve:
+        needs: changelog
+        runs-on: ubuntu-latest
+        environment: release
+        permissions: {}
+
+        env:
+            PR: ${{ needs.changelog.outputs.pr }}
+
+        steps:
+            - run: |
+                echo "Approved release of v$VERSION after changelog PR #$PR."
+
+    resolve:
+        needs: [changelog, approve]
+        runs-on: ubuntu-latest
+        permissions:
+            pull-requests: read
+        outputs:
+            sha: ${{ steps.pr.outputs.sha }}
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GH_REPO: ${{ github.repository }}
+            PR: ${{ needs.changelog.outputs.pr }}
+
+        steps:
+            - name: Resolve changelog commit
+              id: pr
+              run: |
+                read -r state base sha < <(gh pr view "$PR" \
+                  --json state,baseRefName,mergeCommit \
+                  --jq '[.state, .baseRefName, .mergeCommit.oid] | @tsv')
+                if [ "$state" != MERGED ] || [ "$base" != main ] || [ -z "$sha" ]; then
+                  echo "::error::Changelog PR #$PR is not merged into main (state: $state)."
+                  exit 1
+                fi
+                echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+    build:
+        needs: resolve
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: read
+
+        steps:
+            - uses: actions/checkout@v6
+              with:
+                ref: ${{ needs.resolve.outputs.sha }}
 
             - name: Setup .NET
               uses: actions/setup-dotnet@v5
@@ -45,7 +110,7 @@ jobs:
 
             - name: Make README links absolute
               run: |
-                BASE="${{ github.server_url }}/${{ github.repository }}/blob/${{ github.sha }}/src"
+                BASE="${{ github.server_url }}/${{ github.repository }}/blob/${{ needs.resolve.outputs.sha }}/src"
                 for readme in src/*/README.md; do
                   project=$(basename "$(dirname "$readme")")
                   perl -pi -e "s{\]\((?!https?://|#)}{](${BASE}/${project}/}g; s{/src/[^/)]+/\.\./}{/src/}g" "$readme"
@@ -62,27 +127,95 @@ jobs:
                 --configuration Release \
                 -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
-                
+
                 dotnet pack src/DannyGoodacre.Cqrs.EntityFrameworkCore/DannyGoodacre.Cqrs.EntityFrameworkCore.csproj \
                 --configuration Release \
                 -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
-                
+
                 dotnet pack src/DannyGoodacre.Testing/DannyGoodacre.Testing.csproj \
                 --configuration Release \
                 -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
-                
+
                 dotnet pack src/DannyGoodacre.Cqrs.Testing/DannyGoodacre.Cqrs.Testing.csproj \
                 --configuration Release \
                 -p:Version="$VERSION" \
                 --output ${{ github.workspace }}/nupkg
 
+            - name: Check version is unpublished on both feeds
+              env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                lower_version="${VERSION,,}"
+                for file in nupkg/*.nupkg; do
+                  name=$(basename "$file" .nupkg)
+                  id="${name%."$VERSION"}"
+
+                  code=$(curl -s -o nuget.json -w '%{http_code}' "https://api.nuget.org/v3-flatcontainer/${id,,}/index.json")
+                  if [ "$code" = 200 ]; then
+                    if jq -e --arg v "$lower_version" '.versions | index($v)' nuget.json > /dev/null; then
+                      echo "::error::$id $VERSION already exists on nuget.org."
+                      exit 1
+                    fi
+                  elif [ "$code" != 404 ]; then
+                    echo "::error::Could not check nuget.org for $id (HTTP $code)."
+                    exit 1
+                  fi
+
+                  if versions=$(gh api --paginate "/users/${{ github.repository_owner }}/packages/nuget/$id/versions" --jq '.[].name' 2> gh.err); then
+                    if grep -qxF "$VERSION" <<< "$versions"; then
+                      echo "::error::$id $VERSION already exists on GitHub Packages."
+                      exit 1
+                    fi
+                  elif ! grep -q 'HTTP 404' gh.err; then
+                    echo "::error::Could not check GitHub Packages for $id: $(cat gh.err)"
+                    exit 1
+                  fi
+                done
+
+            - name: Upload packages
+              uses: actions/upload-artifact@v7
+              with:
+                name: nupkg
+                path: nupkg/*.nupkg
+                if-no-files-found: error
+
+    publish:
+        needs: [resolve, build]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            packages: write
+            id-token: write
+
+        steps:
+            - name: Download packages
+              uses: actions/download-artifact@v8
+              with:
+                name: nupkg
+                path: nupkg
+
             - name: Push to GitHub Packages
               run: |
                 dotnet nuget push ./nupkg/*.nupkg \
                 --api-key ${{ secrets.GITHUB_TOKEN }} \
-                --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+                --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+                --skip-duplicate
+
+            - name: NuGet login (OIDC)
+              uses: NuGet/login@v1
+              id: login
+              with:
+                user: dannygoodacre
+
+            - name: Push to nuget.org
+              if: ${{ !inputs.dry-run }}
+              run: |
+                dotnet nuget push ./nupkg/*.nupkg \
+                --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
+                --source https://api.nuget.org/v3/index.json \
+                --skip-duplicate
 
             - name: Create GitHub release
               env:
@@ -92,7 +225,7 @@ jobs:
                 PRERELEASE_FLAG=""
                 if [[ "$VERSION" == *-* ]]; then PRERELEASE_FLAG="--prerelease"; fi
                 gh release create "v$VERSION" ./nupkg/*.nupkg \
-                  --target "$GITHUB_SHA" \
+                  --target "${{ needs.resolve.outputs.sha }}" \
                   --title "v$VERSION" \
                   --generate-notes \
                   $PRERELEASE_FLAG
