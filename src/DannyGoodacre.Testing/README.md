@@ -48,7 +48,7 @@ On an `IResult`, `ShouldBeSuccess()` only checks `IsSuccess`. On an `IResult<T>`
 | `ShouldHaveErrorsFor(property, params ValidationError[] expected)` | The property has exactly these errors, in this order. |
 | `ShouldMatch(expected)` | Both states have the same properties and equal `ValidationError`s for each, in order. Property names are compared case-insensitively. |
 
-Assert on the code, which is the contract, rather than the English message. A failure names the property and lists the codes that were found.
+Assert on the code, which is the contract, rather than the English message. A failure names the property. The code-only assertions list the codes that were found, and the others show the code, message, and arguments of the expected and found errors.
 
 ## Error assertions
 

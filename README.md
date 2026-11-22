@@ -6,7 +6,7 @@ A set of .NET 10 libraries for structuring application logic: a result type for 
 
 | Package | Purpose | Documentation |
 | --- | --- | --- |
-| `DannyGoodacre.Results` | Result types, `Error`, and `ValidationState`. Methods return a result for each expected outcome instead of throwing. No dependencies. | [README](./src/DannyGoodacre.Results/README.md) |
+| `DannyGoodacre.Results` | Result types, `Error`, and `ValidationState` with `ValidationError`. Methods return a result for each expected outcome instead of throwing. No dependencies. | [README](./src/DannyGoodacre.Results/README.md) |
 | `DannyGoodacre.Cqrs` | Commands, queries, and the decorator pipeline that runs them. Handlers contain only domain logic. | [README](./src/DannyGoodacre.Cqrs/README.md) |
 | `DannyGoodacre.Cqrs.EntityFrameworkCore` | The EF Core implementation of the pipeline's persistence interfaces. | [README](./src/DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) |
 | `DannyGoodacre.Testing` | xUnit assertions for results, `ValidationState`, and `Error`. | [README](./src/DannyGoodacre.Testing/README.md) |
