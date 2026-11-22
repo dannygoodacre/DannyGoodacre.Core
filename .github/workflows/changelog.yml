@@ -13,6 +13,19 @@ on:
         required: false
         type: string
         default: ""
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      fail-if-unchanged:
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      pr:
+        description: "Number of the changelog PR"
+        value: ${{ jobs.changelog.outputs.pr }}
 
 permissions:
   contents: write
@@ -21,9 +34,12 @@ permissions:
 jobs:
   changelog:
     runs-on: ubuntu-latest
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
     env:
       VERSION: ${{ inputs.version }}
       BASELINE: ${{ inputs.baseline }}
+      FAIL_IF_UNCHANGED: ${{ inputs.fail-if-unchanged }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -50,9 +66,14 @@ jobs:
           fi
 
       - name: Create PR if changed
+        id: pr
         run: |
           if [ -z "$(git status --porcelain -- CHANGELOG.md)" ]; then
             echo "Changelog is already up to date."
+            if [ "$FAIL_IF_UNCHANGED" = true ]; then
+              echo "::error::No changelog changes for v$VERSION, so there is no PR to release from."
+              exit 1
+            fi
             exit 0
           fi
 
@@ -66,8 +87,9 @@ jobs:
           git commit -m "$TITLE"
           git push -u origin "$BRANCH"
 
-          gh pr create \
+          URL=$(gh pr create \
             --base main \
             --head "$BRANCH" \
             --title "$TITLE" \
-            --body "Generated \`CHANGELOG.md\` from conventional commits."
+            --body "Generated \`CHANGELOG.md\` from conventional commits.")
+          echo "pr=${URL##*/}" >> "$GITHUB_OUTPUT"
