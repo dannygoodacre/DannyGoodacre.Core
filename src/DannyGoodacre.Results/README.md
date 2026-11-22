@@ -18,12 +18,6 @@ The reference docs are [RESULTS.md](docs/RESULTS.md) (creating and reading resul
 dotnet add package DannyGoodacre.Results
 ```
 
-> **Note:** The package is currently published to GitHub Packages only; publication to nuget.org is planned. Until then, add the feed with a GitHub token that has the `read:packages` scope:
->
-> ```shell
-> dotnet nuget add source https://nuget.pkg.github.com/dannygoodacre/index.json --name dannygoodacre --username <github-username> --password <token>
-> ```
-
 All types are in the `DannyGoodacre.Results` namespace.
 
 ## Outcome types

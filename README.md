@@ -21,12 +21,6 @@ dotnet add package DannyGoodacre.Cqrs
 dotnet add package DannyGoodacre.Cqrs.EntityFrameworkCore
 ```
 
-The packages are currently published to GitHub Packages only; publication to nuget.org is planned. Until then, add the feed with a GitHub token that has the `read:packages` scope:
-
-```shell
-dotnet nuget add source https://nuget.pkg.github.com/dannygoodacre/index.json --name dannygoodacre --username <github-username> --password <token>
-```
-
 ## Example
 
 [`src/DannyGoodacre.Cqrs.Examples`](./src/DannyGoodacre.Cqrs.Examples) is a customer onboarding workflow on SQLite that uses every part of the pipeline, and [`tests/DannyGoodacre.Cqrs.Examples.Tests`](./tests/DannyGoodacre.Cqrs.Examples.Tests) tests it through the full pipeline. The [examples guide](./src/DannyGoodacre.Cqrs/docs/EXAMPLES.md) walks through both.
