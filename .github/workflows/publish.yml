@@ -1,11 +1,5 @@
 name: Publish NuGet Package
 
-# Flow: open the changelog PR, wait for approval in the "release" environment (merge the PR first),
-# then build and publish from the PR's merge commit, so the tag lands on the changelog commit.
-# A failed run is recovered with "Re-run failed jobs", never a new dispatch: that reuses the same
-# commit and the same packed artifact, so every feed and the tag end up with identical bytes.
-# The tag is created last, by the release, so its existence means everything else was published.
-
 on:
     workflow_dispatch:
         inputs:
