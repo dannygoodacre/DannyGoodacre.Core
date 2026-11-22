@@ -62,8 +62,11 @@ jobs:
         environment: release
         permissions: {}
 
+        env:
+            PR: ${{ needs.changelog.outputs.pr }}
+
         steps:
-            - run: echo "Approved release of v$VERSION after changelog PR #${{ needs.changelog.outputs.pr }}."
+            - run: echo "Approved release of v$VERSION after changelog PR #$PR."
 
     resolve:
         needs: [changelog, approve]
@@ -75,16 +78,17 @@ jobs:
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             GH_REPO: ${{ github.repository }}
+            PR: ${{ needs.changelog.outputs.pr }}
 
         steps:
             - name: Resolve changelog commit
               id: pr
               run: |
-                read -r state base sha < <(gh pr view "${{ needs.changelog.outputs.pr }}" \
+                read -r state base sha < <(gh pr view "$PR" \
                   --json state,baseRefName,mergeCommit \
                   --jq '[.state, .baseRefName, .mergeCommit.oid] | @tsv')
                 if [ "$state" != MERGED ] || [ "$base" != main ] || [ -z "$sha" ]; then
-                  echo "::error::Changelog PR #${{ needs.changelog.outputs.pr }} is not merged into main (state: $state)."
+                  echo "::error::Changelog PR #$PR is not merged into main (state: $state)."
                   exit 1
                 fi
                 echo "sha=$sha" >> "$GITHUB_OUTPUT"
