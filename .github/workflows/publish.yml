@@ -13,6 +13,11 @@ on:
                 description: 'Version for all packages (e.g. 0.15.0 or 0.15.0-beta.1)'
                 required: true
                 type: string
+            dry-run:
+                description: 'Do everything except push to nuget.org (the NuGet login still runs)'
+                required: false
+                type: boolean
+                default: false
 
 concurrency:
     group: publish
@@ -206,6 +211,7 @@ jobs:
                 user: dannygoodacre
 
             - name: Push to nuget.org
+              if: ${{ !inputs.dry-run }}
               run: |
                 dotnet nuget push ./nupkg/*.nupkg \
                 --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
