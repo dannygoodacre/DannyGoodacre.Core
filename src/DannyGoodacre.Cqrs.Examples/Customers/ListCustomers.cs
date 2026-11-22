@@ -37,7 +37,10 @@ public sealed class SearchCustomersQueryValidator : ValidatorBase<SearchCustomer
         => validationState.AddErrorIf(
             request.Search.Trim().Length < MinSearchLength,
             nameof(request.Search),
-            $"Search must be at least {MinSearchLength} characters.");
+            new ValidationError(
+                $"Search must be at least {MinSearchLength} characters.",
+                "TooShort",
+                new Dictionary<string, string> { ["MinLength"] = $"{MinSearchLength}" }));
 }
 
 public sealed class SearchCustomersQueryHandler(ICustomerRepository customerRepository)

@@ -75,8 +75,8 @@ public sealed class RegisterCustomerPipelineTests
         ValidationState validationState = result.ShouldBeInvalid();
 
         Assert.Equal(2, validationState.Errors.Count);
-        Assert.Contains(nameof(RegisterCustomerCommand.Name), validationState.Errors.Keys);
-        Assert.Contains(nameof(RegisterCustomerCommand.Email), validationState.Errors.Keys);
+        validationState.ShouldHaveErrorCode(nameof(RegisterCustomerCommand.Name), "Required");
+        validationState.ShouldHaveErrorCode(nameof(RegisterCustomerCommand.Email), "InvalidFormat");
 
         // The handler did not run, and the pipeline did not call SaveChangesAsync.
         Assert.Empty(host.DatabaseActivity.Commands);

@@ -66,7 +66,12 @@ public sealed class SearchPagingValidator<TRequest> : IValidator<TRequest>
     {
         if (request.Page > MaxSearchPage)
         {
-            validationState.AddError(nameof(IPagedRequest.Page), $"Search results stop after page {MaxSearchPage}.");
+            validationState.AddError(
+                nameof(IPagedRequest.Page),
+                new ValidationError(
+                    $"Search results stop after page {MaxSearchPage}.",
+                    "OutOfRange",
+                    new Dictionary<string, string> { ["Max"] = $"{MaxSearchPage}" }));
         }
     }
 }
@@ -93,7 +98,7 @@ public sealed class OnboardCustomerCommandValidator(IValidator<RegisterCustomerC
 
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Required"));
         }
     }
 }
@@ -182,7 +187,11 @@ public sealed class OnboardCustomerCommandHandler(
             return planResult.MapFailure<Guid>();
         }
 
-        // Steps 3 and 4: add the subscription. The transaction decorator saves it before the commit.
+        // Step 3: the save in step 1 inserted the customer row inside this transaction,
+        // so the database has already generated the customer's ID. Read it to link the subscription.
+        // ...
+
+        // Step 4: a change made by this handler. The transaction decorator saves it before the commit.
         // ...
 
         return new Success<Guid>(customerPublicId);

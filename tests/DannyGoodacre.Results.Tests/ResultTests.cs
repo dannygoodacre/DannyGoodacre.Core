@@ -136,7 +136,7 @@ public sealed class ResultTests
         // Arrange
         var validationState = new ValidationState();
 
-        validationState.AddError("Field", "Required");
+        validationState.AddError("Field", new ValidationError("Required", "Invalid"));
 
         // Act
         IResult result = new Invalid(validationState);

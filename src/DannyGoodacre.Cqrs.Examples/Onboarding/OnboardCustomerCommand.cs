@@ -20,7 +20,7 @@ public sealed class OnboardCustomerCommandValidator(IValidator<RegisterCustomerC
 
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Required"));
         }
     }
 }
@@ -57,7 +57,7 @@ public sealed class OnboardCustomerCommandHandler(
         }
 
         // Step 3: the save in step 1 inserted the customer row inside this transaction,
-        // so the database has already generated the customer's Id. Read it to link the subscription.
+        // so the database has already generated the customer's ID. Read it to link the subscription.
         int customerId = await customerRepository.GetIdAsync(customerPublicId, cancellationToken);
 
         // Step 4: a change made by this handler. The transaction decorator saves it before the commit.

@@ -13,7 +13,7 @@ public sealed class GetPlanQueryValidator : IValidator<GetPlanQuery>
     {
         if (string.IsNullOrWhiteSpace(request.PlanCode))
         {
-            validationState.AddError(nameof(request.PlanCode), "Plan code is required.");
+            validationState.AddError(nameof(request.PlanCode), new ValidationError("Plan code is required.", "Required"));
         }
     }
 }

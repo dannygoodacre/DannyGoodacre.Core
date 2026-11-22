@@ -4,7 +4,7 @@ using Xunit;
 namespace DannyGoodacre.Testing;
 
 /// <summary>
-/// Contains fluent xUnit assertion extension methods for <see cref="ValidationState"/>.
+/// Fluent xUnit assertion extension methods for <see cref="ValidationState"/>.
 /// </summary>
 public static class ValidationStateAssertionExtensions
 {
@@ -21,27 +21,28 @@ public static class ValidationStateAssertionExtensions
         }
 
         /// <summary>
-        /// Asserts that a specific error message exists for the specified property name.
+        /// Asserts that the specified property has an error with the given code, among any others.
         /// </summary>
-        public void ShouldHaveError(string propertyName, string expectedError)
+        public void ShouldHaveErrorCode(string propertyName, string expectedCode)
         {
-            Assert.True(
-                validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<string>? errors),
-                $"Expected validation error for property '{propertyName}', but no errors were recorded for it.");
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
 
-            Assert.Contains(expectedError, errors, StringComparer.Ordinal);
+            Assert.True(
+                errors.Any(e => e.Code == expectedCode),
+                $"Expected an error with code '{expectedCode}' for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
         }
 
         /// <summary>
-        /// Asserts that the exact list of error messages exists for the specified property name.
+        /// Asserts that the specified property has an error equal to <paramref name="expected"/>, among any others.
+        /// Arguments are compared by content.
         /// </summary>
-        public void ShouldHaveErrorsFor(string propertyName, params string[] expectedErrors)
+        public void ShouldHaveError(string propertyName, ValidationError expected)
         {
-            Assert.True(
-                validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<string>? errors),
-                $"Expected validation errors for property '{propertyName}', but no errors were recorded for it.");
+            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
 
-            Assert.Equal(expectedErrors, errors);
+            Assert.True(
+                errors.Contains(expected),
+                $"Expected error {Format(expected)} for property '{propertyName}', but found: {Format(errors)}.");
         }
 
         /// <summary>
@@ -62,11 +63,63 @@ public static class ValidationStateAssertionExtensions
             foreach (var (property, expectedErrors) in expected.Errors)
             {
                 Assert.True(
-                    validationState.Errors.TryGetValue(property, out IReadOnlyList<string>? actualErrors),
+                    validationState.Errors.TryGetValue(property, out IReadOnlyList<ValidationError>? actualErrors),
                     $"Expected property '{property}' in validation state, but it was missing.");
 
-                Assert.Equal(expectedErrors, actualErrors);
+                Assert.True(
+                    expectedErrors.SequenceEqual(actualErrors),
+                    $"Expected errors {Format(expectedErrors)} for property '{property}', but found: {Format(actualErrors)}.");
             }
         }
     }
+
+    // These two are not in the extension block above: a params parameter there makes the compiler report CS8620
+    // at every call site.
+    /// <summary>
+    /// Asserts that the specified property has exactly these error codes, in this order.
+    /// </summary>
+    // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
+    // ReSharper disable once ConvertToExtensionBlock - The <c>params</c> array caused a nullability warning
+    public static void ShouldHaveErrorCodesFor(this ValidationState validationState, string propertyName, params string[] expectedCodes)
+    {
+        IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+        Assert.True(
+            errors.Select(e => e.Code).SequenceEqual(expectedCodes),
+            $"Expected codes [{string.Join(", ", expectedCodes)}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
+    }
+
+    /// <summary>
+    /// Asserts that the specified property has exactly these errors, in this order.
+    /// Arguments are compared by content.
+    /// </summary>
+    // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
+    public static void ShouldHaveErrorsFor(this ValidationState validationState, string propertyName, params ValidationError[] expected)
+    {
+        IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+        Assert.True(
+            errors.SequenceEqual(expected),
+            $"Expected errors {Format(expected)} for property '{propertyName}', but found: {Format(errors)}.");
+    }
+
+    private static IReadOnlyList<ValidationError> GetErrors(ValidationState validationState, string propertyName)
+    {
+        Assert.True(
+            validationState.Errors.TryGetValue(propertyName, out IReadOnlyList<ValidationError>? errors),
+            $"Expected validation errors for property '{propertyName}', but no errors were recorded for it.");
+
+        return errors;
+    }
+
+    private static string FormatCodes(IEnumerable<ValidationError> errors)
+        => $"[{string.Join(", ", errors.Select(e => e.Code))}]";
+
+    private static string Format(IEnumerable<ValidationError> errors)
+        => $"[{string.Join(", ", errors.Select(Format))}]";
+
+    private static string Format(ValidationError error)
+        => error.Arguments.Count == 0
+            ? $"{error.Code} \"{error.Message}\""
+            : $"{error.Code} \"{error.Message}\" ({string.Join(", ", error.Arguments.Select(a => $"{a.Key}={a.Value}"))})";
 }

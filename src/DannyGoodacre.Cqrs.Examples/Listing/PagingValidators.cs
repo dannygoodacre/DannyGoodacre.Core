@@ -13,12 +13,18 @@ public sealed class PagingValidator<TRequest> : ValidatorBase<TRequest>
 
     public override void Validate(TRequest request, ValidationState validationState)
     {
-        validationState.AddErrorIf(request.Page < 1, nameof(IPagedRequest.Page), "Page must be at least 1.");
+        validationState.AddErrorIf(
+            request.Page < 1,
+            nameof(IPagedRequest.Page),
+            new ValidationError("Page must be at least 1.", "OutOfRange", new Dictionary<string, string> { ["Min"] = "1" }));
 
         validationState.AddErrorIf(
             request.PageSize is < 1 or > MaxPageSize,
             nameof(IPagedRequest.PageSize),
-            $"Page size must be between 1 and {MaxPageSize}.");
+            new ValidationError(
+                $"Page size must be between 1 and {MaxPageSize}.",
+                "OutOfRange",
+                new Dictionary<string, string> { ["Min"] = "1", ["Max"] = $"{MaxPageSize}" }));
     }
 }
 
@@ -33,7 +39,10 @@ public abstract class ListQueryValidator<TItem> : ValidatorBase<ListQuery<TItem>
         => validationState.AddErrorIf(
             request.PageSize > MaxPageSize,
             nameof(request.PageSize),
-            $"This list returns at most {MaxPageSize} items per page.");
+            new ValidationError(
+                $"This list returns at most {MaxPageSize} items per page.",
+                "OutOfRange",
+                new Dictionary<string, string> { ["Max"] = $"{MaxPageSize}" }));
 }
 
 // The constraints must all hold, so this validator runs only for requests that are both paged and searchable.
@@ -47,7 +56,12 @@ public sealed class SearchPagingValidator<TRequest> : IValidator<TRequest>
     {
         if (request.Page > MaxSearchPage)
         {
-            validationState.AddError(nameof(IPagedRequest.Page), $"Search results stop after page {MaxSearchPage}.");
+            validationState.AddError(
+                nameof(IPagedRequest.Page),
+                new ValidationError(
+                    $"Search results stop after page {MaxSearchPage}.",
+                    "OutOfRange",
+                    new Dictionary<string, string> { ["Max"] = $"{MaxSearchPage}" }));
         }
     }
 }

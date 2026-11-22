@@ -8,7 +8,7 @@ Guid customerId = result.ShouldBeSuccess();
 result.ShouldBeConflict("A customer with this email address already exists.");
 
 ValidationState validationState = result.ShouldBeInvalid();
-validationState.ShouldHaveError("Email", "Email is required.");
+validationState.ShouldHaveErrorCode("Email", "Required");
 ```
 
 ## Installation
@@ -42,9 +42,13 @@ On an `IResult`, `ShouldBeSuccess()` only checks `IsSuccess`. On an `IResult<T>`
 | Method | Passes when |
 | --- | --- |
 | `ShouldHaveNoErrors()` | The state has no errors. |
-| `ShouldHaveError(property, error)` | The property has this error, among any others. |
-| `ShouldHaveErrorsFor(property, params errors)` | The property has exactly these errors, in this order. |
-| `ShouldMatch(expected)` | Both states have the same properties and the same errors for each. Property names are compared case-insensitively. |
+| `ShouldHaveErrorCode(property, code)` | The property has an error with this code, among any others. |
+| `ShouldHaveError(property, ValidationError expected)` | The property has this exact error, among any others. `Arguments` compare by content. |
+| `ShouldHaveErrorCodesFor(property, params string[] codes)` | The property has exactly these codes, in this order. |
+| `ShouldHaveErrorsFor(property, params ValidationError[] expected)` | The property has exactly these errors, in this order. |
+| `ShouldMatch(expected)` | Both states have the same properties and equal `ValidationError`s for each, in order. Property names are compared case-insensitively. |
+
+Assert on the code, which is the contract, rather than the English message. A failure names the property. The code-only assertions list the codes that were found, and the others show the code, message, and arguments of the expected and found errors.
 
 ## Error assertions
 

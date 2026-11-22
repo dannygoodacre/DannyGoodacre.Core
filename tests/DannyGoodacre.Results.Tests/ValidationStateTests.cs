@@ -20,14 +20,14 @@ public sealed class ValidationStateTests
         var state = new ValidationState();
 
         // Act
-        state.AddError("Name", "Name is required.");
+        state.AddError("Name", new ValidationError("Name is required.", "Invalid"));
 
         // Assert
         Assert.True(state.HasErrors);
         Assert.True(state.Errors.ContainsKey("Name"));
 
         var item = Assert.Single(state.Errors["Name"]);
-        Assert.Equal("Name is required.", item);
+        Assert.Equal("Name is required.", item.Message);
     }
 
     [Fact]
@@ -37,11 +37,11 @@ public sealed class ValidationStateTests
         var state = new ValidationState();
 
         // Act
-        var result = state.AddErrorIf(true, "Name", "Name is required.");
+        var result = state.AddErrorIf(true, "Name", new ValidationError("Name is required.", "Invalid"));
 
         // Assert
         Assert.True(result);
-        Assert.Equal("Name is required.", Assert.Single(state.Errors["Name"]));
+        Assert.Equal("Name is required.", Assert.Single(state.Errors["Name"]).Message);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class ValidationStateTests
         var errors = state.Errors;
 
         // Act
-        var result = state.AddErrorIf(false, "Name", "Name is required.");
+        var result = state.AddErrorIf(false, "Name", new ValidationError("Name is required.", "Invalid"));
 
         // Assert
         Assert.False(result);
@@ -67,14 +67,14 @@ public sealed class ValidationStateTests
         var state = new ValidationState();
 
         // Act
-        state.AddError("Email", "Email is required.");
-        state.AddError("email", "Email format is invalid.");
+        state.AddError("Email", new ValidationError("Email is required.", "Invalid"));
+        state.AddError("email", new ValidationError("Email format is invalid.", "Invalid"));
 
         // Assert
         Assert.Single(state.Errors);
         Assert.Equal(2, state.Errors["Email"].Count);
-        Assert.Equal("Email is required.", state.Errors["Email"][0]);
-        Assert.Equal("Email format is invalid.", state.Errors["Email"][1]);
+        Assert.Equal("Email is required.", state.Errors["Email"][0].Message);
+        Assert.Equal("Email format is invalid.", state.Errors["Email"][1].Message);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class ValidationStateTests
     {
         // Arrange
         var state = new ValidationState();
-        state.AddError("Age", "Must be positive.");
+        state.AddError("Age", new ValidationError("Must be positive.", "Invalid"));
 
         var other = new ValidationState();
 
@@ -91,7 +91,7 @@ public sealed class ValidationStateTests
 
         // Assert
         Assert.Single(state.Errors);
-        Assert.Equal("Must be positive.", state.Errors["Age"][0]);
+        Assert.Equal("Must be positive.", state.Errors["Age"][0].Message);
     }
 
     [Fact]
@@ -99,15 +99,15 @@ public sealed class ValidationStateTests
     {
         // Arrange
         var state = new ValidationState();
-        state.AddError("Email", "Email is required.");
-        state.AddError("Password", "Password is too short.");
+        state.AddError("Email", new ValidationError("Email is required.", "Invalid"));
+        state.AddError("Password", new ValidationError("Password is too short.", "Invalid"));
 
         // Act
         state.Merge(state);
 
         // Assert
-        Assert.Equal(["Email is required.", "Email is required."], state.Errors["Email"]);
-        Assert.Equal(["Password is too short.", "Password is too short."], state.Errors["Password"]);
+        Assert.Equal(["Email is required.", "Email is required."], state.Errors["Email"].Select(e => e.Message));
+        Assert.Equal(["Password is too short.", "Password is too short."], state.Errors["Password"].Select(e => e.Message));
     }
 
     [Fact]
@@ -115,11 +115,11 @@ public sealed class ValidationStateTests
     {
         // Arrange
         var state = new ValidationState();
-        state.AddError("Username", "Username is required.");
+        state.AddError("Username", new ValidationError("Username is required.", "Invalid"));
 
         var other = new ValidationState();
-        other.AddError("Username", "Username must be unique.");
-        other.AddError("Password", "Password is too short.");
+        other.AddError("Username", new ValidationError("Username must be unique.", "Invalid"));
+        other.AddError("Password", new ValidationError("Password is too short.", "Invalid"));
 
         // Act
         state.Merge(other);
@@ -148,9 +148,9 @@ public sealed class ValidationStateTests
     {
         // Arrange
         var state = new ValidationState();
-        state.AddError("Name", "Name is required.");
-        state.AddError("Name", "Name must be at least 3 characters.");
-        state.AddError("Age", "Must be 18 or older.");
+        state.AddError("Name", new ValidationError("Name is required.", "Invalid"));
+        state.AddError("Name", new ValidationError("Name must be at least 3 characters.", "Invalid"));
+        state.AddError("Age", new ValidationError("Must be 18 or older.", "Invalid"));
 
         string expected =
             "Name:" + Environment.NewLine +
@@ -172,11 +172,11 @@ public sealed class ValidationStateTests
         // Arrange
         var state = new ValidationState();
 
-        state.AddError("Email", "Email is required.");
+        state.AddError("Email", new ValidationError("Email is required.", "Invalid"));
 
         // Act & Assert
         Assert.True(state.Errors.ContainsKey("email"));
-        Assert.Equal("Email is required.", Assert.Single(state.Errors["EMAIL"]));
+        Assert.Equal("Email is required.", Assert.Single(state.Errors["EMAIL"]).Message);
     }
 
     [Fact]
@@ -185,13 +185,13 @@ public sealed class ValidationStateTests
         // Arrange
         var state = new ValidationState();
 
-        state.AddError("Name", "Name is required.");
+        state.AddError("Name", new ValidationError("Name is required.", "Invalid"));
 
         // Act
-        IReadOnlyList<string> errors = state.Errors["Name"];
+        IReadOnlyList<ValidationError> errors = state.Errors["Name"];
 
         // Assert
-        Assert.IsNotType<List<string>>(errors, exactMatch: false);
+        Assert.IsNotType<List<ValidationError>>(errors, exactMatch: false);
     }
 
     [Fact]
@@ -200,14 +200,61 @@ public sealed class ValidationStateTests
         // Arrange
         var state = new ValidationState();
 
-        state.AddError("Name", "Name is required.");
+        state.AddError("Name", new ValidationError("Name is required.", "Invalid"));
 
         _ = state.Errors;
 
         // Act
-        state.AddError("Age", "Must be positive.");
+        state.AddError("Age", new ValidationError("Must be positive.", "Invalid"));
 
         // Assert
         Assert.Equal(2, state.Errors.Count);
+    }
+
+    [Fact]
+    public void AddError_WithValidationError_KeepsCodeAndArguments()
+    {
+        var state = new ValidationState();
+        var error = new ValidationError("Too short.", "TooShort", new Dictionary<string, string> { ["Min"] = "3" });
+
+        state.AddError("Name", error);
+
+        Assert.Equal(error, Assert.Single(state.Errors["Name"]));
+        Assert.Equal("3", Assert.Single(state.Errors["Name"]).Arguments["Min"]);
+    }
+
+    [Fact]
+    public void AddErrorIf_WithValidationError_AddsOnlyWhenConditionIsTrue()
+    {
+        var state = new ValidationState();
+        var error = new ValidationError("Required.", "Required");
+
+        Assert.False(state.AddErrorIf(false, "Name", error));
+        Assert.False(state.HasErrors);
+
+        Assert.True(state.AddErrorIf(true, "Name", error));
+        Assert.Equal(error, Assert.Single(state.Errors["Name"]));
+    }
+
+    [Fact]
+    public void Merge_KeepsCodesAndArguments()
+    {
+        var other = new ValidationState();
+        var error = new ValidationError("Too short.", "TooShort", new Dictionary<string, string> { ["Min"] = "3" });
+        other.AddError("Name", error);
+
+        var state = new ValidationState();
+        state.Merge(other);
+
+        Assert.Equal(error, Assert.Single(state.Errors["Name"]));
+    }
+
+    [Fact]
+    public void ToString_PrintsOnlyTheMessage()
+    {
+        var state = new ValidationState();
+        state.AddError("Name", new ValidationError("Too short.", "TooShort", new Dictionary<string, string> { ["Min"] = "3" }));
+
+        Assert.Equal("Name:" + Environment.NewLine + "  - Too short.", state.ToString());
     }
 }

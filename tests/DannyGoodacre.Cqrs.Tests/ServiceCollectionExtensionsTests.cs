@@ -106,7 +106,7 @@ public sealed class ServiceCollectionExtensionsTests
         where TRequest : IRequest, IGroupedRequest
     {
         public void Validate(TRequest request, ValidationState validationState)
-            => validationState.AddError("Group", "Rejected by the group validator.");
+            => validationState.AddError("Group", new ValidationError("Rejected by the group validator.", "Invalid"));
     }
 
     public sealed class GenericCommand<T> : ICommand;
