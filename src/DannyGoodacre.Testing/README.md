@@ -17,8 +17,6 @@ validationState.ShouldHaveErrorCode("Email", "Required");
 dotnet add package DannyGoodacre.Testing
 ```
 
-> **Note:** The package is currently published to GitHub Packages only; publication to nuget.org is planned. See the [installation note](../DannyGoodacre.Cqrs/README.md#installation) for adding the feed.
-
 The assertions use xUnit v3 (`xunit.v3.assert`). All methods are in the `DannyGoodacre.Testing` namespace.
 
 ## Result assertions

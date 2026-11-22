@@ -10,8 +10,6 @@ To test your own handlers through the full pipeline, use the approach in [Pipeli
 dotnet add package DannyGoodacre.Cqrs.Testing
 ```
 
-> **Note:** The package is currently published to GitHub Packages only; publication to nuget.org is planned. See the [installation note](../DannyGoodacre.Cqrs/README.md#installation) for adding the feed.
-
 The package is built on xUnit v3, Moq, and the `FakeLogger` from `Microsoft.Extensions.Diagnostics.Testing`. It includes [DannyGoodacre.Testing](../DannyGoodacre.Testing/README.md), so the result assertions are available too. All types are in the `DannyGoodacre.Cqrs.Testing` namespace.
 
 ## Contexts

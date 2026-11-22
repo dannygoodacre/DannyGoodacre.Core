@@ -22,12 +22,6 @@ dotnet add package DannyGoodacre.Cqrs
 dotnet add package DannyGoodacre.Cqrs.EntityFrameworkCore
 ```
 
-> **Note:** The packages are currently published to GitHub Packages only; publication to nuget.org is planned. Until then, add the feed with a GitHub token that has the `read:packages` scope:
->
-> ```shell
-> dotnet nuget add source https://nuget.pkg.github.com/dannygoodacre/index.json --name dannygoodacre --username <github-username> --password <token>
-> ```
-
 The package depends on [`DannyGoodacre.Results`](../DannyGoodacre.Results/README.md) for its result and validation types.
 
 State commands (`IStateCommand` and `ITransactedStateCommand`) need an `IStateUnit` and an `ITransactionUnit` to save their changes. [`DannyGoodacre.Cqrs.EntityFrameworkCore`](../DannyGoodacre.Cqrs.EntityFrameworkCore/README.md) provides both for EF Core, the most widely used ORM for .NET. With any other data access, implement the two interfaces yourself; see [Custom implementation](docs/PERSISTENCE.md#custom-implementation). Queries and plain `ICommand`s, such as a command that only sends an email, need neither.
