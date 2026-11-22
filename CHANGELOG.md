@@ -2,6 +2,12 @@
 
 All packages are released together at the same version.
 
+## [0.1.0-alpha.3] - 2026-11-22
+
+### Breaking
+
+- **results:** Add structured validation errors with required codes (#69). ValidationState.Errors now holds ValidationError instead of string. AddError(string, string) and AddErrorIf(bool, string, string) are removed, and every error needs a code. The ValidationState assertions in DannyGoodacre.Testing are renamed and compare codes, so message-based calls no longer compile.
+
 ## [1.0.0-alpha.2] - 2026-11-17
 
 ### Added
