@@ -36,8 +36,8 @@ public sealed class ValidationErrorTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("  ")]
-    public void Constructor_WithBlankMessage_UsesDefaultMessage(string? blank)
-        => Assert.Equal("An unspecified error occurred.", new ValidationError(blank!, "Invalid").Message);
+    public void Constructor_WithBlankMessage_Throws(string? blank)
+        => Assert.ThrowsAny<ArgumentException>(() => new ValidationError(blank!, "Invalid"));
 
     [Theory]
     [InlineData(null)]

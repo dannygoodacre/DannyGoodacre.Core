@@ -42,32 +42,7 @@ public static class ValidationStateAssertionExtensions
 
             Assert.True(
                 errors.Contains(expected),
-                $"Expected error '{expected.Code}' ({expected.Message}) for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
-        }
-
-        /// <summary>
-        /// Asserts that the specified property has exactly these error codes, in this order.
-        /// </summary>
-        public void ShouldHaveErrorCodesFor(string propertyName, params string[] expectedCodes)
-        {
-            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
-
-            Assert.True(
-                errors.Select(e => e.Code).SequenceEqual(expectedCodes),
-                $"Expected codes [{string.Join(", ", expectedCodes)}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
-        }
-
-        /// <summary>
-        /// Asserts that the specified property has exactly these errors, in this order.
-        /// Arguments are compared by content.
-        /// </summary>
-        public void ShouldHaveErrorsFor(string propertyName, params ValidationError[] expected)
-        {
-            IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
-
-            Assert.True(
-                errors.SequenceEqual(expected),
-                $"Expected errors [{string.Join(", ", expected.Select(e => e.Code))}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
+                $"Expected error {Format(expected)} for property '{propertyName}', but found: {Format(errors)}.");
         }
 
         /// <summary>
@@ -93,9 +68,39 @@ public static class ValidationStateAssertionExtensions
 
                 Assert.True(
                     expectedErrors.SequenceEqual(actualErrors),
-                    $"Expected codes [{string.Join(", ", expectedErrors.Select(e => e.Code))}] for property '{property}', but found codes: {FormatCodes(actualErrors)}.");
+                    $"Expected errors {Format(expectedErrors)} for property '{property}', but found: {Format(actualErrors)}.");
             }
         }
+    }
+
+    // These two are not in the extension block above: a params parameter there makes the compiler report CS8620
+    // at every call site.
+    /// <summary>
+    /// Asserts that the specified property has exactly these error codes, in this order.
+    /// </summary>
+    // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
+    // ReSharper disable once ConvertToExtensionBlock - The <c>params</c> array caused a nullability warning
+    public static void ShouldHaveErrorCodesFor(this ValidationState validationState, string propertyName, params string[] expectedCodes)
+    {
+        IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+        Assert.True(
+            errors.Select(e => e.Code).SequenceEqual(expectedCodes),
+            $"Expected codes [{string.Join(", ", expectedCodes)}] for property '{propertyName}', but found codes: {FormatCodes(errors)}.");
+    }
+
+    /// <summary>
+    /// Asserts that the specified property has exactly these errors, in this order.
+    /// Arguments are compared by content.
+    /// </summary>
+    // ReSharper disable once MoveToExtensionBlock - The <c>params</c> array caused a nullability warning
+    public static void ShouldHaveErrorsFor(this ValidationState validationState, string propertyName, params ValidationError[] expected)
+    {
+        IReadOnlyList<ValidationError> errors = GetErrors(validationState, propertyName);
+
+        Assert.True(
+            errors.SequenceEqual(expected),
+            $"Expected errors {Format(expected)} for property '{propertyName}', but found: {Format(errors)}.");
     }
 
     private static IReadOnlyList<ValidationError> GetErrors(ValidationState validationState, string propertyName)
@@ -109,4 +114,12 @@ public static class ValidationStateAssertionExtensions
 
     private static string FormatCodes(IEnumerable<ValidationError> errors)
         => $"[{string.Join(", ", errors.Select(e => e.Code))}]";
+
+    private static string Format(IEnumerable<ValidationError> errors)
+        => $"[{string.Join(", ", errors.Select(Format))}]";
+
+    private static string Format(ValidationError error)
+        => error.Arguments.Count == 0
+            ? $"{error.Code} \"{error.Message}\""
+            : $"{error.Code} \"{error.Message}\" ({string.Join(", ", error.Arguments.Select(a => $"{a.Key}={a.Value}"))})";
 }

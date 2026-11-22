@@ -10,12 +10,16 @@ public readonly record struct ValidationError
 {
     private const string DefaultMessage = "An unspecified error occurred.";
 
-    // The code of default(ValidationError), which skips the constructor. It marks an error nobody created.
+    // The message and code of default(ValidationError), which skips the constructor. They mark an error nobody created.
     private const string DefaultCode = "Unknown";
 
     /// <summary>
-    /// Gets a human-readable description of the error, already formatted. Defaults to a generic message.
+    /// Gets a human-readable description of the error, already formatted.
     /// </summary>
+    /// <remarks>
+    /// Intended to be shown to users, so it must not contain internal detail. Only <c>default(ValidationError)</c>
+    /// has the generic message <c>"An unspecified error occurred."</c>
+    /// </remarks>
     public string Message => field ?? DefaultMessage;
 
     /// <summary>
@@ -40,15 +44,15 @@ public readonly record struct ValidationError
     /// <param name="message">The human-readable description of the error.</param>
     /// <param name="code">The machine-readable error code.</param>
     /// <param name="arguments">The values behind the message. The dictionary is copied.</param>
-    /// <exception cref="ArgumentException"><paramref name="code"/> is <see langword="null"/>, empty, or whitespace.</exception>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="message"/> or <paramref name="code"/> is <see langword="null"/>, empty, or whitespace.
+    /// </exception>
     public ValidationError(string message, string code, IReadOnlyDictionary<string, string>? arguments = null)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
 
-        Message = string.IsNullOrWhiteSpace(message)
-            ? DefaultMessage
-            : message;
-
+        Message = message;
         Code = code;
 
         Arguments = arguments is null or { Count: 0 }

@@ -4,7 +4,7 @@
 
 | Member | Description |
 | --- | --- |
-| `ValidationError` | One error: a `Code`, a `Message`, and `Arguments` (never `null`, empty when none were given). Create it with `new ValidationError(message, code, arguments)`. The code is required, and a blank one throws `ArgumentException`; only `default(ValidationError)` has the code `Unknown`. |
+| `ValidationError` | One error: a `Code`, a `Message`, and `Arguments` (never `null`, empty when none were given). Create it with `new ValidationError(message, code, arguments)`. The message and code are required, and a blank one throws `ArgumentException`; only `default(ValidationError)` has the code `Unknown` and a generic message. |
 | `AddError(string property, ValidationError error)` | Adds an error to a property. A property can have several errors. |
 | `AddErrorIf(bool condition, string property, ValidationError error)` | Calls `AddError` only when `condition` is `true`, and returns `condition`. |
 | `HasErrors` | `true` if at least one error exists. |
@@ -16,7 +16,7 @@
 - `Errors` is read-only, so a caller cannot change the state through it.
 - `ValidationState` is mutable and not thread-safe. Use one instance per validation operation.
 
-Codes are the stable contract: a caller compares `Code` (and reads `Arguments`), while `Message` is formatted English for people and may change. The application owns its codes and wording; the library has no catalogue and does no message templating. Use PascalCase codes, such as `Required` and `InvalidFormat`. `ValidationError` has no attempted value, because that can echo sensitive input. `Arguments` is a dictionary of strings, so the caller converts values itself; format numbers and dates with the invariant culture. It compares by content, so two errors with the same code, message, and arguments are equal.
+Codes are the stable contract: a caller compares `Code` (and reads `Arguments`), while `Message` is formatted English for people and may change. The application owns its codes and wording; the library has no catalogue and does no message templating. Use PascalCase codes, such as `Required` and `InvalidFormat`. Messages are meant to be shown to users, for example in a toast, so keep internal detail, identifiers, and other users' data out of them; never interpolate raw input into one. `ValidationError` has no attempted value, because that can echo sensitive input. `Arguments` is a dictionary of strings, so the caller converts values itself; format numbers and dates with the invariant culture. It compares by content, so two errors with the same code, message, and arguments are equal.
 
 ```csharp
 validationState.AddError(
