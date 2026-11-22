@@ -66,7 +66,8 @@ jobs:
             PR: ${{ needs.changelog.outputs.pr }}
 
         steps:
-            - run: echo "Approved release of v$VERSION after changelog PR #$PR."
+            - run: |
+                echo "Approved release of v$VERSION after changelog PR #$PR."
 
     resolve:
         needs: [changelog, approve]
